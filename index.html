@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<meta name="theme-color" content="#0b0e14" />
 <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -33,6 +34,14 @@
     <input type="search" id="globalSearch" placeholder="Search 500+ questions…  (press /)" autocomplete="off" spellcheck="false" />
     <kbd class="kbd-hint">/</kbd>
     <div class="search-results" id="searchResults" hidden></div>
+  </div>
+
+  <div class="type-wrap">
+    <button class="icon-btn type-btn" id="fontToggle" aria-label="Change typeface" aria-expanded="false" title="Typeface and text size">
+      <svg viewBox="0 0 24 24"><path d="M4 7V5h16v2M9 19h6M12 5v14"/></svg>
+      <span class="font-name" id="fontName">Inter</span>
+    </button>
+    <div class="font-panel" id="fontPanel" hidden><!-- built by app.js --></div>
   </div>
 
   <button class="icon-btn" id="themeToggle" aria-label="Toggle theme" title="Toggle theme">

@@ -67,12 +67,65 @@ a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
 svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 
-/* ---------- scroll progress ---------- */
+/* ---------- scroll progress ----------
+   Animated with transform (compositor only) rather than width, which
+   would force a layout on every scroll frame. */
 .progress-bar{
-  position:fixed;top:0;left:0;height:3px;width:0%;
+  position:fixed;top:0;left:0;height:3px;width:100%;
+  transform:scaleX(0);transform-origin:0 50%;
   background:linear-gradient(90deg,var(--accent),var(--accent-2));
-  z-index:200;transition:width .1s linear;
+  z-index:200;will-change:transform;
 }
+
+/* ---------- typography switcher ---------- */
+.type-wrap{position:relative;flex-shrink:0}
+.type-btn{width:auto;gap:7px;padding:0 12px}
+.font-name{
+  font-size:12.5px;font-weight:600;max-width:104px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.font-panel{
+  position:absolute;top:50px;right:0;width:308px;
+  max-height:min(70vh,540px);overflow-y:auto;overscroll-behavior:contain;
+  background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  box-shadow:var(--shadow-lg);padding:10px;z-index:130;
+  animation:pop .16s ease;
+}
+.tp-head{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 8px 8px;font-size:10.5px;font-weight:700;
+  letter-spacing:1.1px;text-transform:uppercase;color:var(--text-mute);
+}
+.tp-count{
+  font-family:var(--mono);font-size:10px;padding:1px 7px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);letter-spacing:0;
+}
+.size-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 4px 10px}
+.size-item{
+  padding:8px 4px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--border);background:var(--bg-soft);
+  color:var(--text-dim);font-family:inherit;font-size:11.5px;font-weight:600;
+  transition:.18s ease;
+}
+.size-item:hover{color:var(--text);border-color:var(--border-strong)}
+.size-item.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.font-list{display:flex;flex-direction:column;gap:3px}
+.font-item{
+  display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;
+  gap:1px 10px;align-items:center;
+  padding:9px 11px;border-radius:10px;cursor:pointer;
+  border:1px solid transparent;background:none;color:var(--text);
+  text-align:left;transition:background .16s ease,border-color .16s ease;
+}
+.font-item:hover{background:var(--bg-soft)}
+.font-item.on{background:var(--accent-soft);border-color:var(--accent)}
+.fi-name{font-size:13.5px;font-weight:600;line-height:1.3}
+.fi-note{grid-column:1;font-size:10.5px;color:var(--text-mute);font-family:var(--sans)}
+.fi-sample{
+  grid-column:2;grid-row:1 / span 2;
+  font-size:14px;color:var(--text-mute);white-space:nowrap;letter-spacing:.3px;
+}
+.font-item.on .fi-sample{color:var(--accent)}
 
 /* ---------- topbar ---------- */
 .topbar{
@@ -304,6 +357,10 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
   background:var(--panel);overflow:hidden;
   transition:border-color .22s, box-shadow .22s;
   animation:rise .35s ease both;
+  /* Skip layout and paint for cards scrolled out of view. On a topic with
+     40+ long answers this is the single biggest scrolling win. */
+  content-visibility:auto;
+  contain-intrinsic-size:auto 64px;
 }
 .qcard:hover{border-color:var(--border-strong)}
 .qcard.open{border-color:var(--accent);box-shadow:var(--shadow)}
@@ -457,6 +514,10 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
   .qfoot{padding-left:20px}
   .toolbar{position:static}
 }
+@media (max-width:900px){
+  .font-name{display:none}
+  .type-btn{width:40px;padding:0}
+}
 @media (max-width:560px){
   .topbar{padding:0 12px;gap:9px}
   .search-wrap{max-width:none}
@@ -464,4 +525,8 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
   .hero-stats{gap:18px}
   .qhead{padding:14px}
   .qbadges .badge:not(.hot){display:none}
+  .font-panel{
+    position:fixed;top:auto;bottom:0;left:0;right:0;width:auto;
+    max-height:76vh;border-radius:16px 16px 0 0;
+  }
 }

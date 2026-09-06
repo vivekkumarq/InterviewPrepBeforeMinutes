@@ -8,6 +8,38 @@
   var LS_THEME = "ipbm.theme";
   var LS_DONE = "ipbm.done";
   var LS_OPEN = "ipbm.groups";
+  var LS_FONT = "ipbm.font";
+  var LS_SIZE = "ipbm.size";
+
+  /* ---------------- typefaces ----------------
+     'google' fonts are fetched only when the reader actually selects them,
+     so the default load stays at a single family. */
+  var FONTS = [
+    { id: "inter",      name: "Inter",              note: "Default · clean UI sans",    stack: "'Inter', system-ui, sans-serif", google: "Inter:wght@400;500;600;700;800" },
+    { id: "system",     name: "System UI",          note: "Your OS font · fastest",     stack: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
+    { id: "roboto",     name: "Roboto",             note: "Android · neutral",          stack: "'Roboto', system-ui, sans-serif", google: "Roboto:wght@400;500;700" },
+    { id: "opensans",   name: "Open Sans",          note: "Highly readable",            stack: "'Open Sans', system-ui, sans-serif", google: "Open+Sans:wght@400;500;600;700" },
+    { id: "lato",       name: "Lato",               note: "Warm humanist",              stack: "'Lato', system-ui, sans-serif", google: "Lato:wght@400;700;900" },
+    { id: "poppins",    name: "Poppins",            note: "Geometric · modern",         stack: "'Poppins', system-ui, sans-serif", google: "Poppins:wght@400;500;600;700" },
+    { id: "nunito",     name: "Nunito",             note: "Rounded · friendly",         stack: "'Nunito', system-ui, sans-serif", google: "Nunito:wght@400;600;700;800" },
+    { id: "sourcesans", name: "Source Sans 3",      note: "Adobe · technical docs",     stack: "'Source Sans 3', system-ui, sans-serif", google: "Source+Sans+3:wght@400;600;700" },
+    { id: "ibmplex",    name: "IBM Plex Sans",      note: "Engineering feel",           stack: "'IBM Plex Sans', system-ui, sans-serif", google: "IBM+Plex+Sans:wght@400;500;600;700" },
+    { id: "worksans",   name: "Work Sans",          note: "Optimised for screens",      stack: "'Work Sans', system-ui, sans-serif", google: "Work+Sans:wght@400;500;600;700" },
+    { id: "spacegrotesk", name: "Space Grotesk",    note: "Techy · distinctive",        stack: "'Space Grotesk', system-ui, sans-serif", google: "Space+Grotesk:wght@400;500;600;700" },
+    { id: "figtree",    name: "Figtree",            note: "Soft geometric sans",        stack: "'Figtree', system-ui, sans-serif", google: "Figtree:wght@400;500;600;800" },
+    { id: "atkinson",   name: "Atkinson Hyperlegible", note: "Max legibility · a11y",   stack: "'Atkinson Hyperlegible', system-ui, sans-serif", google: "Atkinson+Hyperlegible:wght@400;700" },
+    { id: "merriweather", name: "Merriweather",     note: "Serif · long reading",       stack: "'Merriweather', Georgia, serif", google: "Merriweather:wght@400;700" },
+    { id: "lora",       name: "Lora",               note: "Serif · elegant",            stack: "'Lora', Georgia, serif", google: "Lora:wght@400;500;600;700" },
+    { id: "georgia",    name: "Georgia",            note: "Classic serif · no download", stack: "Georgia, 'Times New Roman', serif" },
+    { id: "jetbrains",  name: "JetBrains Mono",     note: "Monospace · code everywhere", stack: "'JetBrains Mono', ui-monospace, monospace", google: "JetBrains+Mono:wght@400;500;700" }
+  ];
+
+  var SIZES = [
+    { id: "s",  name: "Small",   scale: "93.75%" },
+    { id: "m",  name: "Default", scale: "100%" },
+    { id: "l",  name: "Large",   scale: "106.25%" },
+    { id: "xl", name: "X-Large", scale: "112.5%" }
+  ];
 
   var view = document.getElementById("view");
   var navTree = document.getElementById("navTree");
@@ -44,6 +76,100 @@
     try { localStorage.setItem(LS_THEME, next); } catch (e) {}
   });
 
+  /* ---------------- typography ---------------- */
+  var fontLinks = {};
+  function loadFontFace(font) {
+    if (!font.google || fontLinks[font.id]) return;
+    var link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://fonts.googleapis.com/css2?family=" + font.google + "&display=swap";
+    document.head.appendChild(link);
+    fontLinks[font.id] = true;
+  }
+
+  function fontById(id) {
+    for (var i = 0; i < FONTS.length; i++) if (FONTS[i].id === id) return FONTS[i];
+    return FONTS[0];
+  }
+
+  function applyFont(id, persist) {
+    var font = fontById(id);
+    loadFontFace(font);
+    document.documentElement.style.setProperty("--sans", font.stack);
+    document.documentElement.setAttribute("data-font", font.id);
+    if (persist !== false) { try { localStorage.setItem(LS_FONT, font.id); } catch (e) {} }
+    var label = document.getElementById("fontName");
+    if (label) label.textContent = font.name;
+    document.querySelectorAll(".font-item").forEach(function (b) {
+      b.classList.toggle("on", b.dataset.font === font.id);
+    });
+  }
+
+  function applySize(id, persist) {
+    var size = SIZES.filter(function (s) { return s.id === id; })[0] || SIZES[1];
+    document.documentElement.style.fontSize = size.scale;
+    if (persist !== false) { try { localStorage.setItem(LS_SIZE, size.id); } catch (e) {} }
+    document.querySelectorAll(".size-item").forEach(function (b) {
+      b.classList.toggle("on", b.dataset.size === size.id);
+    });
+  }
+
+  function buildTypePanel() {
+    var panel = document.getElementById("fontPanel");
+    panel.innerHTML =
+      '<div class="tp-head">Text size</div>' +
+      '<div class="size-row">' +
+        SIZES.map(function (s) {
+          return '<button class="size-item" data-size="' + s.id + '">' + s.name + "</button>";
+        }).join("") +
+      "</div>" +
+      '<div class="tp-head">Typeface <span class="tp-count">' + FONTS.length + "</span></div>" +
+      '<div class="font-list">' +
+        FONTS.map(function (f) {
+          return '<button class="font-item" data-font="' + f.id + '" style="font-family:' + f.stack + '">' +
+            '<span class="fi-name">' + esc(f.name) + "</span>" +
+            '<span class="fi-note">' + esc(f.note) + "</span>" +
+            '<span class="fi-sample">Aa Bb 123 { }</span>' +
+          "</button>";
+        }).join("") +
+      "</div>";
+
+    panel.querySelectorAll(".font-item").forEach(function (b) {
+      /* Fetch the webfont on hover so the preview and the click feel instant. */
+      b.addEventListener("pointerenter", function () { loadFontFace(fontById(b.dataset.font)); }, { passive: true });
+      b.addEventListener("click", function () { applyFont(b.dataset.font); });
+    });
+    panel.querySelectorAll(".size-item").forEach(function (b) {
+      b.addEventListener("click", function () { applySize(b.dataset.size); });
+    });
+  }
+
+  function initTypography() {
+    var storedFont = null, storedSize = null;
+    try {
+      storedFont = localStorage.getItem(LS_FONT);
+      storedSize = localStorage.getItem(LS_SIZE);
+    } catch (e) {}
+    buildTypePanel();
+    applyFont(storedFont || "inter", false);
+    applySize(storedSize || "m", false);
+  }
+
+  var fontBtn = document.getElementById("fontToggle");
+  var fontPanel = document.getElementById("fontPanel");
+  fontBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    var open = fontPanel.hasAttribute("hidden");
+    if (open) fontPanel.removeAttribute("hidden"); else fontPanel.setAttribute("hidden", "");
+    fontBtn.setAttribute("aria-expanded", String(open));
+  });
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest(".type-wrap")) {
+      fontPanel.setAttribute("hidden", "");
+      fontBtn.setAttribute("aria-expanded", "false");
+    }
+  });
+
   /* ---------------- utils ---------------- */
   function esc(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
@@ -66,23 +192,41 @@
   function qKey(topicId, i) { return topicId + ":" + i; }
 
   /* ---------------- lazy topic loading ---------------- */
+  var loaded = {};
+
+  function loadScript(src, done) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.async = false;          // preserve execution order across parts
+    s.onload = function () { done(true); };
+    s.onerror = function () { done(false); };
+    document.head.appendChild(s);
+  }
+
+  /* A topic's content is split across one or more part files, so new
+     questions arrive in a new file instead of an edit to an existing one.
+     Parts must execute in order, hence the sequential chain. */
   function ensureTopic(id, cb) {
-    if (window.TOPIC_DATA[id]) return cb(window.TOPIC_DATA[id]);
+    if (loaded[id]) return cb(window.TOPIC_DATA[id] || []);
     if (loading[id]) { loading[id].push(cb); return; }
     loading[id] = [cb];
-    var s = document.createElement("script");
-    s.src = "js/data/" + id + ".js";
-    s.onload = function () {
-      var data = window.TOPIC_DATA[id] || [];
-      (loading[id] || []).forEach(function (fn) { fn(data); });
-      delete loading[id];
-    };
-    s.onerror = function () {
-      window.TOPIC_DATA[id] = [];
-      (loading[id] || []).forEach(function (fn) { fn([]); });
-      delete loading[id];
-    };
-    document.head.appendChild(s);
+
+    var meta = window.TOPIC_MAP[id] || {};
+    var total = meta.parts || 1;
+
+    function next(part) {
+      if (part > total) {
+        loaded[id] = true;
+        var data = window.TOPIC_DATA[id] || [];
+        var waiting = loading[id] || [];
+        delete loading[id];
+        waiting.forEach(function (fn) { fn(data); });
+        return;
+      }
+      var suffix = part === 1 ? "" : "-" + part;
+      loadScript("js/data/" + id + suffix + ".js", function () { next(part + 1); });
+    }
+    next(1);
   }
   function loadAll(cb) {
     var ids = Object.keys(window.TOPIC_MAP), pending = ids.length;
@@ -389,10 +533,24 @@
   /* ---------------- scroll extras ---------------- */
   var toTop = document.getElementById("toTop");
   var bar = document.getElementById("scrollProgress");
+  var scrollQueued = false, docHeight = 0, lastToTop = null;
+
+  function measure() { docHeight = document.documentElement.scrollHeight - window.innerHeight; }
+
+  /* Read layout once per frame instead of once per scroll event, and only
+     touch the DOM when a value actually changes. */
+  function onScrollFrame() {
+    scrollQueued = false;
+    var pct = docHeight > 0 ? (window.scrollY / docHeight) * 100 : 0;
+    bar.style.transform = "scaleX(" + (pct / 100).toFixed(4) + ")";
+    var show = window.scrollY > 400;
+    if (show !== lastToTop) { toTop.hidden = !show; lastToTop = show; }
+  }
   window.addEventListener("scroll", function () {
-    var h = document.documentElement.scrollHeight - window.innerHeight;
-    bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + "%";
-    toTop.hidden = window.scrollY < 400;
+    if (!scrollQueued) { scrollQueued = true; requestAnimationFrame(onScrollFrame); }
+  }, { passive: true });
+  window.addEventListener("resize", function () {
+    measure(); onScrollFrame();
   }, { passive: true });
   toTop.addEventListener("click", function () { window.scrollTo({ top: 0, behavior: "smooth" }); });
 
@@ -410,12 +568,32 @@
     }
     markActive();
     window.scrollTo({ top: 0 });
+    requestAnimationFrame(measure);
   }
   window.addEventListener("hashchange", route);
-  document.addEventListener("topic:loaded", paintCounts);
 
+  /* Counts change as parts land; coalesce the repaints into one per frame. */
+  var countsQueued = false;
+  document.addEventListener("topic:loaded", function () {
+    if (countsQueued) return;
+    countsQueued = true;
+    requestAnimationFrame(function () { countsQueued = false; paintCounts(); measure(); });
+  });
+
+  initTypography();
   buildNav();
   route();
-  /* Warm the index in the background so search and counts are ready. */
-  setTimeout(function () { loadAll(function () { searchReady = true; paintCounts(); if (!state.topic) renderHome(); }); }, 600);
+  measure();
+
+  /* Warm the search index once the browser is idle, so first paint is never
+     competing with 50+ content files. */
+  var idle = window.requestIdleCallback || function (fn) { return setTimeout(fn, 800); };
+  idle(function () {
+    loadAll(function () {
+      searchReady = true;
+      paintCounts();
+      measure();
+      if (!state.topic) renderHome();
+    });
+  }, { timeout: 3000 });
 })();

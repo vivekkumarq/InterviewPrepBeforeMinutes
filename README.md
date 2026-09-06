@@ -1,6 +1,6 @@
 # InterviewPrepBeforeMinutes
 
-A last-minute interview preparation hub for backend and full-stack engineers — **478 questions across 27 tech stacks**, each with a real answer, code you can quote, and diagrams for the concepts that are easier to draw than to say.
+A last-minute interview preparation hub for backend and full-stack engineers — every topic with a real answer, code you can quote, and diagrams for the concepts that are easier to draw than to say.
 
 **Live:** https://vivekkumarq.github.io/InterviewPrepBeforeMinutes
 
@@ -24,25 +24,26 @@ Every topic ships a **Beginner** and an **Advanced** track, so you can start fro
 
 ## Features
 
-- **478 questions**, tagged **Most asked** where they come up in nearly every interview
 - **Beginner / Advanced toggle** on every topic
+- **Most asked** badges on the questions that come up in nearly every interview
 - **Instant global search** across every question and answer (press <kbd>/</kbd>)
-- **Inline SVG diagrams** — JVM memory layout, HashMap internals, Kafka partitions, the Spring Security filter chain, saga compensation, the event loop, and more
+- **Typography switcher** — a range of typefaces and four text sizes, so long reading sessions stay comfortable
+- **Dark and light mode**, following your system preference by default
+- **Inline SVG diagrams** — JVM memory layout, HashMap internals, Kafka partitions, the Spring Security filter chain, saga compensation, the event loop and more
 - **Runnable code examples** in Java, SQL, YAML, TypeScript and Bash
 - **Progress tracking** — mark questions as revised; progress is saved in your browser
-- **Dark and light mode** with smooth transitions
 - **Fully responsive** and **100% client-side** — no build step, no backend, no dependencies
 
 ## Tech
 
-Plain HTML, CSS and vanilla JavaScript. No framework, no bundler, no npm install. Topic content is lazy-loaded per topic, so the initial page load stays small, and the whole site is a set of static files served by GitHub Pages.
+Plain HTML, CSS and vanilla JavaScript. No framework, no bundler, no `npm install`. Content is lazy-loaded per topic so the initial page load stays small, and the whole site is a set of static files served by GitHub Pages.
 
 ```
 index.html          # app shell
 css/styles.css      # theming, layout, animations
-js/topics.js        # topic registry and groups
-js/app.js           # router, search, progress, theme
-js/data/*.js        # 27 content files, one per topic
+js/topics.js        # topic registry, groups and part counts
+js/app.js           # router, search, typography, progress, theme
+js/data/*.js        # content, split into parts per topic
 ```
 
 ## Running locally
@@ -54,19 +55,33 @@ python -m http.server 8000
 # then open http://localhost:8000
 ```
 
-## Adding a question
+## Adding questions
 
-Open the relevant file in `js/data/` and add an entry:
+Content for each topic is split across **part files** (`kafka.js`, `kafka-2.js`, `kafka-3.js`, …) so new questions go into a **new file** rather than an edit to an existing one.
+
+To extend an existing topic:
+
+1. Create the next part, e.g. `js/data/kafka-4.js`:
 
 ```js
-{
-  q: "Your question",
-  level: "beginner",          // or "advanced"
-  hot: true,                  // shows the "Most asked" badge
-  tags: ["collections"],
-  a: `<p>The answer as HTML — <code>code</code>, tables, lists and inline SVG all work.</p>`
-}
+appendTopic("kafka", [
+  {
+    q: "Your question",
+    level: "beginner",          // or "advanced"
+    hot: true,                  // shows the "Most asked" badge
+    tags: ["consumers"],
+    a: `<p>The answer as HTML — <code>code</code>, tables, lists and inline SVG all work.</p>`
+  }
+]);
 ```
+
+2. Bump `parts` for that topic in `js/topics.js`:
+
+```js
+{ id: "kafka", parts: 4, name: "Apache Kafka", ... }
+```
+
+Parts load in order, so question numbering stays stable. To add a whole new topic, add an entry to a group in `js/topics.js` and create `js/data/<id>.js` calling `registerTopic(...)`.
 
 ---
 
