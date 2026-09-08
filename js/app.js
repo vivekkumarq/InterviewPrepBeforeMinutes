@@ -184,7 +184,16 @@
   var sidebar = document.getElementById("sidebar");
   var scrim = document.getElementById("scrim");
 
-  var state = { topic: null, level: "all", filter: "", firm: "", done: load(LS_DONE, {}) };
+  var state = {
+    view: "home",          // home | topic | company | companies | notfound
+    topic: null,
+    company: null,         // company slug when view === "company"
+    level: "all",
+    filter: "",
+    firm: "",
+    hotOnly: false,
+    done: load(LS_DONE, {})
+  };
   var loading = {};
 
   /* ---------------- storage helpers ---------------- */
@@ -330,6 +339,43 @@
   }
   function qKey(topicId, i) { return topicId + ":" + i; }
 
+  /* ---------------- company index ----------------
+     Every question already records the companies known to ask it. Walking
+     GROUPS (rather than TOPIC_DATA) means each company's questions come out
+     in the same order as the sidebar, so the page reads top-to-bottom in a
+     sensible sequence with no extra sorting. */
+  function slugify(name) {
+    return String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  }
+
+  var companyIndex = null;
+  function buildCompanyIndex() {
+    if (companyIndex) return companyIndex;
+    var idx = {};
+    window.GROUPS.forEach(function (g) {
+      g.topics.forEach(function (t) {
+        (window.TOPIC_DATA[t.id] || []).forEach(function (q, i) {
+          (q.companies || []).forEach(function (c) {
+            var s = slugify(c);
+            if (!s) return;
+            if (!idx[s]) idx[s] = { slug: s, name: c, rows: [], byTopic: {} };
+            idx[s].rows.push({ tid: t.id, idx: i, q: q });
+            idx[s].byTopic[t.id] = (idx[s].byTopic[t.id] || 0) + 1;
+          });
+        });
+      });
+    });
+    companyIndex = idx;
+    return idx;
+  }
+  function allCompanies() {
+    var idx = buildCompanyIndex();
+    return Object.keys(idx).map(function (k) { return idx[k]; })
+      .sort(function (a, b) {
+        return b.rows.length - a.rows.length || a.name.localeCompare(b.name);
+      });
+  }
+
   /* ---------------- lazy topic loading ---------------- */
   var loaded = {};
 
@@ -390,7 +436,10 @@
         '<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>' +
         '<div class="nav-group-body"><div>' + links + "</div></div></div>";
     }).join("");
-    navTree.innerHTML = html;
+    navTree.innerHTML =
+      '<a class="nav-special" id="navCompanies" href="#/companies">' +
+        '<span class="ic">🏢</span><span>Prepare by company</span>' +
+      "</a>" + html;
 
     navTree.querySelectorAll(".nav-group-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -411,6 +460,10 @@
       a.classList.toggle("active", on);
       if (on) a.closest(".nav-group").classList.add("open");
     });
+    var companies = document.getElementById("navCompanies");
+    if (companies) {
+      companies.classList.toggle("active", state.view === "company" || state.view === "companies");
+    }
   }
 
   function paintCounts() {
@@ -474,7 +527,25 @@
           '<div class="hstat"><b>2</b><span>Difficulty tracks</span></div>' +
           '<div class="hstat"><b>' + totalDone + "</b><span>Marked revised</span></div>" +
         "</div>" +
-      "</section>" + groupsHtml;
+      "</section>" + companyStrip() + groupsHtml;
+  }
+
+  /* Shortcut into the company pages. Only rendered once every part file has
+     landed, since the counts would otherwise be wrong; the idle warm-up
+     re-renders home shortly after boot, which fills it in. */
+  function companyStrip() {
+    if (!searchReady) return "";
+    var top = allCompanies().slice(0, 14);
+    if (!top.length) return "";
+    return '<h2 class="sec-title">🏢 Prepare by company</h2>' +
+      '<p class="sec-note">Every question recorded as asked at a company, pulled together across all topics.</p>' +
+      '<div class="chip-row">' +
+        top.map(function (c) {
+          return '<a class="co-chip" href="#/company/' + c.slug + '">' +
+            esc(c.name) + '<span class="co-n">' + c.rows.length + "</span></a>";
+        }).join("") +
+        '<a class="co-chip co-all" href="#/companies">View all →</a>' +
+      "</div>";
   }
 
   /* ---------------- topic page ---------------- */
@@ -533,13 +604,6 @@
           paintList(id, qs);
         });
       }
-      function setAllOpen(open) {
-        view.querySelectorAll(".qcard").forEach(function (c) {
-          c.classList.toggle("open", open);
-          var h = c.querySelector(".qhead");
-          if (h) h.setAttribute("aria-expanded", String(open));
-        });
-      }
       document.getElementById("expandAll").addEventListener("click", function () { setAllOpen(true); });
       document.getElementById("collapseAll").addEventListener("click", function () { setAllOpen(false); });
 
@@ -560,6 +624,60 @@
       }).join("") + "</select>";
   }
 
+  /* One card renderer shared by the topic and company views, so progress,
+     numbering and the id scheme stay identical between them. `n` is the
+     position within the rendered list; `tid`/`qi` identify the question. */
+  function cardHtml(tid, qi, q, n, term) {
+    var key = qKey(tid, qi);
+    var done = !!state.done[key];
+    var badges = "";
+    if (q.hot) badges += '<span class="badge hot">Most asked</span>';
+    badges += '<span class="badge ' + (q.level === "beginner" ? "beg\">Beginner" : "adv\">Advanced") + "</span>";
+    var chips = (q.tags || []).map(function (t) { return '<span class="chip">#' + esc(t) + "</span>"; }).join("");
+    /* Companies known to ask this question — each links to its prep page. */
+    var firms = (q.companies || []).map(function (c) {
+      return '<a class="firm" href="#/company/' + slugify(c) + '">' + esc(c) + "</a>";
+    }).join("");
+    var firmRow = firms
+      ? '<div class="qfirms"><span class="qfirms-label">Asked at</span>' + firms + "</div>"
+      : "";
+    return '<article class="qcard" data-key="' + key + '" id="q-' + tid + "-" + qi + '" style="animation-delay:' + Math.min(n * 18, 400) + 'ms">' +
+      '<button class="qhead" aria-expanded="false">' +
+        '<span class="qnum">' + (n + 1) + "</span>" +
+        '<span class="qicon" aria-hidden="true">' + iconFor(q) + "</span>" +
+        '<span class="qtext">' + highlight(q.q, term) + "</span>" +
+        '<span class="qbadges">' + badges + "</span>" +
+        '<svg class="qchev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>' +
+      "</button>" +
+      '<div class="qbody"><div class="qbody-inner">' +
+        '<div class="answer">' + q.a + firmRow + "</div>" +
+        '<div class="qfoot">' + chips +
+          '<button class="mark-btn' + (done ? " done" : "") + '" data-key="' + key + '">' +
+          (done ? "✓ Revised" : "Mark as revised") + "</button>" +
+        "</div>" +
+      "</div></div></article>";
+  }
+
+  function wireCards(root) {
+    root.querySelectorAll(".qhead").forEach(function (h) {
+      h.addEventListener("click", function () {
+        var open = h.parentElement.classList.toggle("open");
+        h.setAttribute("aria-expanded", String(open));
+      });
+    });
+    root.querySelectorAll(".mark-btn").forEach(function (b) {
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var key = b.dataset.key;
+        if (state.done[key]) { delete state.done[key]; b.classList.remove("done"); b.textContent = "Mark as revised"; }
+        else { state.done[key] = 1; b.classList.add("done"); b.textContent = "✓ Revised"; }
+        save(LS_DONE, state.done);
+      });
+    });
+  }
+
+  var EMPTY_FILTER = '<div class="empty"><h3>Nothing matches that filter</h3><p>Try another keyword or switch the difficulty track.</p></div>';
+
   function paintList(id, qs) {
     var list = document.getElementById("qlist");
     if (!list) return;
@@ -579,56 +697,182 @@
     document.getElementById("countTag").textContent =
       rows.length + " of " + qs.length + " shown";
 
-    if (!rows.length) {
-      list.innerHTML = '<div class="empty"><h3>Nothing matches that filter</h3><p>Try another keyword or switch the difficulty track.</p></div>';
-      return;
-    }
+    if (!rows.length) { list.innerHTML = EMPTY_FILTER; return; }
 
     list.innerHTML = rows.map(function (r, n) {
-      var q = r.q, key = qKey(id, r.idx);
-      var done = !!state.done[key];
-      var badges = "";
-      if (q.hot) badges += '<span class="badge hot">Most asked</span>';
-      badges += '<span class="badge ' + (q.level === "beginner" ? "beg\">Beginner" : "adv\">Advanced") + "</span>";
-      var chips = (q.tags || []).map(function (t) { return '<span class="chip">#' + esc(t) + "</span>"; }).join("");
-      /* Companies that are known to ask this question, when recorded. */
-      var firms = (q.companies || []).map(function (c) {
-        return '<span class="firm">' + esc(c) + "</span>";
-      }).join("");
-      var firmRow = firms
-        ? '<div class="qfirms"><span class="qfirms-label">Asked at</span>' + firms + "</div>"
-        : "";
-      return '<article class="qcard" data-key="' + key + '" id="q-' + key.replace(":", "-") + '" style="animation-delay:' + Math.min(n * 18, 400) + 'ms">' +
-        '<button class="qhead" aria-expanded="false">' +
-          '<span class="qnum">' + (n + 1) + "</span>" +
-          '<span class="qicon" aria-hidden="true">' + iconFor(q) + "</span>" +
-          '<span class="qtext">' + highlight(q.q, state.filter) + "</span>" +
-          '<span class="qbadges">' + badges + "</span>" +
-          '<svg class="qchev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>' +
-        "</button>" +
-        '<div class="qbody"><div class="qbody-inner">' +
-          '<div class="answer">' + q.a + firmRow + "</div>" +
-          '<div class="qfoot">' + chips +
-            '<button class="mark-btn' + (done ? " done" : "") + '" data-key="' + key + '">' +
-            (done ? "✓ Revised" : "Mark as revised") + "</button>" +
-          "</div>" +
-        "</div></div></article>";
+      return cardHtml(id, r.idx, r.q, n, state.filter);
     }).join("");
+    wireCards(list);
+  }
 
-    list.querySelectorAll(".qhead").forEach(function (h) {
-      h.addEventListener("click", function () {
-        var open = h.parentElement.classList.toggle("open");
-        h.setAttribute("aria-expanded", String(open));
+  /* ---------------- company directory ---------------- */
+  function renderCompanies() {
+    view.innerHTML = '<div class="loading"><div class="spinner"></div>Indexing every question by company…</div>';
+    /* The index needs every topic, so make sure the parts have all landed. */
+    loadAll(function () {
+      if (state.view !== "companies") return;
+      paintCounts();
+      var companies = allCompanies();
+
+      view.innerHTML =
+        '<div class="crumbs"><a href="#/">Home</a> &nbsp;›&nbsp; Companies</div>' +
+        '<div class="topic-head"><h1><span>🏢</span>Prepare by company</h1>' +
+        '<p class="blurb">Every question recorded as asked at a company, pulled together from all ' +
+        Object.keys(window.TOPIC_MAP).length + ' topics. Pick the one you are interviewing at.</p></div>' +
+        '<div class="toolbar">' +
+          '<input class="filter-in" id="companyFilter" placeholder="🔍 Find a company…" />' +
+          '<span class="count-tag" id="countTag">' + companies.length + " companies</span>" +
+        "</div>" +
+        '<div class="company-grid" id="companyGrid"></div>';
+
+      var grid = document.getElementById("companyGrid");
+      function paintGrid(term) {
+        var low = (term || "").trim().toLowerCase();
+        var shown = companies.filter(function (c) {
+          return !low || c.name.toLowerCase().indexOf(low) !== -1;
+        });
+        document.getElementById("countTag").textContent =
+          shown.length + (low ? " of " + companies.length : "") + " companies";
+        if (!shown.length) {
+          grid.innerHTML = '<div class="empty"><h3>No company matches that</h3></div>';
+          return;
+        }
+        grid.innerHTML = shown.map(function (c, i) {
+          /* The three topics this company is most associated with. */
+          var top = Object.keys(c.byTopic)
+            .sort(function (a, b) { return c.byTopic[b] - c.byTopic[a]; })
+            .slice(0, 3)
+            .map(function (tid) {
+              var t = window.TOPIC_MAP[tid];
+              return t ? t.icon + " " + esc(t.name) : "";
+            }).join(" · ");
+          var hot = c.rows.filter(function (r) { return r.q.hot; }).length;
+          return '<a class="ccard" href="#/company/' + c.slug + '" style="animation-delay:' + Math.min(i * 18, 400) + 'ms">' +
+            '<span class="cc-name">' + esc(c.name) + "</span>" +
+            '<span class="cc-count">' + c.rows.length + " questions &nbsp;·&nbsp; " + hot + " most asked</span>" +
+            '<span class="cc-topics">' + top + "</span>" +
+          "</a>";
+        }).join("");
+      }
+      paintGrid("");
+
+      var filterIn = document.getElementById("companyFilter");
+      filterIn.addEventListener("input", function () {
+        paintGrid(filterIn.value);
+        measure();
       });
     });
-    list.querySelectorAll(".mark-btn").forEach(function (b) {
-      b.addEventListener("click", function (e) {
-        e.stopPropagation();
-        var key = b.dataset.key;
-        if (state.done[key]) { delete state.done[key]; b.classList.remove("done"); b.textContent = "Mark as revised"; }
-        else { state.done[key] = 1; b.classList.add("done"); b.textContent = "✓ Revised"; }
-        save(LS_DONE, state.done);
+  }
+
+  /* ---------------- one company's prep page ---------------- */
+  function renderCompany(slug) {
+    view.innerHTML = '<div class="loading"><div class="spinner"></div>Gathering every question…</div>';
+    loadAll(function () {
+      if (state.company !== slug) return;
+      var entry = buildCompanyIndex()[slug];
+      if (!entry) return renderNotFound();
+      paintCounts();
+
+      var topicCount = Object.keys(entry.byTopic).length;
+      var hotCount = entry.rows.filter(function (r) { return r.q.hot; }).length;
+
+      view.innerHTML =
+        '<div class="crumbs"><a href="#/">Home</a> &nbsp;›&nbsp; <a href="#/companies">Companies</a>' +
+        " &nbsp;›&nbsp; " + esc(entry.name) + "</div>" +
+        '<div class="topic-head"><h1><span>🏢</span>' + esc(entry.name) + "</h1>" +
+        '<p class="blurb">' + entry.rows.length + " questions recorded as asked at " + esc(entry.name) +
+        ", spanning " + topicCount + " topics. Grouped in reading order — start at the top.</p></div>" +
+        '<div class="toolbar">' +
+          '<div class="seg" id="levelSeg">' +
+            '<button data-level="all">All</button>' +
+            '<button data-level="beginner">Beginner</button>' +
+            '<button data-level="advanced">Advanced</button>' +
+          "</div>" +
+          '<input class="filter-in" id="topicFilter" placeholder="🔍 Filter these questions…" />' +
+          '<button class="tool-btn hot-toggle" id="hotOnly">🔥 Most asked (' + hotCount + ")</button>" +
+          '<button class="tool-btn" id="expandAll">⤢ Expand all</button>' +
+          '<button class="tool-btn" id="collapseAll">⤡ Collapse all</button>' +
+          '<span class="count-tag" id="countTag"></span>' +
+        "</div>" +
+        '<div class="qlist" id="qlist"></div>';
+
+      var seg = document.getElementById("levelSeg");
+      seg.querySelectorAll("button").forEach(function (b) {
+        b.classList.toggle("on", b.dataset.level === state.level);
+        b.addEventListener("click", function () {
+          state.level = b.dataset.level;
+          seg.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); });
+          paintCompanyList(entry);
+        });
       });
+      var filterIn = document.getElementById("topicFilter");
+      filterIn.value = state.filter;
+      filterIn.addEventListener("input", function () {
+        state.filter = filterIn.value.trim();
+        paintCompanyList(entry);
+      });
+      var hotBtn = document.getElementById("hotOnly");
+      hotBtn.classList.toggle("on", state.hotOnly);
+      hotBtn.addEventListener("click", function () {
+        state.hotOnly = !state.hotOnly;
+        hotBtn.classList.toggle("on", state.hotOnly);
+        paintCompanyList(entry);
+      });
+      document.getElementById("expandAll").addEventListener("click", function () { setAllOpen(true); });
+      document.getElementById("collapseAll").addEventListener("click", function () { setAllOpen(false); });
+
+      paintCompanyList(entry);
+    });
+  }
+
+  function paintCompanyList(entry) {
+    var list = document.getElementById("qlist");
+    if (!list) return;
+    var term = state.filter.toLowerCase();
+
+    var rows = entry.rows.filter(function (r) {
+      var q = r.q;
+      if (state.level !== "all" && q.level !== state.level) return false;
+      if (state.hotOnly && !q.hot) return false;
+      if (term) {
+        var hay = q.q.toLowerCase() + " " + plainAnswer(q) + " " + (q.tags || []).join(" ");
+        if (hay.indexOf(term) === -1) return false;
+      }
+      return true;
+    });
+
+    document.getElementById("countTag").textContent =
+      rows.length + " of " + entry.rows.length + " shown";
+
+    if (!rows.length) { list.innerHTML = EMPTY_FILTER; return; }
+
+    /* Count per topic first, so the headings can show a total without
+       rescanning the list for every group. */
+    var perTopic = {};
+    rows.forEach(function (r) { perTopic[r.tid] = (perTopic[r.tid] || 0) + 1; });
+
+    var html = "", lastTid = null, n = 0;
+    rows.forEach(function (r) {
+      if (r.tid !== lastTid) {
+        var t = window.TOPIC_MAP[r.tid];
+        html += '<div class="qgroup-head">' +
+          '<span class="ic">' + (t ? t.icon : "•") + "</span>" +
+          '<a href="#/topic/' + r.tid + '">' + esc(t ? t.name : r.tid) + "</a>" +
+          '<span class="qgroup-n">' + perTopic[r.tid] + "</span></div>";
+        lastTid = r.tid;
+      }
+      html += cardHtml(r.tid, r.idx, r.q, n++, state.filter);
+    });
+    list.innerHTML = html;
+    wireCards(list);
+  }
+
+  /* Shared by the topic and company toolbars. */
+  function setAllOpen(open) {
+    view.querySelectorAll(".qcard").forEach(function (c) {
+      c.classList.toggle("open", open);
+      var h = c.querySelector(".qhead");
+      if (h) h.setAttribute("aria-expanded", String(open));
     });
   }
 
@@ -658,12 +902,24 @@
     });
     hits.sort(function (a, b) { return a.score - b.score; });
 
-    if (!hits.length) {
+    /* Typing a company name should offer its prep page, not just the
+       questions that happen to mention it. */
+    var companyHits = allCompanies().filter(function (c) {
+      return c.name.toLowerCase().indexOf(low) !== -1;
+    }).slice(0, 3);
+    var companyHtml = companyHits.map(function (c) {
+      return '<button class="sr-item sr-company" data-company="' + c.slug + '">' +
+        '<span class="sr-q">🏢 Prepare for ' + highlight(c.name, term) + "</span>" +
+        '<span class="sr-meta">' + c.rows.length + " questions across " +
+        Object.keys(c.byTopic).length + " topics</span></button>";
+    }).join("");
+
+    if (!hits.length && !companyHits.length) {
       searchBox.innerHTML = '<div class="sr-empty">No question matches “' + esc(term) + '”.</div>';
       searchBox.hidden = false;
       return;
     }
-    searchBox.innerHTML = hits.slice(0, 40).map(function (h) {
+    searchBox.innerHTML = companyHtml + hits.slice(0, 40).map(function (h) {
       var t = window.TOPIC_MAP[h.id];
       return '<button class="sr-item" data-id="' + h.id + '" data-idx="' + h.idx + '">' +
         '<span class="sr-q">' + highlight(h.q.q, term) + "</span>" +
@@ -680,11 +936,18 @@
   /* Jump to one result: clear every filter that could hide the card, make sure
      the topic is actually rendered, then open and centre it. */
   function openHit(b) {
-    var tid = b.dataset.id, idx = +b.dataset.idx;
     searchBox.hidden = true;
     searchInput.value = "";
     searchInput.blur();
-    state.level = "all"; state.filter = ""; state.firm = "";
+
+    /* A company result navigates to its prep page rather than to a card. */
+    if (b.dataset.company) {
+      location.hash = "#/company/" + b.dataset.company;
+      return;
+    }
+
+    var tid = b.dataset.id, idx = +b.dataset.idx;
+    state.level = "all"; state.filter = ""; state.firm = ""; state.hotOnly = false;
 
     var target = "#/topic/" + tid;
     if (location.hash === target) route();          // same topic: no hashchange fires
@@ -788,13 +1051,22 @@
   /* ---------------- router ---------------- */
   function route() {
     var hash = location.hash || "#/";
-    var m = hash.match(/^#\/topic\/([\w-]+)/);
-    if (m) {
-      if (state.topic !== m[1]) { state.level = "all"; state.filter = ""; state.firm = ""; }
-      state.topic = m[1];
-      renderTopic(m[1]);
+    var mCompany = hash.match(/^#\/company\/([\w-]+)/);
+    var mTopic = hash.match(/^#\/topic\/([\w-]+)/);
+
+    if (hash.indexOf("#/companies") === 0) {
+      state.view = "companies"; state.topic = null; state.company = null;
+      renderCompanies();
+    } else if (mCompany) {
+      if (state.company !== mCompany[1]) { state.level = "all"; state.filter = ""; state.hotOnly = false; }
+      state.view = "company"; state.topic = null; state.company = mCompany[1];
+      renderCompany(mCompany[1]);
+    } else if (mTopic) {
+      if (state.topic !== mTopic[1]) { state.level = "all"; state.filter = ""; state.firm = ""; }
+      state.view = "topic"; state.topic = mTopic[1]; state.company = null;
+      renderTopic(mTopic[1]);
     } else {
-      state.topic = null;
+      state.view = "home"; state.topic = null; state.company = null;
       renderHome();
     }
     markActive();
@@ -808,6 +1080,7 @@
   /* Counts change as parts land; coalesce the repaints into one per frame. */
   var countsQueued = false;
   document.addEventListener("topic:loaded", function () {
+    companyIndex = null;            // a new part may add companies
     if (countsQueued) return;
     countsQueued = true;
     requestAnimationFrame(function () { countsQueued = false; paintCounts(); measure(); });
@@ -826,7 +1099,8 @@
       searchReady = true;
       paintCounts();
       measure();
-      if (!state.topic) renderHome();
+      /* Re-render home now that the company index can be built. */
+      if (state.view === "home") renderHome();
     });
   }, { timeout: 3000 });
 })();

@@ -27,7 +27,7 @@ Every topic ships a **Beginner** and an **Advanced** track, so you can start fro
 
 - **Beginner / Advanced toggle** on every topic
 - **Coding & Algorithms corner** — the problems that actually come up, from warm-up rounds to hard graph and DP questions, each with the pattern, the complexity and the edge cases named
-- **Asked at** chips on questions, plus a **company filter** on every topic
+- **Prepare by company** — pick the company you are interviewing at and get every question recorded as asked there, pulled together from all topics, grouped in reading order with a *most asked only* filter. Also reachable by typing a company name into search, or by clicking any **Asked at** chip on an answer.
 - **Most asked** badges on the questions that come up in nearly every interview
 - **Instant global search** across every question and answer (press <kbd>/</kbd>, arrow keys to move, Enter to open)
 - **Typography switcher** — sans, serif, monospace, display and handwriting typefaces, plus four text sizes
@@ -45,9 +45,13 @@ Plain HTML, CSS and vanilla JavaScript. No framework, no bundler, no `npm instal
 index.html          # app shell
 css/styles.css      # theming, layout, animations
 js/topics.js        # topic registry, groups and part counts
-js/app.js           # router, search, typography, progress, theme
+js/app.js           # router, search, company index, typography, progress, theme
 js/data/*.js        # content, split into parts per topic
 ```
+
+Routes are hash-based: `#/` home, `#/topic/<id>`, `#/companies`, `#/company/<slug>`.
+The company pages are derived at runtime from the `companies` array on each
+question — there is no second copy of that data to keep in sync.
 
 ## Running locally
 
