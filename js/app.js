@@ -12,39 +12,78 @@
   var LS_SIZE = "ipbm.size";
 
   /* ---------------- typefaces ----------------
-     'google' fonts are fetched only when the reader actually selects them,
-     so the default load stays at a single family. */
+     'google' fonts are fetched only when the reader actually selects them (or
+     hovers the row), so the default load stays at a single family.
+     `cat` only groups the picker; it has no effect on rendering.
+     Families with a single weight must omit the wght axis — asking Google for
+     a weight a family does not ship makes the whole request 400. */
+  var FONT_CATS = [
+    { id: "sans",  name: "Sans · clean & neutral" },
+    { id: "serif", name: "Serif · long-form reading" },
+    { id: "mono",  name: "Monospace · code-like" },
+    { id: "display", name: "Display · fancy & expressive" },
+    { id: "hand",  name: "Handwriting & script" }
+  ];
+
   var FONTS = [
-    { id: "inter",      name: "Inter",              note: "Default · clean UI sans",    stack: "'Inter', system-ui, sans-serif", google: "Inter:wght@400;500;600;700;800" },
-    { id: "system",     name: "System UI",          note: "Your OS font · fastest",     stack: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
-    { id: "roboto",     name: "Roboto",             note: "Android · neutral",          stack: "'Roboto', system-ui, sans-serif", google: "Roboto:wght@400;500;700" },
-    { id: "opensans",   name: "Open Sans",          note: "Highly readable",            stack: "'Open Sans', system-ui, sans-serif", google: "Open+Sans:wght@400;500;600;700" },
-    { id: "lato",       name: "Lato",               note: "Warm humanist",              stack: "'Lato', system-ui, sans-serif", google: "Lato:wght@400;700;900" },
-    { id: "poppins",    name: "Poppins",            note: "Geometric · modern",         stack: "'Poppins', system-ui, sans-serif", google: "Poppins:wght@400;500;600;700" },
-    { id: "nunito",     name: "Nunito",             note: "Rounded · friendly",         stack: "'Nunito', system-ui, sans-serif", google: "Nunito:wght@400;600;700;800" },
-    { id: "sourcesans", name: "Source Sans 3",      note: "Adobe · technical docs",     stack: "'Source Sans 3', system-ui, sans-serif", google: "Source+Sans+3:wght@400;600;700" },
-    { id: "ibmplex",    name: "IBM Plex Sans",      note: "Engineering feel",           stack: "'IBM Plex Sans', system-ui, sans-serif", google: "IBM+Plex+Sans:wght@400;500;600;700" },
-    { id: "worksans",   name: "Work Sans",          note: "Optimised for screens",      stack: "'Work Sans', system-ui, sans-serif", google: "Work+Sans:wght@400;500;600;700" },
-    { id: "spacegrotesk", name: "Space Grotesk",    note: "Techy · distinctive",        stack: "'Space Grotesk', system-ui, sans-serif", google: "Space+Grotesk:wght@400;500;600;700" },
-    { id: "figtree",    name: "Figtree",            note: "Soft geometric sans",        stack: "'Figtree', system-ui, sans-serif", google: "Figtree:wght@400;500;600;800" },
-    { id: "atkinson",   name: "Atkinson Hyperlegible", note: "Max legibility · a11y",   stack: "'Atkinson Hyperlegible', system-ui, sans-serif", google: "Atkinson+Hyperlegible:wght@400;700" },
-    { id: "merriweather", name: "Merriweather",     note: "Serif · long reading",       stack: "'Merriweather', Georgia, serif", google: "Merriweather:wght@400;700" },
-    { id: "lora",       name: "Lora",               note: "Serif · elegant",            stack: "'Lora', Georgia, serif", google: "Lora:wght@400;500;600;700" },
-    { id: "georgia",    name: "Georgia",            note: "Classic serif · no download", stack: "Georgia, 'Times New Roman', serif" },
-    { id: "jetbrains",  name: "JetBrains Mono",     note: "Monospace · code everywhere", stack: "'JetBrains Mono', ui-monospace, monospace", google: "JetBrains+Mono:wght@400;500;700" },
-    /* --- expressive picks --- */
-    { id: "outfit",     name: "Outfit",             note: "Crisp geometric · confident", stack: "'Outfit', system-ui, sans-serif", google: "Outfit:wght@400;500;600;700" },
-    { id: "manrope",    name: "Manrope",            note: "Modern · semi-rounded",       stack: "'Manrope', system-ui, sans-serif", google: "Manrope:wght@400;500;600;800" },
-    { id: "plusjakarta", name: "Plus Jakarta Sans", note: "Friendly · great numerals",   stack: "'Plus Jakarta Sans', system-ui, sans-serif", google: "Plus+Jakarta+Sans:wght@400;500;600;700" },
-    { id: "dmsans",     name: "DM Sans",            note: "Low-contrast · easy on eyes", stack: "'DM Sans', system-ui, sans-serif", google: "DM+Sans:wght@400;500;700" },
-    { id: "rubik",      name: "Rubik",              note: "Rounded corners · warm",      stack: "'Rubik', system-ui, sans-serif", google: "Rubik:wght@400;500;600;700" },
-    { id: "karla",      name: "Karla",              note: "Grotesque · slightly quirky", stack: "'Karla', system-ui, sans-serif", google: "Karla:wght@400;500;700" },
-    { id: "publicsans", name: "Public Sans",        note: "US design system · neutral",  stack: "'Public Sans', system-ui, sans-serif", google: "Public+Sans:wght@400;500;600;700" },
-    { id: "bitter",     name: "Bitter",             note: "Slab serif · screen-first",   stack: "'Bitter', Georgia, serif", google: "Bitter:wght@400;500;700" },
-    { id: "sourceserif", name: "Source Serif 4",    note: "Serif · long-form reading",   stack: "'Source Serif 4', Georgia, serif", google: "Source+Serif+4:wght@400;600;700" },
-    { id: "ibmplexmono", name: "IBM Plex Mono",     note: "Monospace · terminal feel",   stack: "'IBM Plex Mono', ui-monospace, monospace", google: "IBM+Plex+Mono:wght@400;500;600" },
-    { id: "spacemono",  name: "Space Mono",         note: "Retro mono · distinctive",    stack: "'Space Mono', ui-monospace, monospace", google: "Space+Mono:wght@400;700" },
-    { id: "lexend",     name: "Lexend",             note: "Tuned for reading speed",     stack: "'Lexend', system-ui, sans-serif", google: "Lexend:wght@400;500;600;700" }
+    /* --- sans --- */
+    { id: "inter",      cat: "sans", name: "Inter",           note: "Default · clean UI sans",    stack: "'Inter', system-ui, sans-serif", google: "Inter:wght@400;500;600;700;800" },
+    { id: "system",     cat: "sans", name: "System UI",       note: "Your OS font · fastest",     stack: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
+    { id: "roboto",     cat: "sans", name: "Roboto",          note: "Android · neutral",          stack: "'Roboto', system-ui, sans-serif", google: "Roboto:wght@400;500;700" },
+    { id: "opensans",   cat: "sans", name: "Open Sans",       note: "Highly readable",            stack: "'Open Sans', system-ui, sans-serif", google: "Open+Sans:wght@400;500;600;700" },
+    { id: "lato",       cat: "sans", name: "Lato",            note: "Warm humanist",              stack: "'Lato', system-ui, sans-serif", google: "Lato:wght@400;700;900" },
+    { id: "poppins",    cat: "sans", name: "Poppins",         note: "Geometric · modern",         stack: "'Poppins', system-ui, sans-serif", google: "Poppins:wght@400;500;600;700" },
+    { id: "nunito",     cat: "sans", name: "Nunito",          note: "Rounded · friendly",         stack: "'Nunito', system-ui, sans-serif", google: "Nunito:wght@400;600;700;800" },
+    { id: "sourcesans", cat: "sans", name: "Source Sans 3",   note: "Adobe · technical docs",     stack: "'Source Sans 3', system-ui, sans-serif", google: "Source+Sans+3:wght@400;600;700" },
+    { id: "ibmplex",    cat: "sans", name: "IBM Plex Sans",   note: "Engineering feel",           stack: "'IBM Plex Sans', system-ui, sans-serif", google: "IBM+Plex+Sans:wght@400;500;600;700" },
+    { id: "worksans",   cat: "sans", name: "Work Sans",       note: "Optimised for screens",      stack: "'Work Sans', system-ui, sans-serif", google: "Work+Sans:wght@400;500;600;700" },
+    { id: "spacegrotesk", cat: "sans", name: "Space Grotesk", note: "Techy · distinctive",        stack: "'Space Grotesk', system-ui, sans-serif", google: "Space+Grotesk:wght@400;500;600;700" },
+    { id: "figtree",    cat: "sans", name: "Figtree",         note: "Soft geometric sans",        stack: "'Figtree', system-ui, sans-serif", google: "Figtree:wght@400;500;600;800" },
+    { id: "atkinson",   cat: "sans", name: "Atkinson Hyperlegible", note: "Max legibility · a11y", stack: "'Atkinson Hyperlegible', system-ui, sans-serif", google: "Atkinson+Hyperlegible:wght@400;700" },
+    { id: "outfit",     cat: "sans", name: "Outfit",          note: "Crisp geometric · confident", stack: "'Outfit', system-ui, sans-serif", google: "Outfit:wght@400;500;600;700" },
+    { id: "manrope",    cat: "sans", name: "Manrope",         note: "Modern · semi-rounded",       stack: "'Manrope', system-ui, sans-serif", google: "Manrope:wght@400;500;600;800" },
+    { id: "plusjakarta", cat: "sans", name: "Plus Jakarta Sans", note: "Friendly · great numerals", stack: "'Plus Jakarta Sans', system-ui, sans-serif", google: "Plus+Jakarta+Sans:wght@400;500;600;700" },
+    { id: "dmsans",     cat: "sans", name: "DM Sans",         note: "Low-contrast · easy on eyes", stack: "'DM Sans', system-ui, sans-serif", google: "DM+Sans:wght@400;500;700" },
+    { id: "rubik",      cat: "sans", name: "Rubik",           note: "Rounded corners · warm",      stack: "'Rubik', system-ui, sans-serif", google: "Rubik:wght@400;500;600;700" },
+    { id: "karla",      cat: "sans", name: "Karla",           note: "Grotesque · slightly quirky", stack: "'Karla', system-ui, sans-serif", google: "Karla:wght@400;500;700" },
+    { id: "publicsans", cat: "sans", name: "Public Sans",     note: "US design system · neutral",  stack: "'Public Sans', system-ui, sans-serif", google: "Public+Sans:wght@400;500;600;700" },
+    { id: "lexend",     cat: "sans", name: "Lexend",          note: "Tuned for reading speed",     stack: "'Lexend', system-ui, sans-serif", google: "Lexend:wght@400;500;600;700" },
+    { id: "chakra",     cat: "sans", name: "Chakra Petch",    note: "Angular · sci-fi HUD",        stack: "'Chakra Petch', system-ui, sans-serif", google: "Chakra+Petch:wght@400;500;600;700" },
+
+    /* --- serif --- */
+    { id: "merriweather", cat: "serif", name: "Merriweather", note: "Serif · long reading",       stack: "'Merriweather', Georgia, serif", google: "Merriweather:wght@400;700" },
+    { id: "lora",       cat: "serif", name: "Lora",           note: "Serif · elegant",            stack: "'Lora', Georgia, serif", google: "Lora:wght@400;500;600;700" },
+    { id: "georgia",    cat: "serif", name: "Georgia",        note: "Classic serif · no download", stack: "Georgia, 'Times New Roman', serif" },
+    { id: "bitter",     cat: "serif", name: "Bitter",         note: "Slab serif · screen-first",   stack: "'Bitter', Georgia, serif", google: "Bitter:wght@400;500;700" },
+    { id: "sourceserif", cat: "serif", name: "Source Serif 4", note: "Serif · long-form reading",  stack: "'Source Serif 4', Georgia, serif", google: "Source+Serif+4:wght@400;600;700" },
+    { id: "ebgaramond", cat: "serif", name: "EB Garamond",    note: "Old-style · bookish",         stack: "'EB Garamond', Georgia, serif", google: "EB+Garamond:wght@400;500;600;700" },
+    { id: "baskerville", cat: "serif", name: "Libre Baskerville", note: "Sharp · high contrast",   stack: "'Libre Baskerville', Georgia, serif", google: "Libre+Baskerville:wght@400;700" },
+    { id: "crimson",    cat: "serif", name: "Crimson Pro",    note: "Warm · essay feel",           stack: "'Crimson Pro', Georgia, serif", google: "Crimson+Pro:wght@400;500;600;700" },
+
+    /* --- mono --- */
+    { id: "jetbrains",  cat: "mono", name: "JetBrains Mono",  note: "Monospace · code everywhere", stack: "'JetBrains Mono', ui-monospace, monospace", google: "JetBrains+Mono:wght@400;500;700" },
+    { id: "ibmplexmono", cat: "mono", name: "IBM Plex Mono",  note: "Monospace · terminal feel",   stack: "'IBM Plex Mono', ui-monospace, monospace", google: "IBM+Plex+Mono:wght@400;500;600" },
+    { id: "spacemono",  cat: "mono", name: "Space Mono",      note: "Retro mono · distinctive",    stack: "'Space Mono', ui-monospace, monospace", google: "Space+Mono:wght@400;700" },
+    { id: "firacode",   cat: "mono", name: "Fira Code",       note: "Mono · coding ligatures",     stack: "'Fira Code', ui-monospace, monospace", google: "Fira+Code:wght@400;500;600" },
+    { id: "robotomono", cat: "mono", name: "Roboto Mono",     note: "Mono · tidy and compact",     stack: "'Roboto Mono', ui-monospace, monospace", google: "Roboto+Mono:wght@400;500;700" },
+
+    /* --- display --- */
+    { id: "playfair",   cat: "display", name: "Playfair Display", note: "Elegant · editorial",     stack: "'Playfair Display', Georgia, serif", google: "Playfair+Display:wght@400;500;600;700;800" },
+    { id: "cormorant",  cat: "display", name: "Cormorant Garamond", note: "Delicate · luxurious",  stack: "'Cormorant Garamond', Georgia, serif", google: "Cormorant+Garamond:wght@400;500;600;700" },
+    { id: "fraunces",   cat: "display", name: "Fraunces",     note: "Soft-serif · characterful",   stack: "'Fraunces', Georgia, serif", google: "Fraunces:wght@400;500;600;700" },
+    { id: "comfortaa",  cat: "display", name: "Comfortaa",    note: "Fully rounded · playful",     stack: "'Comfortaa', system-ui, cursive", google: "Comfortaa:wght@400;500;600;700" },
+    { id: "quicksand",  cat: "display", name: "Quicksand",    note: "Rounded geometric · soft",    stack: "'Quicksand', system-ui, sans-serif", google: "Quicksand:wght@400;500;600;700" },
+    { id: "josefin",    cat: "display", name: "Josefin Sans", note: "Art-deco · vintage",          stack: "'Josefin Sans', system-ui, sans-serif", google: "Josefin+Sans:wght@400;500;600;700" },
+
+    /* --- handwriting & script --- */
+    { id: "caveat",     cat: "hand", name: "Caveat",          note: "Handwritten · legible notes", stack: "'Caveat', 'Segoe Script', cursive", google: "Caveat:wght@400;500;600;700" },
+    { id: "kalam",      cat: "hand", name: "Kalam",           note: "Handwritten · pen strokes",   stack: "'Kalam', 'Segoe Script', cursive", google: "Kalam:wght@300;400;700" },
+    { id: "patrickhand", cat: "hand", name: "Patrick Hand",   note: "Neat print handwriting",      stack: "'Patrick Hand', 'Comic Sans MS', cursive", google: "Patrick+Hand" },
+    { id: "architects", cat: "hand", name: "Architects Daughter", note: "Sketchbook · casual",     stack: "'Architects Daughter', 'Comic Sans MS', cursive", google: "Architects+Daughter" },
+    { id: "shadows",    cat: "hand", name: "Shadows Into Light", note: "Light marker pen",         stack: "'Shadows Into Light', 'Segoe Script', cursive", google: "Shadows+Into+Light" },
+    { id: "indieflower", cat: "hand", name: "Indie Flower",   note: "Rounded · friendly script",   stack: "'Indie Flower', 'Comic Sans MS', cursive", google: "Indie+Flower" },
+    { id: "dancing",    cat: "hand", name: "Dancing Script",  note: "Flowing calligraphy",         stack: "'Dancing Script', 'Segoe Script', cursive", google: "Dancing+Script:wght@400;500;600;700" },
+    { id: "pacifico",   cat: "hand", name: "Pacifico",        note: "Bold brush script",           stack: "'Pacifico', 'Segoe Script', cursive", google: "Pacifico" }
   ];
 
   /* Tag -> icon. Gives every question a relevant glyph without hand-tagging
@@ -108,7 +147,18 @@
     map: "🗺️", queue: "🚶", hashmap: "🗺️", treemap: "🌲", iterator: "➡️",
     legacy: "🏚️", parallel: "🔀", volatile: "⚡", rendering: "🖼️", dml: "✏️",
     features: "🎁", ha: "🟢", "b-tree": "🌲", fundamentals: "📘", modelling: "📐",
-    "code-review": "👀", enterprise: "🏢", mnc: "🏢", scenario: "🎬"
+    "code-review": "👀", enterprise: "🏢", mnc: "🏢", scenario: "🎬",
+    /* coding & algorithms corner */
+    warmup: "✍️", "pattern-printing": "🔺", math: "➗", "in-place": "🔃",
+    "prefix-sum": "➕", kadane: "📈", matrix: "🔲", hashing: "#️⃣",
+    "fast-slow": "🐢", "cycle-detection": "🔁", stack: "🥞", monotonic: "📉",
+    heap: "⛰️", "priority-queue": "⛰️", bst: "🌲", traversal: "🚶", lca: "🌿",
+    bfs: "🌊", dfs: "🕳️", "topological-sort": "🔢", "union-find": "🔗",
+    "shortest-path": "🛣️", grid: "🗺️", knapsack: "🎒", lis: "📈", lcs: "🔤",
+    "edit-distance": "✏️", greedy: "🎯", intervals: "📏", "top-k": "🏆",
+    "binary-search": "🎯", "divide-conquer": "✂️", "bit-manipulation": "🔟",
+    "string-matching": "🔎", "linked-list-design": "⛓️", "space-optimisation": "🗜️",
+    "problem-solving": "🧠", "must-know": "⭐", "interview-favourite": "🔥"
   };
 
   function iconFor(q) {
@@ -211,12 +261,15 @@
       "</div>" +
       '<div class="tp-head">Typeface <span class="tp-count">' + FONTS.length + "</span></div>" +
       '<div class="font-list">' +
-        FONTS.map(function (f) {
-          return '<button class="font-item" data-font="' + f.id + '" style="font-family:' + f.stack + '">' +
-            '<span class="fi-name">' + esc(f.name) + "</span>" +
-            '<span class="fi-note">' + esc(f.note) + "</span>" +
-            '<span class="fi-sample">Aa Bb 123 { }</span>' +
-          "</button>";
+        FONT_CATS.map(function (cat) {
+          var rows = FONTS.filter(function (f) { return f.cat === cat.id; }).map(function (f) {
+            return '<button class="font-item" data-font="' + f.id + '" style="font-family:' + f.stack + '">' +
+              '<span class="fi-name">' + esc(f.name) + "</span>" +
+              '<span class="fi-note">' + esc(f.note) + "</span>" +
+              '<span class="fi-sample">Aa Bb 123</span>' +
+            "</button>";
+          }).join("");
+          return rows ? '<div class="fp-cat">' + esc(cat.name) + "</div>" + rows : "";
         }).join("") +
       "</div>";
 
@@ -265,7 +318,7 @@
   function stripTags(html) { return String(html).replace(/<[^>]*>/g, " ").replace(/\s+/g, " "); }
 
   /* Plain-text version of an answer, computed once and cached on the question
-     object. Searching 478 answers on every keystroke is otherwise wasteful. */
+     object. Re-stripping every answer on each keystroke is otherwise wasteful. */
   function plainAnswer(q) {
     if (q._text === undefined) q._text = stripTags(q.a).toLowerCase();
     return q._text;
@@ -471,17 +524,24 @@
       var firmIn = document.getElementById("firmFilter");
       if (firmIn) {
         firmIn.value = state.firm;
+        /* The remembered company may not appear in this topic at all. The
+           select would silently fall back to "All" while the filter kept
+           hiding everything, so drop it instead. */
+        if (firmIn.value !== state.firm) state.firm = "";
         firmIn.addEventListener("change", function () {
           state.firm = firmIn.value;
           paintList(id, qs);
         });
       }
-      document.getElementById("expandAll").addEventListener("click", function () {
-        view.querySelectorAll(".qcard").forEach(function (c) { c.classList.add("open"); });
-      });
-      document.getElementById("collapseAll").addEventListener("click", function () {
-        view.querySelectorAll(".qcard").forEach(function (c) { c.classList.remove("open"); });
-      });
+      function setAllOpen(open) {
+        view.querySelectorAll(".qcard").forEach(function (c) {
+          c.classList.toggle("open", open);
+          var h = c.querySelector(".qhead");
+          if (h) h.setAttribute("aria-expanded", String(open));
+        });
+      }
+      document.getElementById("expandAll").addEventListener("click", function () { setAllOpen(true); });
+      document.getElementById("collapseAll").addEventListener("click", function () { setAllOpen(false); });
 
       paintList(id, qs);
     });
@@ -539,7 +599,7 @@
         ? '<div class="qfirms"><span class="qfirms-label">Asked at</span>' + firms + "</div>"
         : "";
       return '<article class="qcard" data-key="' + key + '" id="q-' + key.replace(":", "-") + '" style="animation-delay:' + Math.min(n * 18, 400) + 'ms">' +
-        '<button class="qhead">' +
+        '<button class="qhead" aria-expanded="false">' +
           '<span class="qnum">' + (n + 1) + "</span>" +
           '<span class="qicon" aria-hidden="true">' + iconFor(q) + "</span>" +
           '<span class="qtext">' + highlight(q.q, state.filter) + "</span>" +
@@ -556,7 +616,10 @@
     }).join("");
 
     list.querySelectorAll(".qhead").forEach(function (h) {
-      h.addEventListener("click", function () { h.parentElement.classList.toggle("open"); });
+      h.addEventListener("click", function () {
+        var open = h.parentElement.classList.toggle("open");
+        h.setAttribute("aria-expanded", String(open));
+      });
     });
     list.querySelectorAll(".mark-btn").forEach(function (b) {
       b.addEventListener("click", function (e) {
@@ -608,23 +671,67 @@
     }).join("") + (hits.length > 40 ? '<div class="sr-empty">+ ' + (hits.length - 40) + " more — refine your search</div>" : "");
     searchBox.hidden = false;
 
+    cursor = -1;
     searchBox.querySelectorAll(".sr-item").forEach(function (b) {
-      b.addEventListener("click", function () {
-        var tid = b.dataset.id, idx = +b.dataset.idx;
-        searchBox.hidden = true;
-        searchInput.value = "";
-        state.level = "all"; state.filter = "";
-        location.hash = "#/topic/" + tid;
-        setTimeout(function () {
-          var card = document.getElementById("q-" + tid + "-" + idx);
-          if (card) {
-            card.classList.add("open");
-            card.scrollIntoView({ behavior: "smooth", block: "center" });
-          }
-        }, 260);
-      });
+      b.addEventListener("click", function () { openHit(b); });
     });
   }
+
+  /* Jump to one result: clear every filter that could hide the card, make sure
+     the topic is actually rendered, then open and centre it. */
+  function openHit(b) {
+    var tid = b.dataset.id, idx = +b.dataset.idx;
+    searchBox.hidden = true;
+    searchInput.value = "";
+    searchInput.blur();
+    state.level = "all"; state.filter = ""; state.firm = "";
+
+    var target = "#/topic/" + tid;
+    if (location.hash === target) route();          // same topic: no hashchange fires
+    else location.hash = target;
+
+    var tries = 0;
+    (function reveal() {
+      var card = document.getElementById("q-" + tid + "-" + idx);
+      if (!card) {
+        if (tries++ < 40) return setTimeout(reveal, 40);   // wait for the part files
+        return;
+      }
+      card.classList.add("open");
+      var head = card.querySelector(".qhead");
+      if (head) head.setAttribute("aria-expanded", "true");
+      /* Cards use content-visibility, so the first scroll can land short while
+         heights are still being resolved. Settle it on the next frame. */
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          card.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      });
+    })();
+  }
+
+  /* Arrow-key navigation over the result list. */
+  var cursor = -1;
+  function moveCursor(delta) {
+    var items = searchBox.querySelectorAll(".sr-item");
+    if (!items.length) return;
+    if (cursor >= 0 && items[cursor]) items[cursor].classList.remove("active");
+    cursor = (cursor + delta + items.length) % items.length;
+    items[cursor].classList.add("active");
+    items[cursor].scrollIntoView({ block: "nearest" });
+  }
+
+  searchInput.addEventListener("keydown", function (e) {
+    if (searchBox.hidden) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); moveCursor(1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); moveCursor(-1); }
+    else if (e.key === "Enter") {
+      var items = searchBox.querySelectorAll(".sr-item");
+      var pick = items[cursor >= 0 ? cursor : 0];
+      if (pick) { e.preventDefault(); openHit(pick); }
+    }
+  });
   searchInput.addEventListener("input", function () {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(runSearch, 140);
@@ -637,7 +744,13 @@
     if (e.key === "/" && document.activeElement !== searchInput && !/input|textarea/i.test(document.activeElement.tagName)) {
       e.preventDefault(); searchInput.focus();
     }
-    if (e.key === "Escape") { searchBox.hidden = true; searchInput.blur(); closeSidebar(); }
+    if (e.key === "Escape") {
+      searchBox.hidden = true;
+      searchInput.blur();
+      closeSidebar();
+      fontPanel.setAttribute("hidden", "");
+      fontBtn.setAttribute("aria-expanded", "false");
+    }
   });
 
   /* ---------------- progress reset ---------------- */
@@ -685,7 +798,9 @@
       renderHome();
     }
     markActive();
-    window.scrollTo({ top: 0 });
+    /* html{scroll-behavior:smooth} would otherwise animate this, so switching
+       topic from far down a long page crawls back to the top. */
+    window.scrollTo({ top: 0, behavior: "instant" });
     requestAnimationFrame(measure);
   }
   window.addEventListener("hashchange", route);

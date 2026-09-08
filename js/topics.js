@@ -3,73 +3,87 @@ window.GROUPS = [
   {
     id: "java", name: "Java Core", icon: "☕",
     topics: [
-      { id: "java-basics", parts: 3,       name: "Java Fundamentals",  icon: "☕", blurb: "Language basics, memory model of objects, strings, exceptions — the questions every Java round opens with." },
-      { id: "java-oop", parts: 3,          name: "OOP & Design",       icon: "🧩", blurb: "Encapsulation, inheritance, polymorphism, abstraction, SOLID and the classic trick questions around them." },
-      { id: "java-collections", parts: 3,  name: "Collections Framework", icon: "📦", blurb: "List, Set, Map, internal working of HashMap, ConcurrentHashMap, comparators and complexity." },
-      { id: "java-concurrency", parts: 3,  name: "Multithreading & Concurrency", icon: "🧵", blurb: "Threads, executors, locks, volatile, CompletableFuture, deadlocks and the Java Memory Model." },
-      { id: "java-8", parts: 4,            name: "Java 8+ & Streams",  icon: "🌊", blurb: "Lambdas, functional interfaces, Streams, Optional, and what landed in Java 9–21." },
-      { id: "jvm", parts: 4,               name: "JVM & Garbage Collection", icon: "⚙️", blurb: "Class loading, runtime memory areas, GC algorithms, tuning flags and OutOfMemoryError debugging." }
+      { id: "java-basics", parts: 4,       name: "Java Fundamentals",  icon: "☕", blurb: "Language basics, memory model of objects, strings, exceptions — the questions every Java round opens with." },
+      { id: "java-oop", parts: 4,          name: "OOP & Design",       icon: "🧩", blurb: "Encapsulation, inheritance, polymorphism, abstraction, SOLID and the classic trick questions around them." },
+      { id: "java-collections", parts: 4,  name: "Collections Framework", icon: "📦", blurb: "List, Set, Map, internal working of HashMap, ConcurrentHashMap, comparators and complexity." },
+      { id: "java-concurrency", parts: 4,  name: "Multithreading & Concurrency", icon: "🧵", blurb: "Threads, executors, locks, volatile, CompletableFuture, deadlocks and the Java Memory Model." },
+      { id: "java-8", parts: 5,            name: "Java 8+ & Streams",  icon: "🌊", blurb: "Lambdas, functional interfaces, Streams, Optional, and what landed in Java 9–21." },
+      { id: "jvm", parts: 5,               name: "JVM & Garbage Collection", icon: "⚙️", blurb: "Class loading, runtime memory areas, GC algorithms, tuning flags and OutOfMemoryError debugging." }
     ]
   },
   {
     id: "spring", name: "Spring Ecosystem", icon: "🍃",
     topics: [
-      { id: "spring-core", parts: 3,   name: "Spring Framework",   icon: "🍃", blurb: "IoC container, dependency injection, bean scopes, lifecycle, AOP and proxies." },
-      { id: "spring-boot", parts: 3,   name: "Spring Boot",        icon: "🚀", blurb: "Auto-configuration, starters, profiles, actuator, configuration properties and exception handling." },
-      { id: "spring-security", parts: 4, name: "Spring Security & Auth", icon: "🔐", blurb: "Filter chain, authentication vs authorization, JWT, OAuth2, Keycloak, CORS and CSRF." },
-      { id: "jpa-hibernate", parts: 3, name: "JPA & Hibernate",    icon: "🗄️", blurb: "Entity lifecycle, fetch strategies, N+1, caching, locking and transaction propagation." }
+      { id: "spring-core", parts: 4,   name: "Spring Framework",   icon: "🍃", blurb: "IoC container, dependency injection, bean scopes, lifecycle, AOP and proxies." },
+      { id: "spring-boot", parts: 4,   name: "Spring Boot",        icon: "🚀", blurb: "Auto-configuration, starters, profiles, actuator, configuration properties and exception handling." },
+      { id: "spring-security", parts: 5, name: "Spring Security & Auth", icon: "🔐", blurb: "Filter chain, authentication vs authorization, JWT, OAuth2, Keycloak, CORS and CSRF." },
+      { id: "jpa-hibernate", parts: 4, name: "JPA & Hibernate",    icon: "🗄️", blurb: "Entity lifecycle, fetch strategies, N+1, caching, locking and transaction propagation." }
     ]
   },
   {
     id: "api", name: "APIs & Messaging", icon: "🔌",
     topics: [
-      { id: "rest-api", parts: 3, name: "REST API Design", icon: "🔌", blurb: "HTTP verbs, status codes, idempotency, versioning, pagination, HATEOAS and OpenAPI." },
-      { id: "graphql", parts: 4,  name: "GraphQL",         icon: "◈",  blurb: "Schema, queries, mutations, resolvers, N+1 with DataLoader and GraphQL-vs-REST trade-offs." },
-      { id: "kafka", parts: 4,    name: "Apache Kafka",    icon: "📨", blurb: "Topics, partitions, consumer groups, offsets, delivery semantics, ISR and exactly-once." }
+      { id: "rest-api", parts: 4, name: "REST API Design", icon: "🔌", blurb: "HTTP verbs, status codes, idempotency, versioning, pagination, HATEOAS and OpenAPI." },
+      { id: "graphql", parts: 5,  name: "GraphQL",         icon: "◈",  blurb: "Schema, queries, mutations, resolvers, N+1 with DataLoader and GraphQL-vs-REST trade-offs." },
+      { id: "kafka", parts: 5,    name: "Apache Kafka",    icon: "📨", blurb: "Topics, partitions, consumer groups, offsets, delivery semantics, ISR and exactly-once." }
     ]
   },
   {
     id: "arch", name: "Architecture & Design", icon: "🏛️",
     topics: [
-      { id: "microservices", parts: 4,   name: "Microservices",       icon: "🧱", blurb: "Decomposition, service discovery, resilience, saga, outbox, idempotency and observability." },
-      { id: "system-design", parts: 3,   name: "System Design (HLD)", icon: "🏛️", blurb: "Scaling, caching, load balancing, CAP, sharding, rate limiting and end-to-end design walkthroughs." },
-      { id: "design-patterns", parts: 4, name: "Design Patterns & LLD", icon: "📐", blurb: "Creational, structural and behavioural patterns with the Java code interviewers expect on the board." }
+      { id: "microservices", parts: 5,   name: "Microservices",       icon: "🧱", blurb: "Decomposition, service discovery, resilience, saga, outbox, idempotency and observability." },
+      { id: "system-design", parts: 4,   name: "System Design (HLD)", icon: "🏛️", blurb: "Scaling, caching, load balancing, CAP, sharding, rate limiting and end-to-end design walkthroughs." },
+      { id: "design-patterns", parts: 5, name: "Design Patterns & LLD", icon: "📐", blurb: "Creational, structural and behavioural patterns with the Java code interviewers expect on the board." }
     ]
   },
   {
     id: "data", name: "Databases", icon: "🗃️",
     topics: [
-      { id: "sql", parts: 3,        name: "SQL & Query Tuning", icon: "🗃️", blurb: "Joins, aggregates, window functions, indexes, execution plans and the classic query puzzles." },
-      { id: "postgresql", parts: 4, name: "PostgreSQL",         icon: "🐘", blurb: "MVCC, isolation levels, index types, VACUUM, partitioning, JSONB and locking." }
+      { id: "sql", parts: 4,        name: "SQL & Query Tuning", icon: "🗃️", blurb: "Joins, aggregates, window functions, indexes, execution plans and the classic query puzzles." },
+      { id: "postgresql", parts: 5, name: "PostgreSQL",         icon: "🐘", blurb: "MVCC, isolation levels, index types, VACUUM, partitioning, JSONB and locking." }
     ]
   },
   {
     id: "devops", name: "DevOps & Cloud", icon: "🐳",
     topics: [
-      { id: "docker", parts: 4,     name: "Docker",         icon: "🐳", blurb: "Images vs containers, layers, multi-stage builds, networking, volumes and Compose." },
-      { id: "kubernetes", parts: 4, name: "Kubernetes",     icon: "☸️", blurb: "Pods, deployments, services, ingress, config, probes, HPA and rollout strategies." },
-      { id: "cicd", parts: 4,       name: "CI/CD & Git",    icon: "🔁", blurb: "Pipelines, GitLab CI, Jenkins, GitHub Actions, branching strategies and deployment patterns." }
+      { id: "docker", parts: 5,     name: "Docker",         icon: "🐳", blurb: "Images vs containers, layers, multi-stage builds, networking, volumes and Compose." },
+      { id: "kubernetes", parts: 5, name: "Kubernetes",     icon: "☸️", blurb: "Pods, deployments, services, ingress, config, probes, HPA and rollout strategies." },
+      { id: "cicd", parts: 5,       name: "CI/CD & Git",    icon: "🔁", blurb: "Pipelines, GitLab CI, Jenkins, GitHub Actions, branching strategies and deployment patterns." }
     ]
   },
   {
     id: "quality", name: "Testing & Quality", icon: "🧪",
     topics: [
-      { id: "testing", parts: 4, name: "JUnit 5, Mockito & Testing", icon: "🧪", blurb: "Unit vs integration tests, mocking, Testcontainers, coverage and testing Spring slices." }
+      { id: "testing", parts: 5, name: "JUnit 5, Mockito & Testing", icon: "🧪", blurb: "Unit vs integration tests, mocking, Testcontainers, coverage and testing Spring slices." }
     ]
   },
   {
     id: "frontend", name: "Frontend", icon: "🎨",
     topics: [
-      { id: "angular", parts: 4,    name: "Angular",    icon: "🅰️", blurb: "Components, DI, RxJS, change detection, signals, routing, forms and performance." },
-      { id: "react", parts: 4,      name: "React",      icon: "⚛️", blurb: "JSX, hooks, reconciliation, state management, memoisation and common pitfalls." },
-      { id: "typescript", parts: 4, name: "TypeScript & JS", icon: "🟦", blurb: "Types, generics, closures, event loop, promises, `this`, and the JS trivia that still gets asked." }
+      { id: "angular", parts: 5,    name: "Angular",    icon: "🅰️", blurb: "Components, DI, RxJS, change detection, signals, routing, forms and performance." },
+      { id: "react", parts: 5,      name: "React",      icon: "⚛️", blurb: "JSX, hooks, reconciliation, state management, memoisation and common pitfalls." },
+      { id: "typescript", parts: 5, name: "TypeScript & JS", icon: "🟦", blurb: "Types, generics, closures, event loop, promises, `this`, and the JS trivia that still gets asked." }
+    ]
+  },
+  {
+    id: "coding", name: "Coding & Algorithms", icon: "💻",
+    topics: [
+      { id: "coding-basics", parts: 1,      name: "Coding Round Basics",   icon: "✍️", blurb: "The warm-up problems every service-company round opens with — reverse, palindrome, prime, Fibonacci, duplicates, patterns — solved without shortcuts." },
+      { id: "coding-arrays", parts: 1,      name: "Arrays & Strings",      icon: "🔢", blurb: "Two pointers, sliding window, prefix sums, Kadane, Dutch national flag and the array problems asked most often." },
+      { id: "coding-linked-list", parts: 1, name: "Linked Lists",          icon: "⛓️", blurb: "Reversal, cycle detection, merge, middle node, LRU cache — the pointer manipulation interviewers love." },
+      { id: "coding-stack-queue", parts: 1, name: "Stacks & Queues",       icon: "🥞", blurb: "Balanced brackets, min stack, next greater element, monotonic stacks, sliding-window maximum and expression evaluation." },
+      { id: "coding-trees", parts: 1,       name: "Trees & BST",           icon: "🌳", blurb: "Traversals, height and diameter, lowest common ancestor, BST validation, serialisation and level-order patterns." },
+      { id: "coding-graphs", parts: 1,      name: "Graphs & Grids",        icon: "🕸️", blurb: "BFS, DFS, topological sort, union-find, shortest paths, islands and the grid problems built on them." },
+      { id: "coding-dp", parts: 1,          name: "Dynamic Programming",   icon: "🧮", blurb: "Knapsack, LIS, LCS, edit distance, coin change, stocks and matrix DP — with the state and recurrence spelled out." },
+      { id: "coding-greedy", parts: 1,      name: "Greedy, Intervals & Heaps", icon: "🎯", blurb: "Activity selection, meeting rooms, merge intervals, job scheduling, top-K and when greedy is provably correct." },
+      { id: "algorithms", parts: 1,         name: "Must-Know Algorithms",  icon: "🧭", blurb: "Sorting, binary search variants, Dijkstra, Kruskal, KMP, Floyd cycle, quickselect, bit tricks and their complexities." }
     ]
   },
   {
     id: "cs", name: "CS Fundamentals", icon: "🧠",
     topics: [
-      { id: "dsa", parts: 4, name: "DSA & Problem Solving", icon: "🧠", blurb: "Complexity, arrays, strings, hashing, trees, graphs, DP patterns and the most-asked coding problems." },
-      { id: "hr", parts: 3,  name: "HR & Behavioural",      icon: "💬", blurb: "Tell me about yourself, STAR stories, salary talk and the closing questions you should ask back." }
+      { id: "dsa", parts: 5, name: "DSA & Problem Solving", icon: "🧠", blurb: "Complexity, arrays, strings, hashing, trees, graphs, DP patterns and the most-asked coding problems." },
+      { id: "hr", parts: 4,  name: "HR & Behavioural",      icon: "💬", blurb: "Tell me about yourself, STAR stories, salary talk and the closing questions you should ask back." }
     ]
   }
 ];

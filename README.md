@@ -20,14 +20,17 @@ Every topic ships a **Beginner** and an **Advanced** track, so you can start fro
 | **DevOps & Cloud** | Docker · Kubernetes · CI/CD & Git |
 | **Testing & Quality** | JUnit 5, Mockito & Testing |
 | **Frontend** | Angular · React · TypeScript & JS |
+| **Coding & Algorithms** | Coding Round Basics · Arrays & Strings · Linked Lists · Stacks & Queues · Trees & BST · Graphs & Grids · Dynamic Programming · Greedy, Intervals & Heaps · Must-Know Algorithms |
 | **CS Fundamentals** | DSA & Problem Solving · HR & Behavioural |
 
 ## Features
 
 - **Beginner / Advanced toggle** on every topic
+- **Coding & Algorithms corner** — the problems that actually come up, from warm-up rounds to hard graph and DP questions, each with the pattern, the complexity and the edge cases named
+- **Asked at** chips on questions, plus a **company filter** on every topic
 - **Most asked** badges on the questions that come up in nearly every interview
-- **Instant global search** across every question and answer (press <kbd>/</kbd>)
-- **Typography switcher** — a range of typefaces and four text sizes, so long reading sessions stay comfortable
+- **Instant global search** across every question and answer (press <kbd>/</kbd>, arrow keys to move, Enter to open)
+- **Typography switcher** — sans, serif, monospace, display and handwriting typefaces, plus four text sizes
 - **Dark and light mode**, following your system preference by default
 - **Inline SVG diagrams** — JVM memory layout, HashMap internals, Kafka partitions, the Spring Security filter chain, saga compensation, the event loop and more
 - **Runnable code examples** in Java, SQL, YAML, TypeScript and Bash
@@ -69,7 +72,8 @@ appendTopic("kafka", [
     q: "Your question",
     level: "beginner",          // or "advanced"
     hot: true,                  // shows the "Most asked" badge
-    tags: ["consumers"],
+    tags: ["consumers"],        // drives the per-question icon
+    companies: ["Amazon"],      // renders the "Asked at" chips and the company filter
     a: `<p>The answer as HTML — <code>code</code>, tables, lists and inline SVG all work.</p>`
   }
 ]);

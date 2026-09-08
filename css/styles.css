@@ -121,6 +121,14 @@ svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke
 .size-item:hover{color:var(--text);border-color:var(--border-strong)}
 .size-item.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 .font-list{display:flex;flex-direction:column;gap:3px}
+.fp-cat{
+  position:sticky;top:-10px;z-index:1;
+  margin:10px 0 2px;padding:6px 8px 5px;
+  background:var(--panel);
+  font-size:10px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
+  color:var(--text-mute);border-bottom:1px solid var(--border);
+}
+.fp-cat:first-child{margin-top:0}
 .font-item{
   display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;
   gap:1px 10px;align-items:center;
@@ -483,6 +491,21 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
 .dg-t{fill:var(--text);font:600 12px var(--sans);stroke:none}
 .dg-s{fill:var(--text-mute);font:400 10.5px var(--sans);stroke:none}
 .dg-m{fill:var(--accent);font:500 11px var(--mono);stroke:none}
+/* Arrowheads live inside <marker> and reuse .dg-line for their colour. That
+   class sets fill:none for connector lines, which would leave every arrowhead
+   a hollow outline — a descendant selector wins and fills them back in. */
+.answer .fig marker path{fill:var(--text-mute);stroke:none}
+/* Inline complexity / verdict callout used by the coding questions */
+.answer .cx{
+  display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;
+  padding:11px 14px;border-radius:11px;
+  background:var(--bg-soft);border:1px solid var(--border);
+}
+.answer .cx b{
+  font-family:var(--mono);font-size:11.5px;font-weight:600;
+  color:var(--accent);white-space:nowrap;
+}
+.answer .cx span{font-size:12.5px;color:var(--text-mute)}
 
 .qfoot{display:flex;align-items:center;gap:10px;padding:0 20px 16px 89px;flex-wrap:wrap}
 .chip{
