@@ -31,8 +31,94 @@
     { id: "merriweather", name: "Merriweather",     note: "Serif · long reading",       stack: "'Merriweather', Georgia, serif", google: "Merriweather:wght@400;700" },
     { id: "lora",       name: "Lora",               note: "Serif · elegant",            stack: "'Lora', Georgia, serif", google: "Lora:wght@400;500;600;700" },
     { id: "georgia",    name: "Georgia",            note: "Classic serif · no download", stack: "Georgia, 'Times New Roman', serif" },
-    { id: "jetbrains",  name: "JetBrains Mono",     note: "Monospace · code everywhere", stack: "'JetBrains Mono', ui-monospace, monospace", google: "JetBrains+Mono:wght@400;500;700" }
+    { id: "jetbrains",  name: "JetBrains Mono",     note: "Monospace · code everywhere", stack: "'JetBrains Mono', ui-monospace, monospace", google: "JetBrains+Mono:wght@400;500;700" },
+    /* --- expressive picks --- */
+    { id: "outfit",     name: "Outfit",             note: "Crisp geometric · confident", stack: "'Outfit', system-ui, sans-serif", google: "Outfit:wght@400;500;600;700" },
+    { id: "manrope",    name: "Manrope",            note: "Modern · semi-rounded",       stack: "'Manrope', system-ui, sans-serif", google: "Manrope:wght@400;500;600;800" },
+    { id: "plusjakarta", name: "Plus Jakarta Sans", note: "Friendly · great numerals",   stack: "'Plus Jakarta Sans', system-ui, sans-serif", google: "Plus+Jakarta+Sans:wght@400;500;600;700" },
+    { id: "dmsans",     name: "DM Sans",            note: "Low-contrast · easy on eyes", stack: "'DM Sans', system-ui, sans-serif", google: "DM+Sans:wght@400;500;700" },
+    { id: "rubik",      name: "Rubik",              note: "Rounded corners · warm",      stack: "'Rubik', system-ui, sans-serif", google: "Rubik:wght@400;500;600;700" },
+    { id: "karla",      name: "Karla",              note: "Grotesque · slightly quirky", stack: "'Karla', system-ui, sans-serif", google: "Karla:wght@400;500;700" },
+    { id: "publicsans", name: "Public Sans",        note: "US design system · neutral",  stack: "'Public Sans', system-ui, sans-serif", google: "Public+Sans:wght@400;500;600;700" },
+    { id: "bitter",     name: "Bitter",             note: "Slab serif · screen-first",   stack: "'Bitter', Georgia, serif", google: "Bitter:wght@400;500;700" },
+    { id: "sourceserif", name: "Source Serif 4",    note: "Serif · long-form reading",   stack: "'Source Serif 4', Georgia, serif", google: "Source+Serif+4:wght@400;600;700" },
+    { id: "ibmplexmono", name: "IBM Plex Mono",     note: "Monospace · terminal feel",   stack: "'IBM Plex Mono', ui-monospace, monospace", google: "IBM+Plex+Mono:wght@400;500;600" },
+    { id: "spacemono",  name: "Space Mono",         note: "Retro mono · distinctive",    stack: "'Space Mono', ui-monospace, monospace", google: "Space+Mono:wght@400;700" },
+    { id: "lexend",     name: "Lexend",             note: "Tuned for reading speed",     stack: "'Lexend', system-ui, sans-serif", google: "Lexend:wght@400;500;600;700" }
   ];
+
+  /* Tag -> icon. Gives every question a relevant glyph without hand-tagging
+     each one; a question may still override it with its own `icon`. */
+  var TAG_ICONS = {
+    jvm: "⚙️", basics: "📘", string: "🔤", memory: "🧠", equals: "⚖️", oop: "🧩",
+    exceptions: "⚠️", gotcha: "🪤", collections: "📦", generics: "🧬", serialization: "💾",
+    design: "📐", solid: "🏛️", patterns: "🧱", polymorphism: "🎭", uml: "📊",
+    concurrency: "🧵", locks: "🔒", atomics: "⚛️", jmm: "🧠", executors: "🏭",
+    deadlock: "🚧", threadlocal: "🧶", loom: "🪶", synchronizers: "🚦", async: "⏳",
+    streams: "🌊", lambda: "λ", optional: "❓", collectors: "🧺", datetime: "📅",
+    gc: "🗑️", jit: "🚀", tuning: "🎛️", classloading: "📚", bytecode: "🔩",
+    ioc: "🔄", di: "💉", beans: "🫘", lifecycle: "♻️", aop: "✂️", proxy: "🎭",
+    transactions: "💳", configuration: "⚙️", annotations: "🏷️", spel: "🧮",
+    autoconfiguration: "🪄", actuator: "🩺", validation: "✅", caching: "⚡",
+    logging: "📝", json: "🔣", scheduling: "⏰", webflux: "🌀",
+    security: "🛡️", jwt: "🎟️", oauth2: "🔑", passwords: "🔐", csrf: "🚫",
+    cors: "🌐", rbac: "👮", authorization: "🚪", authentication: "🪪", tokens: "🎫",
+    mapping: "🗺️", queries: "🔍", fetching: "🎣", "persistence-context": "🧊",
+    "n+1": "➕", auditing: "🕵️", jpa: "🗄️", batch: "📚",
+    http: "🌐", rest: "🔌", versioning: "🔢", idempotency: "♾️", openapi: "📄",
+    pagination: "📑", errors: "❗", schema: "📋", resolvers: "🧩", dataloader: "🚚",
+    subscriptions: "📡", federation: "🕸️", realtime: "⚡",
+    producer: "📤", consumers: "📥", offsets: "🔖", reliability: "🛟",
+    replication: "🔁", semantics: "📐", ordering: "🔢", storage: "💽", ecosystem: "🧰",
+    architecture: "🏗️", microservices: "🧱", resilience: "🛡️", consistency: "⚖️",
+    communication: "📞", saga: "🔗", migration: "🚚", ddd: "🎯", sre: "📈",
+    "design-question": "🧭", estimation: "🔢", theory: "📚", scaling: "📈",
+    distributed: "🌍", availability: "🟢", saas: "🏢", algorithms: "🧮",
+    database: "🗃️", joins: "🔗", indexes: "🚄", "window-functions": "🪟",
+    normalization: "📐", ddl: "🏗️", procedures: "📜", locking: "🔒", mvcc: "🔀",
+    vacuum: "🧹", jsonb: "📦", partitioning: "🪓", integrity: "🔗",
+    docker: "🐳", images: "🖼️", dockerfile: "📜", networking: "🌐",
+    compose: "🎼", registry: "📦", orchestration: "🎻", volumes: "💾",
+    kubernetes: "☸️", workloads: "🚢", probes: "🩺", resources: "📊",
+    deployment: "🚀", governance: "📋", "multi-tenancy": "🏢", cost: "💰",
+    cicd: "🔁", git: "🌿", pipeline: "⚙️", iac: "📜", release: "🏷️",
+    monitoring: "📈", process: "🔄", maintenance: "🔧", quality: "✨",
+    testing: "🧪", junit: "🧪", mockito: "🎭", integration: "🔗",
+    testcontainers: "📦", metrics: "📊", assertions: "✅", terminology: "📖",
+    techniques: "🛠️", strategy: "🎯", contracts: "🤝", observability: "👁️",
+    components: "🧩", templates: "📄", directives: "🎯", pipes: "🚿",
+    rxjs: "🌊", signals: "📶", forms: "📝", routing: "🧭", state: "🗂️",
+    ssr: "🖥️", i18n: "🌍", a11y: "♿", build: "🔨", hooks: "🪝",
+    context: "🔗", react19: "⚛️", internals: "🔬", nextjs: "▲",
+    javascript: "🟨", types: "🏷️", config: "⚙️", bundling: "📦", browser: "🌐",
+    "two-pointers": "👉", "sliding-window": "🪟", searching: "🔎", sorting: "🔤",
+    "linked-list": "⛓️", trees: "🌳", graphs: "🕸️", dp: "🧮", complexity: "📈",
+    "data-structures": "🏗️", practice: "✍️", recursion: "🔄", backtracking: "↩️",
+    bits: "🔢", checklist: "☑️", strings: "🔤",
+    behavioural: "💬", opening: "👋", closing: "🤝", classic: "⭐",
+    negotiation: "🤝", sensitive: "⚠️", motivation: "🔥", onboarding: "🚪",
+    conflict: "⚔️", technical: "🛠️", evaluation: "🔍", framework: "📐",
+    production: "🏭", performance: "⚡", debugging: "🐞", review: "👀",
+    "best-practice": "⭐", modern: "✨", "modern-java": "✨", java21: "☕",
+    "anti-patterns": "🚫", "trade-offs": "⚖️", immutability: "🧊",
+    "change-detection": "🔄", graalvm: "🚀", tooling: "🧰", extension: "🔌",
+    java9: "☕", modules: "📦", java8: "☕", advanced: "🎓", spring: "🍃",
+    container: "📦", experience: "💼", judgement: "🧭", refactoring: "🔧",
+    mobile: "📱", operations: "🛠️", capacity: "📏", set: "🔵", list: "📋",
+    map: "🗺️", queue: "🚶", hashmap: "🗺️", treemap: "🌲", iterator: "➡️",
+    legacy: "🏚️", parallel: "🔀", volatile: "⚡", rendering: "🖼️", dml: "✏️",
+    features: "🎁", ha: "🟢", "b-tree": "🌲", fundamentals: "📘", modelling: "📐",
+    "code-review": "👀", enterprise: "🏢", mnc: "🏢", scenario: "🎬"
+  };
+
+  function iconFor(q) {
+    if (q.icon) return q.icon;
+    var tags = q.tags || [];
+    for (var i = 0; i < tags.length; i++) {
+      if (TAG_ICONS[tags[i]]) return TAG_ICONS[tags[i]];
+    }
+    return q.level === "advanced" ? "🎓" : "📘";
+  }
 
   var SIZES = [
     { id: "s",  name: "Small",   scale: "93.75%" },
@@ -48,7 +134,7 @@
   var sidebar = document.getElementById("sidebar");
   var scrim = document.getElementById("scrim");
 
-  var state = { topic: null, level: "all", filter: "", done: load(LS_DONE, {}) };
+  var state = { topic: null, level: "all", filter: "", firm: "", done: load(LS_DONE, {}) };
   var loading = {};
 
   /* ---------------- storage helpers ---------------- */
@@ -358,9 +444,10 @@
             '<button data-level="beginner">Beginner</button>' +
             '<button data-level="advanced">Advanced</button>' +
           "</div>" +
-          '<input class="filter-in" id="topicFilter" placeholder="Filter within ' + esc(meta.name) + '…" />' +
-          '<button class="tool-btn" id="expandAll">Expand all</button>' +
-          '<button class="tool-btn" id="collapseAll">Collapse all</button>' +
+          '<input class="filter-in" id="topicFilter" placeholder="🔍 Filter within ' + esc(meta.name) + '…" />' +
+          firmSelect(qs) +
+          '<button class="tool-btn" id="expandAll">⤢ Expand all</button>' +
+          '<button class="tool-btn" id="collapseAll">⤡ Collapse all</button>' +
           '<span class="count-tag" id="countTag"></span>' +
         "</div>" +
         '<div class="qlist" id="qlist"></div>';
@@ -381,6 +468,14 @@
         state.filter = filterIn.value.trim();
         paintList(id, qs);
       });
+      var firmIn = document.getElementById("firmFilter");
+      if (firmIn) {
+        firmIn.value = state.firm;
+        firmIn.addEventListener("change", function () {
+          state.firm = firmIn.value;
+          paintList(id, qs);
+        });
+      }
       document.getElementById("expandAll").addEventListener("click", function () {
         view.querySelectorAll(".qcard").forEach(function (c) { c.classList.add("open"); });
       });
@@ -392,6 +487,19 @@
     });
   }
 
+  /* Every company mentioned in this topic, for the toolbar dropdown. */
+  function firmSelect(qs) {
+    var seen = {};
+    qs.forEach(function (q) { (q.companies || []).forEach(function (c) { seen[c] = 1; }); });
+    var names = Object.keys(seen).sort();
+    if (!names.length) return "";
+    return '<select class="firm-select" id="firmFilter" aria-label="Filter by company">' +
+      '<option value="">🏢 All companies</option>' +
+      names.map(function (c) {
+        return '<option value="' + esc(c) + '">' + esc(c) + "</option>";
+      }).join("") + "</select>";
+  }
+
   function paintList(id, qs) {
     var list = document.getElementById("qlist");
     if (!list) return;
@@ -399,8 +507,10 @@
     var rows = [];
     qs.forEach(function (q, idx) {
       if (state.level !== "all" && q.level !== state.level) return;
+      if (state.firm && (q.companies || []).indexOf(state.firm) === -1) return;
       if (term) {
-        var hay = q.q.toLowerCase() + " " + plainAnswer(q) + " " + (q.tags || []).join(" ");
+        var hay = q.q.toLowerCase() + " " + plainAnswer(q) + " " +
+                  (q.tags || []).join(" ") + " " + (q.companies || []).join(" ").toLowerCase();
         if (hay.indexOf(term) === -1) return;
       }
       rows.push({ q: q, idx: idx });
@@ -421,15 +531,23 @@
       if (q.hot) badges += '<span class="badge hot">Most asked</span>';
       badges += '<span class="badge ' + (q.level === "beginner" ? "beg\">Beginner" : "adv\">Advanced") + "</span>";
       var chips = (q.tags || []).map(function (t) { return '<span class="chip">#' + esc(t) + "</span>"; }).join("");
+      /* Companies that are known to ask this question, when recorded. */
+      var firms = (q.companies || []).map(function (c) {
+        return '<span class="firm">' + esc(c) + "</span>";
+      }).join("");
+      var firmRow = firms
+        ? '<div class="qfirms"><span class="qfirms-label">Asked at</span>' + firms + "</div>"
+        : "";
       return '<article class="qcard" data-key="' + key + '" id="q-' + key.replace(":", "-") + '" style="animation-delay:' + Math.min(n * 18, 400) + 'ms">' +
         '<button class="qhead">' +
           '<span class="qnum">' + (n + 1) + "</span>" +
+          '<span class="qicon" aria-hidden="true">' + iconFor(q) + "</span>" +
           '<span class="qtext">' + highlight(q.q, state.filter) + "</span>" +
           '<span class="qbadges">' + badges + "</span>" +
           '<svg class="qchev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>' +
         "</button>" +
         '<div class="qbody"><div class="qbody-inner">' +
-          '<div class="answer">' + q.a + "</div>" +
+          '<div class="answer">' + q.a + firmRow + "</div>" +
           '<div class="qfoot">' + chips +
             '<button class="mark-btn' + (done ? " done" : "") + '" data-key="' + key + '">' +
             (done ? "✓ Revised" : "Mark as revised") + "</button>" +
@@ -559,7 +677,7 @@
     var hash = location.hash || "#/";
     var m = hash.match(/^#\/topic\/([\w-]+)/);
     if (m) {
-      if (state.topic !== m[1]) { state.level = "all"; state.filter = ""; }
+      if (state.topic !== m[1]) { state.level = "all"; state.filter = ""; state.firm = ""; }
       state.topic = m[1];
       renderTopic(m[1]);
     } else {

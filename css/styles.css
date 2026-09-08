@@ -53,7 +53,18 @@
 }
 
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
+html{
+  scroll-behavior:smooth;
+  /* Anchored cards land below the sticky header instead of under it */
+  scroll-padding-top:88px;
+  /* Stops the page jittering when a short view replaces a tall one */
+  scrollbar-gutter:stable;
+  -webkit-text-size-adjust:100%;
+}
+/* Momentum-style easing for the custom scroll-to-top and search jumps */
+@supports (scroll-behavior: smooth){
+  html{scroll-behavior:smooth}
+}
 body{
   margin:0;
   font-family:var(--sans);
@@ -349,11 +360,24 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
   border:1px solid var(--border);background:var(--bg-soft);color:var(--text-dim);transition:.2s;
 }
 .tool-btn:hover{color:var(--accent);border-color:var(--accent)}
+.firm-select{
+  height:38px;padding:0 30px 0 12px;border-radius:10px;cursor:pointer;
+  border:1px solid var(--border);background:var(--bg-soft);color:var(--text-dim);
+  font-family:inherit;font-size:12.5px;font-weight:600;outline:none;
+  appearance:none;transition:.2s;
+  background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),
+                   linear-gradient(135deg,currentColor 50%,transparent 50%);
+  background-position:calc(100% - 16px) 17px, calc(100% - 11px) 17px;
+  background-size:5px 5px, 5px 5px;
+  background-repeat:no-repeat;
+}
+.firm-select:hover,.firm-select:focus{color:var(--accent);border-color:var(--accent)}
 
 /* ---------- Q&A accordion ---------- */
 .qlist{display:flex;flex-direction:column;gap:10px}
 .qcard{
   border:1px solid var(--border);border-radius:14px;
+  scroll-margin-top:96px;
   background:var(--panel);overflow:hidden;
   transition:border-color .22s, box-shadow .22s;
   animation:rise .35s ease both;
@@ -377,7 +401,29 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
   transition:.22s;
 }
 .qcard.open .qnum{background:var(--accent);color:#fff}
+.qicon{
+  flex-shrink:0;font-size:16px;line-height:1.4;width:22px;text-align:center;
+  filter:grayscale(.25);transition:filter .2s ease, transform .2s ease;
+}
+.qcard:hover .qicon,.qcard.open .qicon{filter:none;transform:scale(1.12)}
 .qtext{flex:1;font-size:14.8px;font-weight:600;line-height:1.5;letter-spacing:-.2px}
+
+/* Companies known to ask a question */
+.qfirms{
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+  margin:18px 0 2px;padding-top:14px;border-top:1px dashed var(--border);
+}
+.qfirms-label{
+  font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:var(--text-mute);margin-right:2px;
+}
+.firm{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;
+  background:var(--bg-soft);color:var(--text-dim);
+  border:1px solid var(--border);white-space:nowrap;
+}
+.firm::before{content:"🏢";font-size:9px;opacity:.7}
 .qbadges{display:flex;align-items:center;gap:6px;flex-shrink:0;padding-top:2px}
 .badge{
   font-size:9.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;
@@ -392,7 +438,8 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
 .qcard.open .qbody{grid-template-rows:1fr}
 .qbody-inner{overflow:hidden}
 .answer{
-  padding:2px 20px 20px 61px;
+  padding:2px 20px 20px 89px;
+  scroll-margin-top:88px;
   font-size:14.2px;line-height:1.75;color:var(--text-dim);
   border-top:1px solid transparent;
 }
@@ -437,7 +484,7 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
 .dg-s{fill:var(--text-mute);font:400 10.5px var(--sans);stroke:none}
 .dg-m{fill:var(--accent);font:500 11px var(--mono);stroke:none}
 
-.qfoot{display:flex;align-items:center;gap:10px;padding:0 20px 16px 61px;flex-wrap:wrap}
+.qfoot{display:flex;align-items:center;gap:10px;padding:0 20px 16px 89px;flex-wrap:wrap}
 .chip{
   font-size:10.5px;padding:3px 9px;border-radius:999px;
   background:var(--bg-soft);color:var(--text-mute);border:1px solid var(--border);
@@ -512,6 +559,7 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
   .brand-text{display:none}
   .answer{padding-left:20px}
   .qfoot{padding-left:20px}
+  .qicon{display:none}
   .toolbar{position:static}
 }
 @media (max-width:900px){
