@@ -12,7 +12,7 @@ Every topic ships a **Beginner** and an **Advanced** track, so you can start fro
 
 | Group | Topics |
 |---|---|
-| **Java Core** | Java Fundamentals · OOP & Design · Collections · Multithreading & Concurrency · Java 8+ & Streams · JVM & Garbage Collection |
+| **Java Core** | Java Fundamentals · OOP & Design · Collections · Multithreading & Concurrency · Java 8+ & Streams · Java Versions & Features · JVM & Garbage Collection |
 | **Spring Ecosystem** | Spring Framework · Spring Boot · Spring Security & Auth · JPA & Hibernate |
 | **APIs & Messaging** | REST API Design · GraphQL · Apache Kafka |
 | **Architecture & Design** | Microservices · System Design (HLD) · Design Patterns & LLD |
@@ -35,7 +35,9 @@ Every topic ships a **Beginner** and an **Advanced** track, so you can start fro
 - **Inline SVG diagrams** — JVM memory layout, HashMap internals, Kafka partitions, the Spring Security filter chain, saga compensation, the event loop and more
 - **Runnable code examples** in Java, SQL, YAML, TypeScript and Bash
 - **Progress tracking** — mark questions as revised; progress is saved in your browser
-- **Fully responsive** and **100% client-side** — no build step, no backend, no dependencies
+- **Version-by-version Java coverage** — what Java 8, 11, 17, 21 and 25 each added, and what an upgrade from 8 actually breaks
+- **Fully responsive** — a bottom-sheet type picker and horizontally scrollable diagrams on phones, a drawer sidebar on tablets, the full layout on desktop
+- **100% client-side** — no build step, no backend, no dependencies
 
 ## Tech
 

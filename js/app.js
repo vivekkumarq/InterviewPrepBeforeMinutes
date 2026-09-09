@@ -158,7 +158,10 @@
     "edit-distance": "✏️", greedy: "🎯", intervals: "📏", "top-k": "🏆",
     "binary-search": "🎯", "divide-conquer": "✂️", "bit-manipulation": "🔟",
     "string-matching": "🔎", "linked-list-design": "⛓️", "space-optimisation": "🗜️",
-    "problem-solving": "🧠", "must-know": "⭐", "interview-favourite": "🔥"
+    "problem-solving": "🧠", "must-know": "⭐", "interview-favourite": "🔥",
+    /* java release features */
+    versions: "🏷️", lts: "🛡️", "release-cadence": "📅", java10: "☕", java11: "☕",
+    java17: "☕", java25: "☕", preview: "🧪", upgrade: "⬆️", syntax: "✍️"
   };
 
   function iconFor(q) {
@@ -262,6 +265,7 @@
   function buildTypePanel() {
     var panel = document.getElementById("fontPanel");
     panel.innerHTML =
+      '<div class="fp-grab" id="fpGrab" aria-hidden="true"></div>' +
       '<div class="tp-head">Text size</div>' +
       '<div class="size-row">' +
         SIZES.map(function (s) {
@@ -290,6 +294,8 @@
     panel.querySelectorAll(".size-item").forEach(function (b) {
       b.addEventListener("click", function () { applySize(b.dataset.size); });
     });
+    var grab = document.getElementById("fpGrab");
+    if (grab) grab.addEventListener("click", function () { setFontPanel(false); });
   }
 
   function initTypography() {
@@ -305,16 +311,38 @@
 
   var fontBtn = document.getElementById("fontToggle");
   var fontPanel = document.getElementById("fontPanel");
+  var fontScrim = document.getElementById("fontScrim");
+
+  /* Below this width the panel is a bottom sheet rather than a dropdown, so it
+     gets a backdrop and locks the page behind it. Matches the CSS breakpoint. */
+  var sheetMode = window.matchMedia
+    ? window.matchMedia("(max-width: 640px)")
+    : { matches: false };
+
+  function setFontPanel(open) {
+    if (open) fontPanel.removeAttribute("hidden");
+    else fontPanel.setAttribute("hidden", "");
+
+    var asSheet = open && sheetMode.matches;
+    if (fontScrim) {
+      if (asSheet) fontScrim.removeAttribute("hidden");
+      else fontScrim.setAttribute("hidden", "");
+    }
+    document.body.classList.toggle("no-scroll", asSheet);
+    fontBtn.setAttribute("aria-expanded", String(open));
+  }
+
   fontBtn.addEventListener("click", function (e) {
     e.stopPropagation();
-    var open = fontPanel.hasAttribute("hidden");
-    if (open) fontPanel.removeAttribute("hidden"); else fontPanel.setAttribute("hidden", "");
-    fontBtn.setAttribute("aria-expanded", String(open));
+    setFontPanel(fontPanel.hasAttribute("hidden"));
   });
+  if (fontScrim) fontScrim.addEventListener("click", function () { setFontPanel(false); });
+
+  /* The panel is a child of <body> now (see index.html), so the outside-click
+     test has to allow the panel itself as well as the button. */
   document.addEventListener("click", function (e) {
-    if (!e.target.closest(".type-wrap")) {
-      fontPanel.setAttribute("hidden", "");
-      fontBtn.setAttribute("aria-expanded", "false");
+    if (!e.target.closest(".type-wrap") && !e.target.closest(".font-panel")) {
+      setFontPanel(false);
     }
   });
 
@@ -1011,8 +1039,7 @@
       searchBox.hidden = true;
       searchInput.blur();
       closeSidebar();
-      fontPanel.setAttribute("hidden", "");
-      fontBtn.setAttribute("aria-expanded", "false");
+      setFontPanel(false);
     }
   });
 
