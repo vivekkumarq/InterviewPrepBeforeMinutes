@@ -8,6 +8,7 @@ window.GROUPS = [
       { id: "java-collections", parts: 4,  name: "Collections Framework", icon: "📦", blurb: "List, Set, Map, internal working of HashMap, ConcurrentHashMap, comparators and complexity." },
       { id: "java-concurrency", parts: 4,  name: "Multithreading & Concurrency", icon: "🧵", blurb: "Threads, executors, locks, volatile, CompletableFuture, deadlocks and the Java Memory Model." },
       { id: "java-8", parts: 5,            name: "Java 8+ & Streams",  icon: "🌊", blurb: "Lambdas, functional interfaces, Streams, Optional, and what landed in Java 9–21." },
+      { id: "java-versions", parts: 1,     name: "Java Versions & Features", icon: "🏷️", blurb: "What each release actually added — Java 8, 11, 17, 21 and 25 — records, sealed classes, text blocks, var, virtual threads, and what an upgrade from 8 really breaks." },
       { id: "jvm", parts: 5,               name: "JVM & Garbage Collection", icon: "⚙️", blurb: "Class loading, runtime memory areas, GC algorithms, tuning flags and OutOfMemoryError debugging." }
     ]
   },
