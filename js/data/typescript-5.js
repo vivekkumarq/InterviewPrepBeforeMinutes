@@ -70,7 +70,7 @@ async function processLargeList(items) {
 <p><strong>The Node.js addition, if asked:</strong> Node has phases — timers, pending callbacks, poll, check (<code>setImmediate</code>), close — and <code>process.nextTick</code> runs before <em>all</em> promise microtasks. So <code>setTimeout(fn, 0)</code> versus <code>setImmediate(fn)</code> is non-deterministic at the top level, and deterministic inside an I/O callback where <code>setImmediate</code> always wins.</p>`
 },
 {
-  q: "Explain closures, `this` binding, and prototypal inheritance",
+  q: "Explain closures, this binding, and prototypal inheritance",
   level: "advanced", hot: true, tags: ["javascript", "internals", "gotcha"],
   companies: ["Amazon", "Microsoft", "Adobe", "Flipkart", "Zoho", "Uber", "Cognizant", "Optum"],
   a: `<pre><code>// CLOSURE — a function plus the scope it was created in

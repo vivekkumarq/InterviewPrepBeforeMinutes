@@ -63,7 +63,7 @@ window.GROUPS = [
     topics: [
       { id: "angular", parts: 5,    name: "Angular",    icon: "🅰️", blurb: "Components, DI, RxJS, change detection, signals, routing, forms and performance." },
       { id: "react", parts: 5,      name: "React",      icon: "⚛️", blurb: "JSX, hooks, reconciliation, state management, memoisation and common pitfalls." },
-      { id: "typescript", parts: 5, name: "TypeScript & JS", icon: "🟦", blurb: "Types, generics, closures, event loop, promises, `this`, and the JS trivia that still gets asked." }
+      { id: "typescript", parts: 5, name: "TypeScript & JS", icon: "🟦", blurb: "Types, generics, closures, event loop, promises, this binding, and the JS trivia that still gets asked." }
     ]
   },
   {

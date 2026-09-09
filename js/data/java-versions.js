@@ -104,7 +104,7 @@ HttpResponse&lt;String&gt; res = client.send(
 <p><strong>The removal that breaks builds:</strong> Java 11 deleted <code>java.xml.bind</code>, <code>java.activation</code> and the CORBA modules. Code using <code>javax.xml.bind.DatatypeConverter</code> or JAXB stops compiling until you add the artefacts as ordinary dependencies. That is the single most common failure when moving from 8 to 11.</p>`
 },
 {
-  q: "What is `var`, and what are the rules for using it well?",
+  q: "What is var, and what are the rules for using it well?",
   level: "beginner", hot: true, tags: ["java10", "syntax", "best-practice"],
   companies: ["Amazon", "TCS", "Infosys", "Oracle", "SAP", "Cognizant", "EPAM", "Zoho"],
   a: `<p><code>var</code> is <strong>local variable type inference</strong>, not dynamic typing. The type is fixed at compile time from the initialiser — the variable is exactly as statically typed as if you had written the type out.</p>
