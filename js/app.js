@@ -191,6 +191,7 @@
     view: "home",          // home | topic | company | companies | notfound
     topic: null,
     company: null,         // company slug when view === "company"
+    sheet: null,           // topic id when view === "cheatsheet"
     level: "all",
     filter: "",
     firm: "",
@@ -465,6 +466,9 @@
         '<div class="nav-group-body"><div>' + links + "</div></div></div>";
     }).join("");
     navTree.innerHTML =
+      '<a class="nav-special" id="navSheets" href="#/cheatsheets">' +
+        '<span class="ic">⚡</span><span>Cheatsheets</span>' +
+      "</a>" +
       '<a class="nav-special" id="navCompanies" href="#/companies">' +
         '<span class="ic">🏢</span><span>Prepare by company</span>' +
       "</a>" + html;
@@ -491,6 +495,10 @@
     var companies = document.getElementById("navCompanies");
     if (companies) {
       companies.classList.toggle("active", state.view === "company" || state.view === "companies");
+    }
+    var sheets = document.getElementById("navSheets");
+    if (sheets) {
+      sheets.classList.toggle("active", state.view === "cheatsheet" || state.view === "cheatsheets");
     }
   }
 
@@ -555,7 +563,25 @@
           '<div class="hstat"><b>2</b><span>Difficulty tracks</span></div>' +
           '<div class="hstat"><b>' + totalDone + "</b><span>Marked revised</span></div>" +
         "</div>" +
-      "</section>" + companyStrip() + groupsHtml;
+      "</section>" + sheetStrip() + companyStrip() + groupsHtml;
+  }
+
+  /* Shortcut into the cheatsheets, coloured per stack. */
+  function sheetStrip() {
+    var theme = window.TOPIC_THEME;
+    var picks = ["java-basics", "spring-boot", "sql", "kubernetes", "coding-dp", "react", "dsa"];
+    return '<h2 class="sec-title">⚡ Cheatsheets</h2>' +
+      '<p class="sec-note">One condensed screen per stack — tables, syntax and rules for the last fifteen minutes.</p>' +
+      '<div class="chip-row">' +
+        picks.map(function (id) {
+          var t = window.TOPIC_MAP[id];
+          if (!t) return "";
+          return '<a class="co-chip cs-chip" href="#/cheatsheet/' + id + '"' +
+            ' style="--tint:' + (theme ? theme.accent(id) : "#4f46e5") + '">' +
+            t.icon + " " + esc(t.name) + "</a>";
+        }).join("") +
+        '<a class="co-chip co-all" href="#/cheatsheets">All cheatsheets →</a>' +
+      "</div>";
   }
 
   /* Shortcut into the company pages. Only rendered once every part file has
@@ -577,6 +603,42 @@
   }
 
   /* ---------------- topic page ---------------- */
+  /* A solid, technology-themed band at the top of a topic. The motif is drawn
+     large inside the band rather than behind the page text, so the page keeps
+     its contrast while the stack is still recognisable at a glance. */
+  function topicBanner(id, meta) {
+    var theme = window.TOPIC_THEME;
+    var motif = theme ? theme.motif(id, "banner-motif") : "";
+    return '<header class="topic-banner" data-topic="' + id + '">' +
+        '<div class="tb-art" aria-hidden="true">' + motif + "</div>" +
+        '<div class="tb-copy">' +
+          '<h1><span class="tb-icon">' + meta.icon + "</span>" + esc(meta.name) + "</h1>" +
+          '<p class="blurb">' + esc(meta.blurb) + "</p>" +
+          '<a class="tb-sheet" href="#/cheatsheet/' + id + '">⚡ Open cheatsheet</a>' +
+        "</div>" +
+      "</header>";
+  }
+
+  /* Sets --accent for the current view so cards, badges and rules pick up the
+     technology's colour without every rule needing a per-topic override. */
+  function applyTheme(id) {
+    var theme = window.TOPIC_THEME;
+    if (!theme) return;
+    if (id && theme.has(id)) {
+      view.style.setProperty("--accent", theme.accent(id));
+      view.style.setProperty("--accent-soft", hexToSoft(theme.accent(id)));
+      view.setAttribute("data-themed", id);
+    } else {
+      view.style.removeProperty("--accent");
+      view.style.removeProperty("--accent-soft");
+      view.removeAttribute("data-themed");
+    }
+  }
+  function hexToSoft(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + ",.14)";
+  }
+
   function renderTopic(id) {
     var meta = window.TOPIC_MAP[id];
     if (!meta) return renderNotFound();
@@ -588,8 +650,7 @@
 
       var head =
         '<div class="crumbs"><a href="#/">Home</a> &nbsp;›&nbsp; ' + esc(meta.group) + " &nbsp;›&nbsp; " + esc(meta.name) + "</div>" +
-        '<div class="topic-head"><h1><span>' + meta.icon + "</span>" + esc(meta.name) + "</h1>" +
-        '<p class="blurb">' + esc(meta.blurb) + "</p></div>" +
+        topicBanner(id, meta) +
         '<div class="toolbar">' +
           '<div class="seg" id="levelSeg">' +
             '<button data-level="all">All</button>' +
@@ -731,6 +792,110 @@
       return cardHtml(id, r.idx, r.q, n, state.filter);
     }).join("");
     wireCards(list);
+  }
+
+  /* ---------------- cheatsheets ----------------
+     Condensed recall, one screen per topic. Bundles are fetched on demand so
+     the questions and the sheets never load each other's weight. */
+  var sheetBundles = {};
+  function ensureSheet(id, cb) {
+    var bundle = (window.SHEET_BUNDLES || []).filter(function (b) {
+      return b.topics.indexOf(id) !== -1;
+    })[0];
+    if (!bundle) return cb(null);
+    if (window.SHEETS[id]) return cb(window.SHEETS[id]);
+    if (sheetBundles[bundle.file] === "loading") {
+      document.addEventListener("sheet:loaded", function again() {
+        if (window.SHEETS[id]) { document.removeEventListener("sheet:loaded", again); cb(window.SHEETS[id]); }
+      });
+      return;
+    }
+    sheetBundles[bundle.file] = "loading";
+    loadScript("js/data/" + bundle.file, function () {
+      sheetBundles[bundle.file] = "done";
+      document.dispatchEvent(new CustomEvent("sheet:loaded"));
+      cb(window.SHEETS[id] || null);
+    });
+  }
+
+  function sheetSectionHtml(sec) {
+    var body = "";
+    if (sec.t === "table") {
+      body = "<table><tr>" + (sec.rows[0] || []).map(function (c) { return "<th>" + c + "</th>"; }).join("") + "</tr>" +
+        sec.rows.slice(1).map(function (r) {
+          return "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
+        }).join("") + "</table>";
+    } else if (sec.t === "list") {
+      body = "<ul>" + sec.items.map(function (i) { return "<li>" + i + "</li>"; }).join("") + "</ul>";
+    } else if (sec.t === "code") {
+      body = '<pre data-lang="' + esc(sec.lang || "") + '"><code>' + esc(sec.code) + "</code></pre>";
+    } else if (sec.t === "quote") {
+      body = '<blockquote class="cs-quote">' + sec.text + "</blockquote>";
+    }
+    return '<section class="cs-card"><h2>' + esc(sec.h) + "</h2>" + body + "</section>";
+  }
+
+  function renderCheatsheet(id) {
+    var meta = window.TOPIC_MAP[id];
+    if (!meta) return renderNotFound();
+    view.innerHTML = '<div class="loading"><div class="spinner"></div>Loading the ' + esc(meta.name) + " cheatsheet…</div>";
+
+    ensureSheet(id, function (sections) {
+      if (state.sheet !== id) return;
+      if (!sections) return renderNotFound();
+      paintCounts();
+      var theme = window.TOPIC_THEME;
+
+      view.innerHTML =
+        '<div class="crumbs"><a href="#/">Home</a> &nbsp;›&nbsp; <a href="#/cheatsheets">Cheatsheets</a>' +
+        " &nbsp;›&nbsp; " + esc(meta.name) + "</div>" +
+        '<header class="topic-banner cs-banner">' +
+          '<div class="tb-art" aria-hidden="true">' + (theme ? theme.motif(id, "banner-motif") : "") + "</div>" +
+          '<div class="tb-copy">' +
+            '<span class="cs-kicker">Cheatsheet</span>' +
+            "<h1><span class=\"tb-icon\">" + meta.icon + "</span>" + esc(meta.name) + "</h1>" +
+            '<p class="blurb">Everything worth glancing at in the last fifteen minutes.</p>' +
+            '<a class="tb-sheet" href="#/topic/' + id + '">← Back to the questions</a>' +
+          "</div>" +
+        "</header>" +
+        '<div class="cs-grid">' + sections.map(sheetSectionHtml).join("") + "</div>" +
+        sheetNav(id);
+    });
+  }
+
+  /* Previous / next within the sidebar order, so a sheet reads like a book. */
+  function sheetNav(id) {
+    var ids = [];
+    window.GROUPS.forEach(function (g) { g.topics.forEach(function (t) { ids.push(t); }); });
+    var i = ids.map(function (t) { return t.id; }).indexOf(id);
+    var prev = i > 0 ? ids[i - 1] : null, next = i < ids.length - 1 ? ids[i + 1] : null;
+    return '<nav class="cs-nav">' +
+      (prev ? '<a href="#/cheatsheet/' + prev.id + '">← ' + prev.icon + " " + esc(prev.name) + "</a>" : "<span></span>") +
+      (next ? '<a href="#/cheatsheet/' + next.id + '">' + next.icon + " " + esc(next.name) + " →</a>" : "<span></span>") +
+      "</nav>";
+  }
+
+  function renderCheatsheetIndex() {
+    paintCounts();
+    var theme = window.TOPIC_THEME;
+    var groups = window.GROUPS.map(function (g) {
+      return '<h2 class="sec-title">' + g.icon + " " + esc(g.name) + "</h2>" +
+        '<div class="card-grid">' + g.topics.map(function (t, i) {
+          return '<a class="tcard cs-tile" href="#/cheatsheet/' + t.id + '"' +
+              ' style="--tint:' + (theme ? theme.accent(t.id) : "#4f46e5") + ";animation-delay:" + Math.min(i * 26, 320) + 'ms">' +
+            '<span class="cs-tile-art" aria-hidden="true">' + (theme ? theme.motif(t.id, "tile-motif") : "") + "</span>" +
+            "<h3>" + t.icon + " " + esc(t.name) + "</h3>" +
+            '<p class="tc-blurb">' + esc(t.blurb) + "</p>" +
+            '<span class="tc-go">Open cheatsheet →</span>' +
+          "</a>";
+        }).join("") + "</div>";
+    }).join("");
+
+    view.innerHTML =
+      '<div class="crumbs"><a href="#/">Home</a> &nbsp;›&nbsp; Cheatsheets</div>' +
+      '<section class="hero cs-hero"><h1>⚡ Cheatsheets</h1>' +
+      "<p>One condensed screen per stack — the tables, syntax and rules worth glancing at " +
+      "on the way in. Every topic has one.</p></section>" + groups;
   }
 
   /* ---------------- company directory ---------------- */
@@ -1080,22 +1245,30 @@
     var hash = location.hash || "#/";
     var mCompany = hash.match(/^#\/company\/([\w-]+)/);
     var mTopic = hash.match(/^#\/topic\/([\w-]+)/);
+    var mSheet = hash.match(/^#\/cheatsheet\/([\w-]+)/);
 
-    if (hash.indexOf("#/companies") === 0) {
-      state.view = "companies"; state.topic = null; state.company = null;
+    if (hash.indexOf("#/cheatsheets") === 0) {
+      state.view = "cheatsheets"; state.topic = null; state.company = null; state.sheet = null;
+      renderCheatsheetIndex();
+    } else if (mSheet) {
+      state.view = "cheatsheet"; state.topic = null; state.company = null; state.sheet = mSheet[1];
+      renderCheatsheet(mSheet[1]);
+    } else if (hash.indexOf("#/companies") === 0) {
+      state.view = "companies"; state.topic = null; state.company = null; state.sheet = null;
       renderCompanies();
     } else if (mCompany) {
       if (state.company !== mCompany[1]) { state.level = "all"; state.filter = ""; state.hotOnly = false; }
-      state.view = "company"; state.topic = null; state.company = mCompany[1];
+      state.view = "company"; state.topic = null; state.company = mCompany[1]; state.sheet = null;
       renderCompany(mCompany[1]);
     } else if (mTopic) {
       if (state.topic !== mTopic[1]) { state.level = "all"; state.filter = ""; state.firm = ""; }
-      state.view = "topic"; state.topic = mTopic[1]; state.company = null;
+      state.view = "topic"; state.topic = mTopic[1]; state.company = null; state.sheet = null;
       renderTopic(mTopic[1]);
     } else {
-      state.view = "home"; state.topic = null; state.company = null;
+      state.view = "home"; state.topic = null; state.company = null; state.sheet = null;
       renderHome();
     }
+    applyTheme(mTopic ? mTopic[1] : (mSheet ? mSheet[1] : null));
     markActive();
     /* html{scroll-behavior:smooth} would otherwise animate this, so switching
        topic from far down a long page crawls back to the top. */

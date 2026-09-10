@@ -95,6 +95,13 @@ window.GROUPS.forEach(g => g.topics.forEach(t => { t.group = g.name; t.groupId =
 
 /* Data files call this when they load. */
 window.TOPIC_DATA = {};
+/* Cheatsheets live in their own bundles (js/data/cheatsheets-*.js) and are
+   fetched only when a cheatsheet route is opened. */
+window.SHEETS = {};
+window.registerSheet = function (id, sections) {
+  window.SHEETS[id] = sections;
+};
+
 window.registerTopic = function (id, questions) {
   window.TOPIC_DATA[id] = questions;
   document.dispatchEvent(new CustomEvent("topic:loaded", { detail: { id } }));
@@ -107,3 +114,20 @@ window.appendTopic = function (id, questions) {
   window.TOPIC_DATA[id] = (window.TOPIC_DATA[id] || []).concat(questions);
   document.dispatchEvent(new CustomEvent("topic:loaded", { detail: { id } }));
 };
+
+/* Cheatsheet bundles -> the topics each one registers. */
+window.SHEET_BUNDLES = [
+  { file: "cheatsheets-java.js",
+    topics: ["java-basics","java-oop","java-collections","java-concurrency","java-8","java-versions","jvm"] },
+  { file: "cheatsheets-spring.js",
+    topics: ["spring-core","spring-boot","spring-security","jpa-hibernate"] },
+  { file: "cheatsheets-platform.js",
+    topics: ["rest-api","graphql","kafka","microservices","system-design","design-patterns"] },
+  { file: "cheatsheets-data-devops.js",
+    topics: ["sql","postgresql","docker","kubernetes","cicd","testing"] },
+  { file: "cheatsheets-frontend-coding.js",
+    topics: ["angular","react","typescript","dsa","hr"] },
+  { file: "cheatsheets-coding.js",
+    topics: ["coding-basics","coding-arrays","coding-linked-list","coding-stack-queue",
+             "coding-trees","coding-graphs","coding-dp","coding-greedy","algorithms"] }
+];

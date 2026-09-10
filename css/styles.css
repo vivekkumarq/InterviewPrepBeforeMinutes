@@ -540,6 +540,126 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
 .mark-btn:hover{color:var(--good);border-color:var(--good)}
 .mark-btn.done{background:rgba(16,185,129,.12);color:var(--good);border-color:var(--good)}
 
+/* ---------- per-topic identity ----------
+   Each topic gets a solid, technology-coloured band with its motif drawn
+   large inside it. The band is opaque so it reads as a real header; the motif
+   stays inside the band rather than behind the body text, which keeps the
+   answers at full contrast. */
+.topic-banner{
+  position:relative;overflow:hidden;
+  display:flex;align-items:center;
+  min-height:132px;margin:0 0 20px;padding:24px 26px;
+  border-radius:18px;border:1px solid var(--border);
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--accent) 26%, var(--panel)) 0%,
+      color-mix(in srgb, var(--accent) 10%, var(--panel)) 48%,
+      var(--panel) 100%);
+  animation:rise .42s cubic-bezier(.22,1,.36,1) both;
+}
+/* A hairline of the topic colour, so the band is unmistakably "this stack". */
+.topic-banner::before{
+  content:"";position:absolute;inset:0 auto 0 0;width:5px;
+  background:linear-gradient(180deg,var(--accent),transparent);
+}
+.tb-art{
+  position:absolute;right:-14px;top:50%;transform:translateY(-50%);
+  color:var(--accent);opacity:.22;pointer-events:none;
+}
+.banner-motif{width:168px;height:168px;stroke-width:1.1}
+[data-theme="dark"] .tb-art{opacity:.3}
+.tb-copy{position:relative;z-index:1;max-width:min(72%,760px)}
+.tb-copy h1{
+  margin:0 0 7px;font-size:clamp(23px,3.2vw,33px);font-weight:800;
+  letter-spacing:-1px;display:flex;flex-wrap:wrap;align-items:center;gap:11px;
+}
+.tb-icon{font-size:1.05em}
+.tb-copy .blurb{margin:0;font-size:13.6px;color:var(--text-dim);line-height:1.62}
+.tb-sheet{
+  display:inline-flex;align-items:center;gap:6px;margin-top:13px;
+  padding:8px 15px;border-radius:999px;
+  background:var(--accent);color:#fff;
+  font-size:12.5px;font-weight:700;letter-spacing:.2px;
+  text-decoration:none;box-shadow:0 6px 18px -8px var(--accent);
+  transition:transform .22s cubic-bezier(.34,1.4,.64,1), box-shadow .22s;
+}
+.tb-sheet:hover{transform:translateY(-2px);text-decoration:none;box-shadow:0 10px 22px -8px var(--accent)}
+.tb-sheet:active{transform:translateY(0)}
+
+/* ---------- cheatsheets ---------- */
+.cs-hero h1{font-size:clamp(28px,4vw,40px)}
+.cs-kicker{
+  display:inline-block;margin-bottom:8px;padding:3px 10px;border-radius:999px;
+  background:var(--accent);color:#fff;
+  font-size:10px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;
+}
+.cs-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));
+  gap:15px;align-items:start;
+}
+.cs-card{
+  border:1px solid var(--border);border-radius:15px;background:var(--panel);
+  padding:17px 19px 19px;box-shadow:var(--shadow);
+  content-visibility:auto;contain-intrinsic-size:280px;
+  animation:rise .4s ease both;
+  transition:border-color .22s ease, box-shadow .22s ease, transform .22s ease;
+}
+.cs-card:hover{border-color:var(--accent);box-shadow:var(--shadow-lg);transform:translateY(-2px)}
+.cs-card h2{
+  margin:0 0 12px;padding-bottom:9px;border-bottom:1px solid var(--border);
+  font-size:12px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;
+  color:var(--accent);
+}
+.cs-card table{width:100%;border-collapse:collapse;font-size:13px;display:block;overflow-x:auto}
+.cs-card th,.cs-card td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+.cs-card th{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--text-mute);font-weight:700}
+.cs-card td{color:var(--text-dim);line-height:1.55}
+.cs-card tr:last-child td{border-bottom:none}
+.cs-card ul{margin:0;padding-left:19px;font-size:13.4px;color:var(--text-dim);line-height:1.72}
+.cs-card li{margin:5px 0}
+.cs-card li::marker{color:var(--accent)}
+.cs-card pre{
+  margin:0;padding:13px 14px;border-radius:10px;overflow-x:auto;
+  background:var(--code-bg);border:1px solid var(--border);
+}
+.cs-card pre code{font-family:var(--mono);font-size:12.1px;line-height:1.65;color:var(--code-text)}
+.cs-card pre[data-lang]::before{
+  content:attr(data-lang);display:block;margin:-4px 0 8px;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--text-mute);
+}
+.cs-quote{
+  margin:0;padding:11px 15px;border-left:3px solid var(--accent);
+  border-radius:0 9px 9px 0;background:var(--accent-soft);
+  font-size:13.4px;line-height:1.68;color:var(--text-dim);font-style:italic;
+}
+.cs-card code{
+  font-family:var(--mono);font-size:.9em;padding:1px 5px;border-radius:5px;
+  background:var(--bg-soft);color:var(--code-text);
+}
+.cs-card pre code{background:none;padding:0}
+.cs-nav{
+  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  margin-top:22px;padding-top:18px;border-top:1px solid var(--border);
+}
+.cs-nav a{
+  padding:10px 15px;border-radius:11px;border:1px solid var(--border);
+  background:var(--panel);color:var(--text-dim);font-size:13px;font-weight:600;
+  text-decoration:none;transition:.2s ease;
+}
+.cs-nav a:hover{color:var(--accent);border-color:var(--accent);text-decoration:none;transform:translateY(-2px)}
+
+/* Cheatsheet index tiles carry their topic's colour */
+.cs-tile{position:relative;overflow:hidden;border-top:3px solid var(--tint)}
+.cs-tile:hover{border-color:var(--tint);border-top-color:var(--tint)}
+.cs-tile-art{
+  position:absolute;right:-10px;bottom:-14px;color:var(--tint);opacity:.13;
+  pointer-events:none;transition:transform .35s cubic-bezier(.22,1,.36,1), opacity .35s;
+}
+.tile-motif{width:96px;height:96px;stroke-width:1.2}
+.cs-tile:hover .cs-tile-art{transform:scale(1.12) rotate(-6deg);opacity:.2}
+.cs-tile .tc-go{color:var(--tint)}
+
 /* ---------- company pages ---------- */
 .nav-special{
   display:flex;align-items:center;gap:9px;
@@ -577,6 +697,8 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
   background:var(--accent-soft);color:var(--accent);
 }
 .co-chip.co-all{border-style:dashed;color:var(--accent)}
+.cs-chip{border-left:3px solid var(--tint)}
+.cs-chip:hover{color:var(--tint);border-color:var(--tint);border-left-color:var(--tint)}
 
 .company-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(212px,100%),1fr));gap:13px}
 .ccard{
@@ -729,6 +851,19 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
   /* iOS Safari zooms the page when a focused input is under 16px */
   .search-wrap input,.filter-in,.firm-select{font-size:16px}
 
+  /* Banner shrinks and the motif steps back so the copy stays readable */
+  .topic-banner{min-height:0;padding:18px;border-radius:15px}
+  .tb-copy{max-width:100%}
+  .banner-motif{width:112px;height:112px}
+  .tb-art{right:-24px;opacity:.15}
+  [data-theme="dark"] .tb-art{opacity:.2}
+  .cs-grid{grid-template-columns:1fr;gap:12px}
+  .cs-card{padding:15px 15px 17px}
+  .cs-card pre code{font-size:11.6px}
+  .cs-card table{font-size:12.4px}
+  .cs-nav{flex-direction:column}
+  .cs-nav a{text-align:center}
+
   /* Comfortable tap targets */
   .mark-btn{padding:8px 14px;font-size:12px}
   .tool-btn{padding:10px 13px}
@@ -756,6 +891,10 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
   .count-tag{flex:1 1 100%}
   .tool-btn{flex:1}
 
+  .topic-banner{padding:16px 15px}
+  .tb-art{display:none}          /* below this width the motif crowds the text */
+  .tb-copy h1{gap:8px}
+  .tb-sheet{width:100%;justify-content:center}
   .answer{font-size:14px;padding-right:14px}
   .answer pre{padding:13px 12px;border-radius:9px}
   .answer pre code{font-size:12px}
