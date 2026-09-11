@@ -776,6 +776,65 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
   html{scroll-behavior:auto}
 }
 
+/* ---------- interaction polish ----------
+   Everything here is transform/opacity only, so it stays on the compositor
+   and never triggers layout during a scroll. */
+
+/* Views fade in on navigation instead of snapping */
+.view{animation:view-in .3s cubic-bezier(.22,1,.36,1) both}
+@keyframes view-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* Question cards lift on hover and press in on click */
+.qcard{transition:border-color .22s ease, box-shadow .22s ease, transform .22s cubic-bezier(.34,1.4,.64,1)}
+.qcard:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.qcard:has(.qhead:active){transform:translateY(0) scale(.995)}
+.qcard.open{border-color:var(--accent)}
+/* The number badge fills with the topic colour once the card is open */
+.qcard.open .qnum{background:var(--accent);color:#fff;border-color:var(--accent)}
+.qnum{transition:background .25s ease, color .25s ease, border-color .25s ease}
+.qchev{transition:transform .28s cubic-bezier(.34,1.4,.64,1)}
+.qcard.open .qchev{transform:rotate(180deg)}
+
+/* Topic cards on the home grid */
+.tcard{transition:transform .26s cubic-bezier(.34,1.4,.64,1), box-shadow .26s ease, border-color .26s ease}
+.tcard:hover{transform:translateY(-4px)}
+.tcard:active{transform:translateY(-1px)}
+
+/* Buttons acknowledge the press */
+.tool-btn,.seg button,.mark-btn,.ghost-btn{transition:.18s ease}
+.tool-btn:active,.seg button:active,.mark-btn:active{transform:scale(.96)}
+
+/* A revised card recedes, so what is left to do stands out */
+.qcard:has(.mark-btn.done) .qnum{background:var(--good);border-color:var(--good);color:#fff}
+.qcard:has(.mark-btn.done):not(.open) .qtext{opacity:.62}
+
+/* Sidebar links slide toward their content */
+.nav-link{transition:color .18s ease, background .18s ease, padding-left .18s ease}
+.nav-link:hover{padding-left:18px}
+
+/* Focus rings for keyboard users only — no rings on mouse clicks */
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.qhead:focus-visible{outline-offset:-2px}
+
+/* Copy button on every code block, revealed on hover */
+.answer pre,.cs-card pre{position:relative}
+.copy-btn{
+  position:absolute;top:8px;right:8px;
+  padding:5px 10px;border-radius:7px;cursor:pointer;
+  border:1px solid var(--border);background:var(--panel);color:var(--text-mute);
+  font-family:var(--sans);font-size:10.5px;font-weight:700;letter-spacing:.5px;
+  opacity:0;transform:translateY(-3px);transition:.18s ease;
+}
+pre:hover .copy-btn,.copy-btn:focus-visible{opacity:1;transform:none}
+.copy-btn:hover{color:var(--accent);border-color:var(--accent)}
+.copy-btn.done{color:var(--good);border-color:var(--good);opacity:1;transform:none}
+
+/* Anything that animates in should not do so for people who asked it not to */
+@media (prefers-reduced-motion:reduce){
+  .view,.qcard,.tcard,.cs-card,.topic-banner{animation:none!important}
+  *,*::before,*::after{transition-duration:.01ms!important}
+}
+
 /* ---------- responsive ----------
    Breakpoints: 1000 trims the brand, 900 collapses the type button to an icon,
    860 turns the sidebar into a drawer, 640 turns the type panel into a bottom

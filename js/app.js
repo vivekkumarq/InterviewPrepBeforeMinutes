@@ -747,6 +747,49 @@
       "</div></div></article>";
   }
 
+  /* Adds a copy button to every code block under `root`. Uses the async
+     clipboard API where available and falls back to a hidden textarea, since
+     the modern API needs a secure context. */
+  function wireCopyButtons(root) {
+    root.querySelectorAll("pre").forEach(function (pre) {
+      if (pre.querySelector(".copy-btn")) return;
+      var code = pre.querySelector("code");
+      if (!code) return;
+      var btn = document.createElement("button");
+      btn.className = "copy-btn";
+      btn.type = "button";
+      btn.textContent = "Copy";
+      btn.setAttribute("aria-label", "Copy code to clipboard");
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        copyText(code.textContent, function (okFlag) {
+          btn.textContent = okFlag ? "Copied" : "Failed";
+          btn.classList.toggle("done", okFlag);
+          setTimeout(function () { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1400);
+        });
+      });
+      pre.appendChild(btn);
+    });
+  }
+
+  function copyText(text, done) {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+      return;
+    }
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      var okFlag = document.execCommand("copy");
+      document.body.removeChild(ta);
+      done(okFlag);
+    } catch (e) { done(false); }
+  }
+
   function wireCards(root) {
     root.querySelectorAll(".qhead").forEach(function (h) {
       h.addEventListener("click", function () {
@@ -792,6 +835,7 @@
       return cardHtml(id, r.idx, r.q, n, state.filter);
     }).join("");
     wireCards(list);
+    wireCopyButtons(list);
   }
 
   /* ---------------- cheatsheets ----------------
@@ -860,6 +904,7 @@
         "</header>" +
         '<div class="cs-grid">' + sections.map(sheetSectionHtml).join("") + "</div>" +
         sheetNav(id);
+      wireCopyButtons(view);
     });
   }
 
@@ -1058,6 +1103,7 @@
     });
     list.innerHTML = html;
     wireCards(list);
+    wireCopyButtons(list);
   }
 
   /* Shared by the topic and company toolbars. */
