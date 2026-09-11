@@ -48,10 +48,12 @@ for (const name of files) {
     if (trimmed.startsWith("//") || trimmed.startsWith("#")) {
       // Strip the legitimate closing backtick that ends an answer literal.
       const body = line.replace(/<\/code><\/pre>`\s*[,;]?\s*$/, "");
-      const ticks = (body.match(/`/g) || []).length;
-      if (ticks === 1) {
+      // ANY unescaped backtick inside an answer literal breaks it — a pair is
+      // no safer than a lone one, it just moves where Node reports the error.
+      const ticks = (body.match(/(?<!\\)`/g) || []).length;
+      if (ticks >= 1) {
         backticks++;
-        console.log(`  ERROR  ${name}:${i + 1} lone backtick in a code comment closes the template literal: ${trimmed.slice(0, 70)}`);
+        console.log(`  ERROR  ${name}:${i + 1} backtick in a code comment closes the template literal: ${trimmed.slice(0, 70)}`);
       }
     }
   });

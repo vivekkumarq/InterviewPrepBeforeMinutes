@@ -1,38 +1,45 @@
 appendTopic("java-collections", [
 {
-  q: "How does ConcurrentHashMap achieve thread safety without locking the whole map?",
-  level: "advanced", hot: true, tags: ["collections", "concurrency", "internals"],
-  companies: ["Amazon", "Oracle", "Goldman Sachs", "SAP", "Flipkart", "Barclays", "Optum"],
+  q: "Which specialised collections are worth knowing beyond List, Set and Map?",
+  level: "advanced", tags: ["collections", "performance", "design"],
+  companies: ["Amazon", "Oracle", "SAP", "Goldman Sachs", "Optum", "EPAM", "Flipkart"],
   a: `<table>
-<tr><th></th><th>Java 7</th><th>Java 8+</th></tr>
-<tr><td>Strategy</td><td>16 <strong>segments</strong>, each with its own lock</td><td><strong>Per-bucket</strong> CAS + <code>synchronized</code> on the first node</td></tr>
-<tr><td>Max concurrency</td><td>The segment count</td><td>Effectively the bucket count</td></tr>
-<tr><td>Write into an empty bucket</td><td>Take the segment lock</td><td><strong>Lock-free CAS</strong></td></tr>
-<tr><td><code>size()</code></td><td>Lock everything, or retry</td><td>Striped counters summed, like <code>LongAdder</code></td></tr>
+<tr><th>Collection</th><th>Use for</th><th>Why not the obvious one</th></tr>
+<tr><td><strong><code>EnumMap</code></strong></td><td>Keys are an enum</td><td>Backed by an <strong>array indexed by ordinal</strong> — no hashing, no collisions, tiny and fast</td></tr>
+<tr><td><code>EnumSet</code></td><td>A set of enum values</td><td>A <strong>bit vector</strong>. A set of 64 constants fits in one <code>long</code>.</td></tr>
+<tr><td><code>ArrayDeque</code></td><td>Stack or queue</td><td>Faster than both <code>Stack</code> and <code>LinkedList</code>; circular array, no per-node allocation</td></tr>
+<tr><td><code>IdentityHashMap</code></td><td>Keys compared by <code>==</code></td><td>Needed when equal-but-distinct objects must stay distinct — serialisation graphs, object mapping</td></tr>
+<tr><td><code>WeakHashMap</code></td><td>Entries that may be collected</td><td>Keys are weak references, so a cache does not pin objects in memory</td></tr>
+<tr><td><code>LinkedHashMap</code> (access order)</td><td><strong>An LRU cache in four lines</strong></td><td>Override <code>removeEldestEntry</code> and you are done</td></tr>
+<tr><td><code>BitSet</code></td><td>Millions of boolean flags</td><td>1 bit each, not 1 byte — and it does set operations natively</td></tr>
+<tr><td><code>PriorityQueue</code></td><td>Always the min or max</td><td>O(1) peek; a sorted list costs O(n) per insert</td></tr>
 </table>
-<pre><code>// Writing into an EMPTY bucket costs no lock at all:
-if (tab[i] == null &amp;&amp; casTabAt(tab, i, null, newNode)) break;
+<pre><code>// An LRU cache, using what is already in the JDK
+Map&lt;K, V&gt; lru = new LinkedHashMap&lt;&gt;(capacity, 0.75f, true) {   // true = ACCESS order
+    @Override protected boolean removeEldestEntry(Map.Entry&lt;K, V&gt; e) {
+        return size() &gt; capacity;
+    }
+};
+// Wrap it with Collections.synchronizedMap for concurrent use — or use
+// Caffeine, which is what you would actually ship.</code></pre>
+<pre><code>// EnumMap vs HashMap — not a micro-optimisation
+enum Status { PENDING, PAID, SHIPPED, DELIVERED }
 
-// Only a COLLISION takes a lock, and only on that one bucket:
-synchronized (firstNodeInBucket) { /* append or update */ }
+Map&lt;Status, Integer&gt; counts = new EnumMap&lt;&gt;(Status.class);
+// Internally: new int[Status.values().length], indexed by ordinal().
+// No hashCode call, no collision handling, no Entry objects, and iteration
+// comes out in DECLARATION order for free.
 
-// So N threads hitting N different buckets never contend.</code></pre>
-<pre><code>// The atomic compound operations — the real reason to choose it
-map.putIfAbsent(k, v);
-map.computeIfAbsent(k, key -&gt; expensive(key));   // computed ONCE per key
-map.merge(k, 1, Integer::sum);                    // the counter idiom
-map.compute(k, (key, old) -&gt; old == null ? 1 : old + 1);
-
-// ✗ NOT atomic even on a ConcurrentHashMap — two calls, a race in between
-if (!map.containsKey(k)) map.put(k, v);</code></pre>
+EnumSet&lt;Status&gt; open = EnumSet.of(PENDING, PAID);
+EnumSet&lt;Status&gt; closed = EnumSet.complementOf(open);    // set algebra, on bits</code></pre>
 <table>
-<tr><th>Gotcha</th><th>Detail</th></tr>
-<tr><td><strong>No null keys or values</strong></td><td>Unlike <code>HashMap</code>. A null from <code>get</code> would be ambiguous under concurrency — absent, or present-and-null?</td></tr>
-<tr><td>Iteration is <strong>weakly consistent</strong></td><td>Never throws CME, but may or may not reflect concurrent writes</td></tr>
-<tr><td><code>size()</code> is an estimate</td><td>Exact only at a quiescent moment — never branch on it</td></tr>
-<tr><td><code>computeIfAbsent</code> holds the bucket lock</td><td>A slow or recursive mapping function can deadlock that bucket</td></tr>
+<tr><th>Immutable factories</th><th>Behaviour</th></tr>
+<tr><td><code>List.of</code>, <code>Set.of</code>, <code>Map.of</code></td><td>Truly immutable; <strong>reject nulls</strong>; <code>Set.of</code>/<code>Map.of</code> throw on duplicate keys</td></tr>
+<tr><td><code>List.copyOf(x)</code></td><td>An immutable snapshot — the defensive-copy idiom</td></tr>
+<tr><td><code>Collections.unmodifiableList(x)</code></td><td>A <strong>view</strong>, not a copy — the underlying list can still change beneath it</td></tr>
+<tr><td><code>Arrays.asList(x)</code></td><td>Fixed size but <em>mutable</em>, and writes through to the array</td></tr>
 </table>
-<p><strong>Versus the alternatives:</strong> <code>Collections.synchronizedMap</code> wraps every method in one lock — correct, but a single contention point, and compound operations still need external synchronisation. <code>Hashtable</code> is the same idea from 1998. <code>ConcurrentHashMap</code> is the only one where uncontended writes are genuinely parallel.</p>`
+<p><strong>The point to make:</strong> "<code>HashMap</code> and <code>ArrayList</code> are right most of the time, and I would not swap them without a reason. But when the key is an enum, <code>EnumMap</code> is strictly better on every axis — smaller, faster, ordered — so there is no trade-off to weigh. Knowing the handful of cases like that is worth more than micro-tuning the common ones."</p>`
 },
 {
   q: "When would you choose an array over a collection, and what are the gotchas?",

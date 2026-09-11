@@ -25,6 +25,8 @@ Every topic ships a **Beginner** and an **Advanced** track, so you can start fro
 
 ## Features
 
+- **Cheatsheets** — a condensed recall screen for every topic: the tables, syntax, commands and rules worth glancing at in the last fifteen minutes. Reachable from the sidebar, the home page, or a button on any topic.
+- **Per-technology theming** — each stack has its own accent colour and an inline SVG motif drawn from the technology itself, shown in a solid banner on its topic and cheatsheet pages.
 - **Beginner / Advanced toggle** on every topic
 - **Coding & Algorithms corner** — the problems that actually come up, from warm-up rounds to hard graph and DP questions, each with the pattern, the complexity and the edge cases named
 - **Prepare by company** — pick the company you are interviewing at and get every question recorded as asked there, pulled together from all topics, grouped in reading order with a *most asked only* filter. Also reachable by typing a company name into search, or by clicking any **Asked at** chip on an answer.
@@ -34,7 +36,8 @@ Every topic ships a **Beginner** and an **Advanced** track, so you can start fro
 - **Dark and light mode**, following your system preference by default
 - **Inline SVG diagrams** — JVM memory layout, HashMap internals, Kafka partitions, the Spring Security filter chain, saga compensation, the event loop and more
 - **Runnable code examples** in Java, SQL, YAML, TypeScript and Bash
-- **Progress tracking** — mark questions as revised; progress is saved in your browser
+- **Copy button** on every code block
+- **Progress tracking** — mark questions as revised; progress is saved in your browser, and revised cards recede so what is left stands out
 - **Version-by-version Java coverage** — what Java 8, 11, 17, 21 and 25 each added, and what an upgrade from 8 actually breaks
 - **Fully responsive** — a bottom-sheet type picker and horizontally scrollable diagrams on phones, a drawer sidebar on tablets, the full layout on desktop
 - **100% client-side** — no build step, no backend, no dependencies
@@ -46,12 +49,22 @@ Plain HTML, CSS and vanilla JavaScript. No framework, no bundler, no `npm instal
 ```
 index.html          # app shell
 css/styles.css      # theming, layout, animations
-js/topics.js        # topic registry, groups and part counts
-js/app.js           # router, search, company index, typography, progress, theme
-js/data/*.js        # content, split into parts per topic
+js/topics.js        # topic registry, groups, part counts, cheatsheet bundles
+js/motifs.js        # per-topic accent colours and inline SVG motifs
+js/app.js           # router, search, company index, cheatsheets, typography, theme
+js/data/*.js        # questions, split into parts per topic
+js/data/cheatsheets-*.js   # cheatsheet content, bundled and lazily loaded
+tools/check-data.js # content checks that `node --check` cannot make
 ```
 
-Routes are hash-based: `#/` home, `#/topic/<id>`, `#/companies`, `#/company/<slug>`.
+Run `node tools/check-data.js` before committing content. It catches an
+unescaped `${...}` in an answer, a stray backtick in a code comment, markdown
+in a plain-text field, and stray non-Latin characters — each of which is valid
+JavaScript that breaks at runtime or renders wrongly. `--fix` escapes the
+interpolations.
+
+Routes are hash-based: `#/` home, `#/topic/<id>`, `#/cheatsheets`,
+`#/cheatsheet/<id>`, `#/companies`, `#/company/<slug>`.
 The company pages are derived at runtime from the `companies` array on each
 question — there is no second copy of that data to keep in sync.
 
