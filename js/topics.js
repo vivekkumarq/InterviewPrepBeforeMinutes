@@ -6,19 +6,19 @@ window.GROUPS = [
       { id: "java-basics", parts: 5,       name: "Java Fundamentals",  icon: "☕", blurb: "Language basics, memory model of objects, strings, exceptions — the questions every Java round opens with." },
       { id: "java-oop", parts: 5,          name: "OOP & Design",       icon: "🧩", blurb: "Encapsulation, inheritance, polymorphism, abstraction, SOLID and the classic trick questions around them." },
       { id: "java-collections", parts: 5,  name: "Collections Framework", icon: "📦", blurb: "List, Set, Map, internal working of HashMap, ConcurrentHashMap, comparators and complexity." },
-      { id: "java-concurrency", parts: 5,  name: "Multithreading & Concurrency", icon: "🧵", blurb: "Threads, executors, locks, volatile, CompletableFuture, deadlocks and the Java Memory Model." },
+      { id: "java-concurrency", parts: 6,  name: "Multithreading & Concurrency", icon: "🧵", blurb: "Threads, executors, locks, volatile, CompletableFuture, deadlocks and the Java Memory Model." },
       { id: "java-8", parts: 6,            name: "Java 8+ & Streams",  icon: "🌊", blurb: "Lambdas, functional interfaces, Streams, Optional, and what landed in Java 9–21." },
-      { id: "java-versions", parts: 2,     name: "Java Versions & Features", icon: "🏷️", blurb: "What each release actually added — Java 8, 11, 17, 21 and 25 — records, sealed classes, text blocks, var, virtual threads, and what an upgrade from 8 really breaks." },
-      { id: "jvm", parts: 6,               name: "JVM & Garbage Collection", icon: "⚙️", blurb: "Class loading, runtime memory areas, GC algorithms, tuning flags and OutOfMemoryError debugging." }
+      { id: "java-versions", parts: 3,     name: "Java Versions & Features", icon: "🏷️", blurb: "What each release actually added — Java 8, 11, 17, 21 and 25 — records, sealed classes, text blocks, var, virtual threads, and what an upgrade from 8 really breaks." },
+      { id: "jvm", parts: 7,               name: "JVM & Garbage Collection", icon: "⚙️", blurb: "Class loading, runtime memory areas, GC algorithms, tuning flags and OutOfMemoryError debugging." }
     ]
   },
   {
     id: "spring", name: "Spring Ecosystem", icon: "🍃",
     topics: [
       { id: "spring-core", parts: 5,   name: "Spring Framework",   icon: "🍃", blurb: "IoC container, dependency injection, bean scopes, lifecycle, AOP and proxies." },
-      { id: "spring-boot", parts: 5,   name: "Spring Boot",        icon: "🚀", blurb: "Auto-configuration, starters, profiles, actuator, configuration properties and exception handling." },
+      { id: "spring-boot", parts: 6,   name: "Spring Boot",        icon: "🚀", blurb: "Auto-configuration, starters, profiles, actuator, configuration properties and exception handling." },
       { id: "spring-security", parts: 6, name: "Spring Security & Auth", icon: "🔐", blurb: "Filter chain, authentication vs authorization, JWT, OAuth2, Keycloak, CORS and CSRF." },
-      { id: "jpa-hibernate", parts: 5, name: "JPA & Hibernate",    icon: "🗄️", blurb: "Entity lifecycle, fetch strategies, N+1, caching, locking and transaction propagation." }
+      { id: "jpa-hibernate", parts: 6, name: "JPA & Hibernate",    icon: "🗄️", blurb: "Entity lifecycle, fetch strategies, N+1, caching, locking and transaction propagation." }
     ]
   },
   {
@@ -32,15 +32,15 @@ window.GROUPS = [
   {
     id: "arch", name: "Architecture & Design", icon: "🏛️",
     topics: [
-      { id: "microservices", parts: 6,   name: "Microservices",       icon: "🧱", blurb: "Decomposition, service discovery, resilience, saga, outbox, idempotency and observability." },
-      { id: "system-design", parts: 6,   name: "System Design (HLD)", icon: "🏛️", blurb: "Scaling, caching, load balancing, CAP, sharding, rate limiting and end-to-end design walkthroughs." },
+      { id: "microservices", parts: 7,   name: "Microservices",       icon: "🧱", blurb: "Decomposition, service discovery, resilience, saga, outbox, idempotency and observability." },
+      { id: "system-design", parts: 7,   name: "System Design (HLD)", icon: "🏛️", blurb: "Scaling, caching, load balancing, CAP, sharding, rate limiting and end-to-end design walkthroughs." },
       { id: "design-patterns", parts: 6, name: "Design Patterns & LLD", icon: "📐", blurb: "Creational, structural and behavioural patterns with the Java code interviewers expect on the board." }
     ]
   },
   {
     id: "data", name: "Databases", icon: "🗃️",
     topics: [
-      { id: "sql", parts: 5,        name: "SQL & Query Tuning", icon: "🗃️", blurb: "Joins, aggregates, window functions, indexes, execution plans and the classic query puzzles." },
+      { id: "sql", parts: 6,        name: "SQL & Query Tuning", icon: "🗃️", blurb: "Joins, aggregates, window functions, indexes, execution plans and the classic query puzzles." },
       { id: "postgresql", parts: 6, name: "PostgreSQL",         icon: "🐘", blurb: "MVCC, isolation levels, index types, VACUUM, partitioning, JSONB and locking." }
     ]
   },
@@ -48,7 +48,7 @@ window.GROUPS = [
     id: "devops", name: "DevOps & Cloud", icon: "🐳",
     topics: [
       { id: "docker", parts: 6,     name: "Docker",         icon: "🐳", blurb: "Images vs containers, layers, multi-stage builds, networking, volumes and Compose." },
-      { id: "kubernetes", parts: 6, name: "Kubernetes",     icon: "☸️", blurb: "Pods, deployments, services, ingress, config, probes, HPA and rollout strategies." },
+      { id: "kubernetes", parts: 7, name: "Kubernetes",     icon: "☸️", blurb: "Pods, deployments, services, ingress, config, probes, HPA and rollout strategies." },
       { id: "cicd", parts: 6,       name: "CI/CD & Git",    icon: "🔁", blurb: "Pipelines, GitLab CI, Jenkins, GitHub Actions, branching strategies and deployment patterns." }
     ]
   },
