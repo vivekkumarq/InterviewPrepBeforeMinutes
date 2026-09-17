@@ -33,7 +33,7 @@ window.GROUPS = [
     id: "arch", name: "Architecture & Design", icon: "🏛️",
     topics: [
       { id: "microservices", parts: 6,   name: "Microservices",       icon: "🧱", blurb: "Decomposition, service discovery, resilience, saga, outbox, idempotency and observability." },
-      { id: "system-design", parts: 5,   name: "System Design (HLD)", icon: "🏛️", blurb: "Scaling, caching, load balancing, CAP, sharding, rate limiting and end-to-end design walkthroughs." },
+      { id: "system-design", parts: 6,   name: "System Design (HLD)", icon: "🏛️", blurb: "Scaling, caching, load balancing, CAP, sharding, rate limiting and end-to-end design walkthroughs." },
       { id: "design-patterns", parts: 6, name: "Design Patterns & LLD", icon: "📐", blurb: "Creational, structural and behavioural patterns with the Java code interviewers expect on the board." }
     ]
   },
@@ -69,21 +69,21 @@ window.GROUPS = [
   {
     id: "coding", name: "Coding & Algorithms", icon: "💻",
     topics: [
-      { id: "coding-basics", parts: 2,      name: "Coding Round Basics",   icon: "✍️", blurb: "The warm-up problems every service-company round opens with — reverse, palindrome, prime, Fibonacci, duplicates, patterns — solved without shortcuts." },
-      { id: "coding-arrays", parts: 2,      name: "Arrays & Strings",      icon: "🔢", blurb: "Two pointers, sliding window, prefix sums, Kadane, Dutch national flag and the array problems asked most often." },
-      { id: "coding-linked-list", parts: 2, name: "Linked Lists",          icon: "⛓️", blurb: "Reversal, cycle detection, merge, middle node, LRU cache — the pointer manipulation interviewers love." },
-      { id: "coding-stack-queue", parts: 2, name: "Stacks & Queues",       icon: "🥞", blurb: "Balanced brackets, min stack, next greater element, monotonic stacks, sliding-window maximum and expression evaluation." },
-      { id: "coding-trees", parts: 2,       name: "Trees & BST",           icon: "🌳", blurb: "Traversals, height and diameter, lowest common ancestor, BST validation, serialisation and level-order patterns." },
-      { id: "coding-graphs", parts: 2,      name: "Graphs & Grids",        icon: "🕸️", blurb: "BFS, DFS, topological sort, union-find, shortest paths, islands and the grid problems built on them." },
-      { id: "coding-dp", parts: 2,          name: "Dynamic Programming",   icon: "🧮", blurb: "Knapsack, LIS, LCS, edit distance, coin change, stocks and matrix DP — with the state and recurrence spelled out." },
-      { id: "coding-greedy", parts: 2,      name: "Greedy, Intervals & Heaps", icon: "🎯", blurb: "Activity selection, meeting rooms, merge intervals, job scheduling, top-K and when greedy is provably correct." },
-      { id: "algorithms", parts: 2,         name: "Must-Know Algorithms",  icon: "🧭", blurb: "Sorting, binary search variants, Dijkstra, Kruskal, KMP, Floyd cycle, quickselect, bit tricks and their complexities." }
+      { id: "coding-basics", parts: 3,      name: "Coding Round Basics",   icon: "✍️", blurb: "The warm-up problems every service-company round opens with — reverse, palindrome, prime, Fibonacci, duplicates, patterns — solved without shortcuts." },
+      { id: "coding-arrays", parts: 3,      name: "Arrays & Strings",      icon: "🔢", blurb: "Two pointers, sliding window, prefix sums, Kadane, Dutch national flag and the array problems asked most often." },
+      { id: "coding-linked-list", parts: 3, name: "Linked Lists",          icon: "⛓️", blurb: "Reversal, cycle detection, merge, middle node, LRU cache — the pointer manipulation interviewers love." },
+      { id: "coding-stack-queue", parts: 3, name: "Stacks & Queues",       icon: "🥞", blurb: "Balanced brackets, min stack, next greater element, monotonic stacks, sliding-window maximum and expression evaluation." },
+      { id: "coding-trees", parts: 3,       name: "Trees & BST",           icon: "🌳", blurb: "Traversals, height and diameter, lowest common ancestor, BST validation, serialisation and level-order patterns." },
+      { id: "coding-graphs", parts: 3,      name: "Graphs & Grids",        icon: "🕸️", blurb: "BFS, DFS, topological sort, union-find, shortest paths, islands and the grid problems built on them." },
+      { id: "coding-dp", parts: 3,          name: "Dynamic Programming",   icon: "🧮", blurb: "Knapsack, LIS, LCS, edit distance, coin change, stocks and matrix DP — with the state and recurrence spelled out." },
+      { id: "coding-greedy", parts: 3,      name: "Greedy, Intervals & Heaps", icon: "🎯", blurb: "Activity selection, meeting rooms, merge intervals, job scheduling, top-K and when greedy is provably correct." },
+      { id: "algorithms", parts: 3,         name: "Must-Know Algorithms",  icon: "🧭", blurb: "Sorting, binary search variants, Dijkstra, Kruskal, KMP, Floyd cycle, quickselect, bit tricks and their complexities." }
     ]
   },
   {
     id: "cs", name: "CS Fundamentals", icon: "🧠",
     topics: [
-      { id: "dsa", parts: 6, name: "DSA & Problem Solving", icon: "🧠", blurb: "Complexity, arrays, strings, hashing, trees, graphs, DP patterns and the most-asked coding problems." },
+      { id: "dsa", parts: 7, name: "DSA & Problem Solving", icon: "🧠", blurb: "Complexity, arrays, strings, hashing, trees, graphs, DP patterns and the most-asked coding problems." },
       { id: "hr", parts: 5,  name: "HR & Behavioural",      icon: "💬", blurb: "Tell me about yourself, STAR stories, salary talk and the closing questions you should ask back." }
     ]
   }
