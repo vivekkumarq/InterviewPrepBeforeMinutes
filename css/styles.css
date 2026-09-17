@@ -53,6 +53,14 @@
 }
 
 *{box-sizing:border-box}
+
+/* The HTML `hidden` attribute hides via the USER-AGENT rule [hidden]{display:none},
+   and author styles always beat the UA origin. So any author rule that sets a
+   display value — `.fab{display:grid}`, or `.sheet-scrim{display:block}` inside a
+   media query — silently un-hides the element while JS still believes it is hidden.
+   That shipped a full-viewport backdrop over the mobile site that blurred the page
+   and swallowed every tap. Make the attribute authoritative. */
+[hidden]{display:none!important}
 html{
   scroll-behavior:smooth;
   /* Anchored cards land below the sticky header instead of under it */
