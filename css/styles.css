@@ -52,6 +52,155 @@
   color-scheme:dark;
 }
 
+/* ---------- extra palettes ----------
+   Every palette must restate --shadow, --shadow-lg and --ring: those are
+   defined on :root with LIGHT values, so a dark palette that omits them
+   inherits pale shadows and looks flat. */
+
+/* Carbon — true black, for OLED screens */
+[data-theme="carbon"]{
+  --bg:#000000;
+  --bg-elev:#0a0a0c;
+  --bg-soft:#121217;
+  --panel:#0a0a0c;
+  --border:#1c1c23;
+  --border-strong:#2d2d38;
+  --text:#eceff4;
+  --text-dim:#9aa1ae;
+  --text-mute:#6a707e;
+  --accent:#22d3ee;
+  --accent-2:#a78bfa;
+  --accent-soft:rgba(34,211,238,.14);
+  --good:#34d399;
+  --warn:#fbbf24;
+  --code-bg:#0e0e13;
+  --code-text:#d8dce6;
+  --shadow:0 1px 2px rgba(0,0,0,.6), 0 10px 30px -14px rgba(0,0,0,.9);
+  --shadow-lg:0 30px 70px -30px rgba(0,0,0,.95);
+  --ring:0 0 0 3px rgba(34,211,238,.28);
+  color-scheme:dark;
+}
+
+/* Nord — muted arctic blue */
+[data-theme="nord"]{
+  --bg:#2e3440;
+  --bg-elev:#3b4252;
+  --bg-soft:#434c5e;
+  --panel:#3b4252;
+  --border:#4c566a;
+  --border-strong:#5e6b85;
+  --text:#eceff4;
+  --text-dim:#c3cbd8;
+  --text-mute:#8d97a8;
+  --accent:#88c0d0;
+  --accent-2:#b48ead;
+  --accent-soft:rgba(136,192,208,.16);
+  --good:#a3be8c;
+  --warn:#ebcb8b;
+  --code-bg:#272c36;
+  --code-text:#d8dee9;
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 30px -14px rgba(0,0,0,.6);
+  --shadow-lg:0 30px 70px -30px rgba(0,0,0,.75);
+  --ring:0 0 0 3px rgba(136,192,208,.32);
+  color-scheme:dark;
+}
+
+/* Dracula — purple and pink */
+[data-theme="dracula"]{
+  --bg:#282a36;
+  --bg-elev:#343746;
+  --bg-soft:#3c3f51;
+  --panel:#343746;
+  --border:#44475a;
+  --border-strong:#5a5e78;
+  --text:#f8f8f2;
+  --text-dim:#c8c9d6;
+  --text-mute:#8f92a8;
+  --accent:#bd93f9;
+  --accent-2:#ff79c6;
+  --accent-soft:rgba(189,147,249,.17);
+  --good:#50fa7b;
+  --warn:#ffb86c;
+  --code-bg:#21222c;
+  --code-text:#f0f0ea;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.65);
+  --shadow-lg:0 30px 70px -30px rgba(0,0,0,.8);
+  --ring:0 0 0 3px rgba(189,147,249,.32);
+  color-scheme:dark;
+}
+
+/* Forest — deep green */
+[data-theme="forest"]{
+  --bg:#0c1512;
+  --bg-elev:#111f1a;
+  --bg-soft:#16281f;
+  --panel:#111f1a;
+  --border:#1e3329;
+  --border-strong:#2c4a3a;
+  --text:#e6f2ea;
+  --text-dim:#9fb8ab;
+  --text-mute:#6d8a7c;
+  --accent:#4ade80;
+  --accent-2:#2dd4bf;
+  --accent-soft:rgba(74,222,128,.14);
+  --good:#4ade80;
+  --warn:#fbbf24;
+  --code-bg:#0a1310;
+  --code-text:#d5e8dd;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 30px -14px rgba(0,0,0,.7);
+  --shadow-lg:0 30px 70px -30px rgba(0,0,0,.85);
+  --ring:0 0 0 3px rgba(74,222,128,.28);
+  color-scheme:dark;
+}
+
+/* Solarized — warm light, low contrast */
+[data-theme="solarized"]{
+  --bg:#fdf6e3;
+  --bg-elev:#fffbf0;
+  --bg-soft:#f4ecd8;
+  --panel:#fffbf0;
+  --border:#e8dcc0;
+  --border-strong:#d0c09c;
+  --text:#073642;
+  --text-dim:#586e75;
+  --text-mute:#778787;
+  --accent:#12658f;
+  --accent-2:#2aa198;
+  --accent-soft:rgba(18,101,143,.12);
+  --good:#6b8e00;
+  --warn:#b58900;
+  --code-bg:#f2ebd8;
+  --code-text:#073642;
+  --shadow:0 1px 2px rgba(101,86,50,.08), 0 8px 24px -12px rgba(101,86,50,.24);
+  --shadow-lg:0 24px 60px -24px rgba(101,86,50,.4);
+  --ring:0 0 0 3px rgba(18,101,143,.25);
+  color-scheme:light;
+}
+
+/* Sepia — paper, for long reading sessions */
+[data-theme="sepia"]{
+  --bg:#f3ece1;
+  --bg-elev:#fbf6ee;
+  --bg-soft:#ebe2d4;
+  --panel:#fbf6ee;
+  --border:#ded2be;
+  --border-strong:#c5b59a;
+  --text:#2f2a23;
+  --text-dim:#6b6152;
+  --text-mute:#968b78;
+  --accent:#a2542e;
+  --accent-2:#7a6a3f;
+  --accent-soft:rgba(162,84,46,.12);
+  --good:#4d7c4d;
+  --warn:#b06a1a;
+  --code-bg:#efe7da;
+  --code-text:#33302a;
+  --shadow:0 1px 2px rgba(80,62,40,.08), 0 8px 24px -12px rgba(80,62,40,.24);
+  --shadow-lg:0 24px 60px -24px rgba(80,62,40,.4);
+  --ring:0 0 0 3px rgba(162,84,46,.22);
+  color-scheme:light;
+}
+
 *{box-sizing:border-box}
 
 /* The HTML `hidden` attribute hides via the USER-AGENT rule [hidden]{display:none},
@@ -125,6 +274,29 @@ svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke
   font-family:var(--mono);font-size:10px;padding:1px 7px;border-radius:999px;
   background:var(--accent-soft);color:var(--accent);letter-spacing:0;
 }
+/* Theme swatches. Each button paints itself with its OWN palette via inline
+   custom properties, so the preview is the real thing rather than a guess. */
+.theme-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 4px 12px}
+.theme-item{
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:7px 3px 6px;border-radius:10px;cursor:pointer;
+  border:1px solid var(--border);background:var(--bg-soft);
+  color:var(--text-dim);font-family:inherit;font-size:10px;font-weight:600;
+  transition:.18s ease;
+}
+.theme-item:hover{color:var(--text);border-color:var(--border-strong);transform:translateY(-1px)}
+.theme-item.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.th-chip{
+  width:100%;height:26px;border-radius:7px;overflow:hidden;
+  display:grid;grid-template-columns:1fr 1fr;
+  border:1px solid rgba(128,128,128,.25);
+}
+.th-chip i{display:block}
+.th-chip i:first-child{background:var(--sw-bg)}
+.th-chip i:last-child{background:var(--sw-accent)}
+.theme-item.on .th-chip{box-shadow:0 0 0 1px var(--accent)}
+.th-name{line-height:1;letter-spacing:.2px}
+
 .size-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 4px 10px}
 .size-item{
   padding:8px 4px;border-radius:9px;cursor:pointer;

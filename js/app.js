@@ -6,6 +6,10 @@
   "use strict";
 
   var LS_THEME = "ipbm.theme";
+  /* The last palette chosen of each kind, so the sun/moon toggle returns you to
+     your own dark and light picks rather than the two defaults. */
+  var LS_THEME_LIGHT = "ipbm.theme.light";
+  var LS_THEME_DARK = "ipbm.theme.dark";
   var LS_DONE = "ipbm.done";
   var LS_OPEN = "ipbm.groups";
   var LS_FONT = "ipbm.font";
@@ -180,6 +184,28 @@
     { id: "xl", name: "X-Large", scale: "112.5%" }
   ];
 
+  /* ---------------- palettes ----------------
+     `dark` drives the sun/moon toggle: it flips to whichever palette of the
+     OPPOSITE kind you last chose, so picking Dracula and toggling twice brings
+     Dracula back rather than dumping you on the default.
+     `bg` and `accent` are only for the swatch preview — the real colours live
+     in css/styles.css under [data-theme="<id>"]. Keep the two in step. */
+  var THEMES = [
+    { id: "dark",      name: "Dark",      dark: true,  bg: "#0b0e14", accent: "#7c8cff" },
+    { id: "light",     name: "Light",     dark: false, bg: "#f6f7fb", accent: "#4f46e5" },
+    { id: "carbon",    name: "Carbon",    dark: true,  bg: "#000000", accent: "#22d3ee" },
+    { id: "nord",      name: "Nord",      dark: true,  bg: "#2e3440", accent: "#88c0d0" },
+    { id: "dracula",   name: "Dracula",   dark: true,  bg: "#282a36", accent: "#bd93f9" },
+    { id: "forest",    name: "Forest",    dark: true,  bg: "#0c1512", accent: "#4ade80" },
+    { id: "solarized", name: "Solarized", dark: false, bg: "#fdf6e3", accent: "#12658f" },
+    { id: "sepia",     name: "Sepia",     dark: false, bg: "#f3ece1", accent: "#a2542e" }
+  ];
+
+  function themeById(id) {
+    for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return THEMES[i];
+    return THEMES[0];
+  }
+
   var view = document.getElementById("view");
   var navTree = document.getElementById("navTree");
   var searchInput = document.getElementById("globalSearch");
@@ -210,19 +236,40 @@
   }
 
   /* ---------------- theme ---------------- */
+  function applyPalette(id, persist) {
+    var t = themeById(id);
+    document.documentElement.setAttribute("data-theme", t.id);
+    /* Colours the browser chrome on mobile — without it the address bar keeps
+       the dark colour baked into index.html under a light palette. */
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", t.bg);
+    if (persist !== false) {
+      try {
+        localStorage.setItem(LS_THEME, t.id);
+        localStorage.setItem(t.dark ? LS_THEME_DARK : LS_THEME_LIGHT, t.id);
+      } catch (e) {}
+    }
+    document.querySelectorAll(".theme-item").forEach(function (b) {
+      b.classList.toggle("on", b.dataset.theme === t.id);
+    });
+  }
+
   function initTheme() {
     var stored = null;
     try { stored = localStorage.getItem(LS_THEME); } catch (e) {}
     if (!stored) {
       stored = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
     }
-    document.documentElement.setAttribute("data-theme", stored);
+    applyPalette(stored, false);
   }
   initTheme();
+
   document.getElementById("themeToggle").addEventListener("click", function () {
-    var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", next);
-    try { localStorage.setItem(LS_THEME, next); } catch (e) {}
+    var cur = themeById(document.documentElement.getAttribute("data-theme"));
+    var key = cur.dark ? LS_THEME_LIGHT : LS_THEME_DARK;
+    var remembered = null;
+    try { remembered = localStorage.getItem(key); } catch (e) {}
+    applyPalette(remembered || (cur.dark ? "light" : "dark"));
   });
 
   /* ---------------- typography ---------------- */
@@ -267,6 +314,16 @@
     var panel = document.getElementById("fontPanel");
     panel.innerHTML =
       '<div class="fp-grab" id="fpGrab" aria-hidden="true"></div>' +
+      '<div class="tp-head">Theme <span class="tp-count">' + THEMES.length + "</span></div>" +
+      '<div class="theme-row">' +
+        THEMES.map(function (t) {
+          return '<button class="theme-item" data-theme="' + t.id + '" title="' + esc(t.name) + '"' +
+            ' style="--sw-bg:' + t.bg + ";--sw-accent:" + t.accent + '">' +
+            '<span class="th-chip" aria-hidden="true"><i></i><i></i></span>' +
+            '<span class="th-name">' + esc(t.name) + "</span>" +
+          "</button>";
+        }).join("") +
+      "</div>" +
       '<div class="tp-head">Text size</div>' +
       '<div class="size-row">' +
         SIZES.map(function (s) {
@@ -295,6 +352,9 @@
     panel.querySelectorAll(".size-item").forEach(function (b) {
       b.addEventListener("click", function () { applySize(b.dataset.size); });
     });
+    panel.querySelectorAll(".theme-item").forEach(function (b) {
+      b.addEventListener("click", function () { applyPalette(b.dataset.theme); });
+    });
     var grab = document.getElementById("fpGrab");
     if (grab) grab.addEventListener("click", function () { setFontPanel(false); });
   }
@@ -308,6 +368,8 @@
     buildTypePanel();
     applyFont(storedFont || "inter", false);
     applySize(storedSize || "m", false);
+    /* initTheme() ran before the panel existed, so nothing was marked then. */
+    applyPalette(document.documentElement.getAttribute("data-theme"), false);
   }
 
   var fontBtn = document.getElementById("fontToggle");
