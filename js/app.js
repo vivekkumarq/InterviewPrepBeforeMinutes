@@ -1388,10 +1388,16 @@
     });
   }
 
+  /* codeSearch holds exactly what was typed, so normalising happens HERE
+     rather than on the way in. Every whitespace-separated word must appear
+     somewhere in the title, in any order — so "rotate array" and "array
+     rotate" both find "Rotate an Array". */
   function codeMatches(q) {
     if (codeDiff !== "all" && q.difficulty !== codeDiff) return false;
-    if (!codeSearch) return true;
-    return q.title.toLowerCase().indexOf(codeSearch) !== -1;
+    var words = codeSearch.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length) return true;
+    var title = q.title.toLowerCase();
+    return words.every(function (w) { return title.indexOf(w) !== -1; });
   }
 
   /* ---- sidebar tree for the coding section ---- */
@@ -1434,35 +1440,47 @@
       return '<div class="code-sec">' + esc(sec.name) + "</div>" + rows;
     }).join("");
 
-    navTree.innerHTML =
-      '<a class="nav-special" href="#/"><span class="ic">←</span><span>Back to tech stacks</span></a>' +
-      '<div class="code-tools">' +
-        '<input type="search" id="codeSearch" placeholder="Search questions…" autocomplete="off" value="' +
-          esc(codeSearch) + '" />' +
-        '<div class="code-diffs">' +
-          ["all", "easy", "medium", "hard"].map(function (d) {
-            return '<button class="code-diff' + (codeDiff === d ? " on" : "") + '" data-diff="' + d + '">' +
-              d.charAt(0).toUpperCase() + d.slice(1) + "</button>";
-          }).join("") +
+    /* The tools block is rendered ONCE and never replaced. Re-rendering it
+       on every keystroke meant re-creating the search input from state,
+       which silently rewrote what you had typed — a trailing space was
+       trimmed away before you could type the next word. Only the tree
+       below it is redrawn, so the input keeps its own value and caret and
+       no focus juggling is needed. */
+    if (!document.getElementById("codeTree")) {
+      navTree.innerHTML =
+        '<a class="nav-special" href="#/"><span class="ic">←</span><span>Back to tech stacks</span></a>' +
+        '<div class="code-tools">' +
+          '<input type="search" id="codeSearch" placeholder="Search questions…" autocomplete="off" />' +
+          '<div class="code-diffs">' +
+            ["all", "easy", "medium", "hard"].map(function (d) {
+              return '<button class="code-diff' + (codeDiff === d ? " on" : "") + '" data-diff="' + d + '">' +
+                d.charAt(0).toUpperCase() + d.slice(1) + "</button>";
+            }).join("") +
+          "</div>" +
         "</div>" +
-      "</div>" + body;
+        '<div id="codeTree"></div>';
 
-    var box = document.getElementById("codeSearch");
-    if (box) {
+      var box = document.getElementById("codeSearch");
+      /* Set once, via the property rather than the attribute, so a filter
+         typed earlier survives leaving and re-entering the section. */
+      box.value = codeSearch;
       box.addEventListener("input", function () {
-        codeSearch = box.value.trim().toLowerCase();
-        var at = box.selectionStart;
+        codeSearch = this.value;        // store RAW: never write it back
         buildCodeNav();
-        var again = document.getElementById("codeSearch");
-        if (again) { again.focus(); try { again.setSelectionRange(at, at); } catch (e) {} }
+      });
+      navTree.querySelectorAll(".code-diff").forEach(function (b) {
+        b.addEventListener("click", function () {
+          codeDiff = b.dataset.diff;
+          navTree.querySelectorAll(".code-diff").forEach(function (other) {
+            other.classList.toggle("on", other === b);
+          });
+          buildCodeNav();
+        });
       });
     }
-    navTree.querySelectorAll(".code-diff").forEach(function (b) {
-      b.addEventListener("click", function () {
-        codeDiff = b.dataset.diff;
-        buildCodeNav();
-      });
-    });
+
+    document.getElementById("codeTree").innerHTML = body;
+
     navTree.querySelectorAll(".nav-group-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var group = btn.parentElement;
