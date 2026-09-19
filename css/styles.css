@@ -1155,6 +1155,12 @@ pre:hover .copy-btn,.copy-btn:focus-visible{opacity:1;transform:none}
 @media (pointer:coarse){
   .qhead{min-height:52px}
   .size-item,.font-item{min-height:44px}
+  /* Coding section: nav rows and the filter/language pills. The empty
+     placeholder inside a collapsed topic is excluded, or every collapsed
+     topic would reserve 44px of blank space. */
+  .code-q:not(.dim),.code-row{min-height:44px}
+  .code-diff,.lang-btn{min-height:40px}
+  .copy-btn{min-height:36px;opacity:1;transform:none}
 }
 
 /* ============================================================
