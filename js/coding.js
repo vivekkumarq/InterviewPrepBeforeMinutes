@@ -27,9 +27,9 @@ window.CODE_SECTIONS = [
 window.CODE_TOPICS = [
   /* ---- DSA ---- */
   { id: "basics-bigo",   section: "dsa", name: "Basics & Big-O",           count: 10 },
-  { id: "arrays",        section: "dsa", name: "Arrays",                   count: 21, soon: true },
-  { id: "strings",       section: "dsa", name: "Strings",                  count: 11, soon: true },
-  { id: "hashing",       section: "dsa", name: "Hashing",                  count: 4, soon: true },
+  { id: "arrays",        section: "dsa", name: "Arrays",                   count: 21 },
+  { id: "strings",       section: "dsa", name: "Strings",                  count: 11 },
+  { id: "hashing",       section: "dsa", name: "Hashing",                  count: 4 },
   { id: "searching",     section: "dsa", name: "Searching & Sorting",      count: 13, soon: true },
   { id: "linked-lists",  section: "dsa", name: "Linked Lists",             count: 12, soon: true },
   { id: "stacks-queues", section: "dsa", name: "Stacks & Queues",          count: 9, soon: true },
