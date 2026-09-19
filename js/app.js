@@ -1484,6 +1484,56 @@
     markActive();
   }
 
+  /* ---- syntax highlighting ----
+     Deliberately small and regex-based: one pass that matches comments,
+     strings, numbers and keywords in that order of priority, escaping
+     everything else. Matching comments and strings FIRST is what stops a
+     keyword inside a comment being coloured. A real parser would be more
+     accurate and is not worth a dependency here. */
+  var KEYWORDS = {
+    java: "abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|" +
+          "default|double|do|else|enum|extends|final|finally|float|for|goto|if|" +
+          "implements|import|instanceof|interface|int|long|native|new|package|" +
+          "private|protected|public|record|return|sealed|short|static|strictfp|" +
+          "super|switch|synchronized|this|throws|throw|transient|try|var|void|" +
+          "volatile|while|yield|true|false|null",
+    python: "and|as|assert|async|await|break|class|continue|def|del|elif|else|" +
+            "except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|" +
+            "or|pass|raise|return|try|while|with|yield|True|False|None|self"
+  };
+
+  var hlCache = {};
+  function hlPattern(lang) {
+    if (hlCache[lang]) { hlCache[lang].lastIndex = 0; return hlCache[lang]; }
+    /* Built from a string, so every backslash is doubled: "\\d" is the
+       regex \d. Getting this wrong throws "Nothing to repeat" at runtime. */
+    var comment = lang === "python"
+      ? "#[^\\n]*"
+      : "//[^\\n]*|/\\*[\\s\\S]*?\\*/";
+    var re = new RegExp(
+      "(" + comment + ")" +                                  // 1 comment
+      "|(\"(?:[^\"\\\\\\n]|\\\\.)*\"" +                      // 2 string, double
+      "|'(?:[^'\\\\\\n]|\\\\.)*')" +                         //   or single
+      "|(\\b\\d[\\d_]*(?:\\.\\d+)?\\b)" +                    // 3 number
+      "|\\b(" + KEYWORDS[lang] + ")\\b",                     // 4 keyword
+      "g");
+    hlCache[lang] = re;
+    return re;
+  }
+
+  function highlightCode(src, lang) {
+    if (!KEYWORDS[lang]) return esc(src);
+    var re = hlPattern(lang);
+    var out = "", last = 0, m;
+    while ((m = re.exec(src)) !== null) {
+      out += esc(src.slice(last, m.index));
+      var cls = m[1] ? "t-c" : m[2] ? "t-s" : m[3] ? "t-n" : "t-k";
+      out += '<span class="' + cls + '">' + esc(m[0]) + "</span>";
+      last = m.index + m[0].length;
+    }
+    return out + esc(src.slice(last));
+  }
+
   /* ---- language switcher ---- */
   function langSwitchHtml() {
     return '<div class="lang-switch" role="group" aria-label="Code language">' +
@@ -1592,7 +1642,7 @@
             '<div class="appr-badges"><span class="badge">Time ' + esc(a.time) + "</span>" +
             '<span class="badge">Space ' + esc(a.space) + "</span></div></header>" +
           '<div class="appr-note">' + a.note + "</div>" +
-          "<pre><code>" + esc(src) + "</code></pre>" +
+          "<pre><code>" + highlightCode(src, codeLang) + "</code></pre>" +
         "</section>";
       }).join("");
 

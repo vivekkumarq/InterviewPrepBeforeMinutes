@@ -655,15 +655,15 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
 .answer ul,.answer ol{margin:0 0 12px;padding-left:20px}
 .answer li{margin-bottom:7px}
 .answer li::marker{color:var(--accent)}
-.answer code{
+.answer code,.appr code{
   font-family:var(--mono);font-size:12.6px;padding:2px 6px;border-radius:5px;
   background:var(--code-bg);color:var(--accent);border:1px solid var(--border);
 }
-.answer pre{
+.answer pre,.appr pre{
   margin:0 0 14px;padding:15px 17px;border-radius:11px;overflow-x:auto;
   background:var(--code-bg);border:1px solid var(--border);
 }
-.answer pre code{
+.answer pre code,.appr pre code{
   padding:0;border:none;background:none;color:var(--code-text);
   font-size:12.6px;line-height:1.65;display:block;white-space:pre;
 }
@@ -997,7 +997,7 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
 .qhead:focus-visible{outline-offset:-2px}
 
 /* Copy button on every code block, revealed on hover */
-.answer pre,.cs-card pre{position:relative}
+.answer pre,.cs-card pre,.appr pre{position:relative}
 .copy-btn{
   position:absolute;top:8px;right:8px;
   padding:5px 10px;border-radius:7px;cursor:pointer;
@@ -1135,8 +1135,8 @@ pre:hover .copy-btn,.copy-btn:focus-visible{opacity:1;transform:none}
   .tb-copy h1{gap:8px}
   .tb-sheet{width:100%;justify-content:center}
   .answer{font-size:14px;padding-right:14px}
-  .answer pre{padding:13px 12px;border-radius:9px}
-  .answer pre code{font-size:12px}
+  .answer pre,.appr pre{padding:13px 12px;border-radius:9px}
+  .answer pre code,.appr pre code{font-size:12px}
   .answer table{font-size:12.5px}
   .answer th,.answer td{padding:8px 10px}
   .qgroup-head{font-size:11px}
@@ -1294,7 +1294,7 @@ pre:hover .copy-btn,.copy-btn:focus-visible{opacity:1;transform:none}
 }
 .appr-note{margin:10px 0 12px;color:var(--text-dim);font-size:14px;line-height:1.65}
 .appr-note p{margin:0}
-.appr pre{margin:0}
+.appr pre{margin:0 0 2px}
 .code-foot{margin-top:18px}
 .code-nav{display:flex;justify-content:space-between;gap:12px;margin:26px 0 8px;font-size:13.5px}
 .code-nav a{
@@ -1319,3 +1319,24 @@ pre:hover .copy-btn,.copy-btn:focus-visible{opacity:1;transform:none}
 .soon-tag{padding:1px 7px;border-radius:999px;background:var(--bg-soft);color:var(--text-mute)}
 .code-card.soon{opacity:.5;cursor:default}
 .code-card.soon:hover{border-color:var(--border);transform:none;box-shadow:none}
+
+/* ---- syntax highlighting tokens ----
+   Hue only, no bold or italics: code is already dense, and weight changes
+   make it jitter. Colours are chosen to hold contrast in every palette,
+   so they are fixed rather than derived from --accent. */
+.t-k{color:#c084fc}                       /* keyword  */
+.t-s{color:#86c46a}                       /* string   */
+.t-n{color:#f0a868}                       /* number   */
+.t-c{color:var(--text-mute);font-style:italic}   /* comment */
+
+/* Light palettes need darker tokens to stay readable on a pale panel. */
+:root:not([data-theme]) .t-k,
+[data-theme="light"] .t-k,
+[data-theme="solarized"] .t-k,
+[data-theme="sepia"] .t-k{color:#8b3fc4}
+[data-theme="light"] .t-s,
+[data-theme="solarized"] .t-s,
+[data-theme="sepia"] .t-s{color:#2f7d32}
+[data-theme="light"] .t-n,
+[data-theme="solarized"] .t-n,
+[data-theme="sepia"] .t-n{color:#b45309}
