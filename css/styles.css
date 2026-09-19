@@ -781,7 +781,6 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
    min-content width of whatever it holds. A wide table then pushed the card
    past the viewport and the whole page scrolled sideways on a phone. */
 .cs-card{min-width:0}
-.cs-card table,.cs-card pre{max-width:100%}
 .cs-card{
   border:1px solid var(--border);border-radius:15px;background:var(--panel);
   padding:17px 19px 19px;box-shadow:var(--shadow);
