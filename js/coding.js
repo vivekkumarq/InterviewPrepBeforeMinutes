@@ -45,12 +45,12 @@ window.CODE_TOPICS = [
   { id: "bst",           section: "tree", name: "Binary Search Tree",      count: 7 },
   { id: "tree-advanced", section: "tree", name: "Advanced Trees",          count: 3 },
   /* ---- Concurrency ---- */
-  { id: "thread-basics", section: "concurrency", name: "Thread Basics",              count: 3, soon: true },
-  { id: "sync",          section: "concurrency", name: "Synchronization",            count: 8, soon: true },
-  { id: "futures",       section: "concurrency", name: "Futures & Async",            count: 10, soon: true },
-  { id: "parallel-data", section: "concurrency", name: "Data Parallelism",           count: 7, soon: true },
-  { id: "concurrent-collections", section: "concurrency", name: "Concurrent Collections", count: 5, soon: true },
-  { id: "classic-concurrency",    section: "concurrency", name: "Classic Concurrency Problems", count: 9, soon: true }
+  { id: "thread-basics", section: "concurrency", name: "Thread Basics",              count: 3 },
+  { id: "sync",          section: "concurrency", name: "Synchronization",            count: 8 },
+  { id: "futures",       section: "concurrency", name: "Futures & Async",            count: 10 },
+  { id: "parallel-data", section: "concurrency", name: "Data Parallelism",           count: 7 },
+  { id: "concurrent-collections", section: "concurrency", name: "Concurrent Collections", count: 5 },
+  { id: "classic-concurrency",    section: "concurrency", name: "Classic Concurrency Problems", count: 9 }
 ];
 
 window.CODE_DATA = {};   /* topicId -> { intro, questions[] } */
