@@ -427,9 +427,15 @@
     if (q._text === undefined) q._text = stripTags(q.a).toLowerCase();
     return q._text;
   }
+  /* Highlights every search word, not just the whole phrase, so a result
+     found by matching two separate words still shows why it matched. */
   function highlight(text, term) {
     if (!term) return esc(text);
-    var re = new RegExp("(" + term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig");
+    var words = String(term).toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length) return esc(text);
+    var re = new RegExp("(" + words.map(function (w) {
+      return w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }).join("|") + ")", "ig");
     return esc(text).replace(re, "<mark>$1</mark>");
   }
   function qKey(topicId, i) { return topicId + ":" + i; }
@@ -1205,13 +1211,31 @@
       loadAll(function () { searchReady = true; paintCounts(); runSearch(); });
       return;
     }
-    var low = term.toLowerCase(), hits = [];
+    /* Match every word rather than the whole string. A single indexOf meant
+       "  virtual   threads  " found nothing at all (the doubled inner space
+       is in no title) and "threads virtual" missed almost everything. Now
+       word order and extra whitespace stop mattering, while an exact phrase
+       still ranks first. */
+    var low = term.toLowerCase().replace(/\s+/g, " ");
+    var words = low.split(" ").filter(Boolean);
+    var hits = [];
     Object.keys(window.TOPIC_MAP).forEach(function (id) {
       (window.TOPIC_DATA[id] || []).forEach(function (q, idx) {
-        var inQ = q.q.toLowerCase().indexOf(low);
-        var inA = inQ === -1 ? plainAnswer(q).indexOf(low) : -1;
-        if (inQ === -1 && inA === -1) return;
-        hits.push({ id: id, idx: idx, q: q, score: inQ !== -1 ? inQ : 1000 + inA });
+        var qLow = q.q.toLowerCase();
+        var phraseAt = qLow.indexOf(low);
+        var score;
+        if (phraseAt !== -1) {
+          score = phraseAt;                        // exact phrase in the title
+        } else if (words.every(function (w) { return qLow.indexOf(w) !== -1; })) {
+          score = 500;                             // all words in the title
+        } else {
+          var aLow = plainAnswer(q);
+          var aPhrase = aLow.indexOf(low);
+          if (aPhrase !== -1) score = 1000 + aPhrase;
+          else if (words.every(function (w) { return aLow.indexOf(w) !== -1; })) score = 500000;
+          else return;                             // not a match
+        }
+        hits.push({ id: id, idx: idx, q: q, score: score });
       });
     });
     hits.sort(function (a, b) { return a.score - b.score; });
@@ -1219,7 +1243,8 @@
     /* Typing a company name should offer its prep page, not just the
        questions that happen to mention it. */
     var companyHits = allCompanies().filter(function (c) {
-      return c.name.toLowerCase().indexOf(low) !== -1;
+      var cLow = c.name.toLowerCase();
+      return words.every(function (w) { return cLow.indexOf(w) !== -1; });
     }).slice(0, 3);
     var companyHtml = companyHits.map(function (c) {
       return '<button class="sr-item sr-company" data-company="' + c.slug + '">' +
