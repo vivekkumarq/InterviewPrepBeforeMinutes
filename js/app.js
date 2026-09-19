@@ -222,8 +222,12 @@
     filter: "",
     firm: "",
     hotOnly: false,
-    done: load(LS_DONE, {})
+    done: load(LS_DONE, {}),
+    codeTopic: null,      // topic id inside the coding section
+    codeSlug: null        // question slug inside that topic
   };
+  /* which tree the one sidebar container is currently showing */
+  var navMode = "topics";
   var loading = {};
 
   /* ---------------- storage helpers ---------------- */
@@ -533,6 +537,9 @@
       "</a>" +
       '<a class="nav-special" id="navCompanies" href="#/companies">' +
         '<span class="ic">🏢</span><span>Prepare by company</span>' +
+      "</a>" +
+      '<a class="nav-special" id="navCode" href="#/code">' +
+        '<span class="ic">💻</span><span>Important coding questions</span>' +
       "</a>" + html;
 
     navTree.querySelectorAll(".nav-group-btn").forEach(function (btn) {
@@ -549,6 +556,12 @@
   }
 
   function markActive() {
+    if (navMode === "code") {
+      navTree.querySelectorAll(".code-q").forEach(function (a) {
+        a.classList.toggle("active", a.dataset.slug === state.codeSlug);
+      });
+      return;
+    }
     navTree.querySelectorAll(".nav-link").forEach(function (a) {
       var on = a.dataset.topic === state.topic;
       a.classList.toggle("active", on);
@@ -1349,11 +1362,301 @@
   toTop.addEventListener("click", function () { window.scrollTo({ top: 0, behavior: "smooth" }); });
 
   /* ---------------- router ---------------- */
+  /* ================= Important Coding Questions =================
+     A solutions reference rather than a Q&A bank: each question carries
+     several approaches, each with its own complexity and code in two
+     languages. Code is stored raw in the data files and escaped here, so
+     the files never need hand-escaped HTML entities. */
+
+  var LS_LANG = "ipbm.lang";
+  var LANGS = [{ id: "java", name: "Java" }, { id: "python", name: "Python" }];
+  var codeLang = "java";
+  try { codeLang = localStorage.getItem(LS_LANG) || "java"; } catch (e) {}
+
+  var codeLoading = {};
+  var codeSearch = "";
+  var codeDiff = "all";
+
+  function loadCodeTopic(id, done) {
+    if (window.CODE_DATA[id]) { done(true); return; }
+    if (codeLoading[id]) { codeLoading[id].push(done); return; }
+    codeLoading[id] = [done];
+    loadScript("js/data/code/" + id + ".js", function (okFlag) {
+      var waiting = codeLoading[id] || [];
+      codeLoading[id] = null;
+      waiting.forEach(function (fn) { fn(okFlag); });
+    });
+  }
+
+  function codeMatches(q) {
+    if (codeDiff !== "all" && q.difficulty !== codeDiff) return false;
+    if (!codeSearch) return true;
+    return q.title.toLowerCase().indexOf(codeSearch) !== -1;
+  }
+
+  /* ---- sidebar tree for the coding section ---- */
+  function buildCodeNav() {
+    var chev = '<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
+    var body = window.CODE_SECTIONS.map(function (sec) {
+      var topics = window.CODE_TOPICS.filter(function (t) { return t.section === sec.id; });
+      var rows = topics.map(function (t) {
+        var data = window.CODE_DATA[t.id];
+        var isOpen = state.codeTopic === t.id;
+        var inner;
+        if (!data) {
+          inner = '<div class="code-q dim">' + (isOpen ? "Loading…" : "") + "</div>";
+        } else {
+          var qs = data.questions.filter(codeMatches);
+          inner =
+            '<a class="code-q intro' + (state.view === "codeTopic" && isOpen ? " active" : "") +
+              '" href="#/code/' + t.id + '"><span class="cq-n">📖</span>' +
+              '<span class="cq-t">Introduction</span></a>' +
+            (qs.length
+              ? qs.map(function (q) {
+                  return '<a class="code-q" data-slug="' + q.slug + '" href="#/code/' + t.id + "/" + q.slug + '">' +
+                    '<span class="cq-n">' + q.n + "</span>" +
+                    '<span class="cq-t">' + esc(q.title) + "</span>" +
+                    '<span class="cq-d ' + q.difficulty + '" title="' + q.difficulty + '"></span></a>';
+                }).join("")
+              : '<div class="code-q dim">No match</div>');
+        }
+        if (t.soon) {
+          return '<div class="nav-group soon"><span class="nav-group-btn">' +
+            "<span>" + esc(t.name) + "</span>" +
+            '<span class="n">' + t.count + "</span>" +
+            '<span class="soon-tag">soon</span></span></div>';
+        }
+        return '<div class="nav-group' + (isOpen ? " open" : "") + '" data-codetopic="' + t.id + '">' +
+          '<button class="nav-group-btn"><span>' + esc(t.name) + "</span>" +
+          '<span class="n">' + t.count + "</span>" + chev + "</button>" +
+          '<div class="nav-group-body"><div>' + inner + "</div></div></div>";
+      }).join("");
+      return '<div class="code-sec">' + esc(sec.name) + "</div>" + rows;
+    }).join("");
+
+    navTree.innerHTML =
+      '<a class="nav-special" href="#/"><span class="ic">←</span><span>Back to tech stacks</span></a>' +
+      '<div class="code-tools">' +
+        '<input type="search" id="codeSearch" placeholder="Search questions…" autocomplete="off" value="' +
+          esc(codeSearch) + '" />' +
+        '<div class="code-diffs">' +
+          ["all", "easy", "medium", "hard"].map(function (d) {
+            return '<button class="code-diff' + (codeDiff === d ? " on" : "") + '" data-diff="' + d + '">' +
+              d.charAt(0).toUpperCase() + d.slice(1) + "</button>";
+          }).join("") +
+        "</div>" +
+      "</div>" + body;
+
+    var box = document.getElementById("codeSearch");
+    if (box) {
+      box.addEventListener("input", function () {
+        codeSearch = box.value.trim().toLowerCase();
+        var at = box.selectionStart;
+        buildCodeNav();
+        var again = document.getElementById("codeSearch");
+        if (again) { again.focus(); try { again.setSelectionRange(at, at); } catch (e) {} }
+      });
+    }
+    navTree.querySelectorAll(".code-diff").forEach(function (b) {
+      b.addEventListener("click", function () {
+        codeDiff = b.dataset.diff;
+        buildCodeNav();
+      });
+    });
+    navTree.querySelectorAll(".nav-group-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var group = btn.parentElement;
+        var id = group.dataset.codetopic;
+        var opening = !group.classList.contains("open");
+        group.classList.toggle("open");
+        /* Fetch on first expand so the question list can be drawn. */
+        if (opening && !window.CODE_DATA[id]) {
+          loadCodeTopic(id, function () {
+            state.codeTopic = id;
+            buildCodeNav();
+          });
+        }
+      });
+    });
+    navTree.querySelectorAll(".code-q").forEach(function (a) {
+      a.addEventListener("click", function () { closeSidebar(); });
+    });
+    markActive();
+  }
+
+  /* ---- language switcher ---- */
+  function langSwitchHtml() {
+    return '<div class="lang-switch" role="group" aria-label="Code language">' +
+      LANGS.map(function (l) {
+        return '<button class="lang-btn' + (codeLang === l.id ? " on" : "") +
+          '" data-lang="' + l.id + '">' + l.name + "</button>";
+      }).join("") + "</div>";
+  }
+
+  function wireLangSwitch(root) {
+    root.querySelectorAll(".lang-btn").forEach(function (b) {
+      b.addEventListener("click", function () {
+        if (codeLang === b.dataset.lang) return;
+        codeLang = b.dataset.lang;
+        try { localStorage.setItem(LS_LANG, codeLang); } catch (e) {}
+        route();            // redraw with the other language
+      });
+    });
+  }
+
+  /* ---- views ---- */
+  function renderCodeIndex() {
+    var ready = window.CODE_TOPICS.filter(function (t) { return !t.soon; });
+    var total = ready.reduce(function (a, t) { return a + t.count; }, 0);
+    var planned = window.CODE_TOPICS.reduce(function (a, t) { return a + t.count; }, 0);
+    view.innerHTML =
+      '<div class="code-hero">' +
+        "<h1>Important Coding Questions</h1>" +
+        "<p>Every question shows several approaches, from the obvious one to the one you should actually write — each with its own time and space cost, in Java and Python. Read the topic introduction first, then work down the list.</p>" +
+        '<div class="code-stats">' +
+          '<div><b>' + total + "</b><span>Questions</span></div>" +
+          '<div><b>' + ready.length + "</b><span>Topics</span></div>" +
+          '<div><b>2</b><span>Languages</span></div>' +
+          '<div><b>' + planned + "</b><span>Planned</span></div>" +
+        "</div>" +
+      "</div>" +
+      window.CODE_SECTIONS.map(function (sec) {
+        var topics = window.CODE_TOPICS.filter(function (t) { return t.section === sec.id; });
+        return '<h2 class="code-h2">' + esc(sec.name) + "</h2>" +
+          '<p class="code-sub">' + esc(sec.blurb) + "</p>" +
+          '<div class="code-grid">' +
+            topics.map(function (t) {
+              if (t.soon) {
+                return '<span class="code-card soon"><b>' + esc(t.name) + "</b>" +
+                  '<span class="cc-n">' + t.count + " questions · soon</span></span>";
+              }
+              return '<a class="code-card" href="#/code/' + t.id + '">' +
+                "<b>" + esc(t.name) + "</b>" +
+                '<span class="cc-n">' + t.count + " questions</span></a>";
+            }).join("") +
+          "</div>";
+      }).join("");
+  }
+
+  function renderCodeTopic(id) {
+    var topic = window.codeTopic(id);
+    if (!topic || topic.soon) { renderCodeIndex(); return; }
+    loadCodeTopic(id, function () {
+      var data = window.CODE_DATA[id];
+      if (!data) {
+        view.innerHTML = '<div class="empty"><h2>Could not load ' + esc(topic.name) + "</h2></div>";
+        return;
+      }
+      view.innerHTML =
+        '<nav class="crumbs"><a href="#/code">Coding Questions</a> <span>/</span> ' + esc(topic.name) + "</nav>" +
+        "<h1>" + esc(topic.name) + "</h1>" +
+        '<div class="code-intro answer">' + data.intro + "</div>" +
+        '<h2 class="code-h2">Questions</h2>' +
+        '<div class="code-list">' +
+          data.questions.map(function (q) {
+            return '<a class="code-row" href="#/code/' + id + "/" + q.slug + '">' +
+              '<span class="cr-n">' + q.n + "</span>" +
+              '<span class="cr-t">' + esc(q.title) + "</span>" +
+              '<span class="cr-d ' + q.difficulty + '">' + q.difficulty + "</span>" +
+              '<span class="cr-a">' + q.approaches.length + " approaches</span></a>";
+          }).join("") +
+        "</div>";
+      wireCopyButtons(view);
+      buildCodeNav();
+    });
+  }
+
+  function renderCodeQuestion(topicId, slug) {
+    var topic = window.codeTopic(topicId);
+    if (!topic || topic.soon) { renderCodeIndex(); return; }
+    loadCodeTopic(topicId, function () {
+      var data = window.CODE_DATA[topicId];
+      var list = (data && data.questions) || [];
+      var idx = -1;
+      for (var i = 0; i < list.length; i++) if (list[i].slug === slug) idx = i;
+      if (idx === -1) { renderCodeTopic(topicId); return; }
+      var q = list[idx];
+
+      var table =
+        '<table class="appr-table"><tr><th>#</th><th>Approach</th><th>Time</th><th>Space</th></tr>' +
+        q.approaches.map(function (a, i) {
+          return "<tr" + (a.best ? ' class="best"' : "") + "><td>" + (i + 1) + "</td><td>" +
+            esc(a.name) + (a.best ? ' <span class="pick">best</span>' : "") + "</td><td>" +
+            esc(a.time) + "</td><td>" + esc(a.space) + "</td></tr>";
+        }).join("") + "</table>";
+
+      var cards = q.approaches.map(function (a, i) {
+        var src = a[codeLang] || "// not available in this language";
+        return '<section class="appr">' +
+          '<header><h3>' + (i + 1) + ". " + esc(a.name) + "</h3>" +
+            '<div class="appr-badges"><span class="badge">Time ' + esc(a.time) + "</span>" +
+            '<span class="badge">Space ' + esc(a.space) + "</span></div></header>" +
+          '<div class="appr-note">' + a.note + "</div>" +
+          "<pre><code>" + esc(src) + "</code></pre>" +
+        "</section>";
+      }).join("");
+
+      var prev = idx > 0 ? list[idx - 1] : null;
+      var next = idx < list.length - 1 ? list[idx + 1] : null;
+
+      view.innerHTML =
+        '<nav class="crumbs"><a href="#/code">Coding Questions</a> <span>/</span> ' +
+          '<a href="#/code/' + topicId + '">' + esc(topic.name) + "</a></nav>" +
+        '<div class="code-qhead">' +
+          "<h1>" + q.n + ". " + esc(q.title) + "</h1>" +
+          '<span class="cr-d ' + q.difficulty + '">' + q.difficulty + "</span>" +
+        "</div>" +
+        '<div class="answer">' + q.statement + "</div>" +
+        '<div class="appr-bar">' +
+          "<h2>Approaches</h2>" + langSwitchHtml() +
+        "</div>" +
+        table + cards +
+        (q.note ? '<div class="answer code-foot">' + q.note + "</div>" : "") +
+        '<nav class="code-nav">' +
+          (prev ? '<a href="#/code/' + topicId + "/" + prev.slug + '">← ' + esc(prev.title) + "</a>" : "<span></span>") +
+          (next ? '<a href="#/code/' + topicId + "/" + next.slug + '">' + esc(next.title) + " →</a>" : "<span></span>") +
+        "</nav>";
+
+      wireCopyButtons(view);
+      wireLangSwitch(view);
+      buildCodeNav();
+    });
+  }
+
   function route() {
     var hash = location.hash || "#/";
     var mCompany = hash.match(/^#\/company\/([\w-]+)/);
     var mTopic = hash.match(/^#\/topic\/([\w-]+)/);
     var mSheet = hash.match(/^#\/cheatsheet\/([\w-]+)/);
+    var mCodeQ = hash.match(/^#\/code\/([\w-]+)\/([\w-]+)/);
+    var mCodeT = hash.match(/^#\/code\/([\w-]+)/);
+    var inCode = hash.indexOf("#/code") === 0;
+
+    /* The sidebar has two modes and one container: tech stacks, or the
+       coding tree. Swap only when crossing the boundary, so expanding a
+       topic does not get wiped on every navigation. */
+    if (inCode && navMode !== "code") { navMode = "code"; buildCodeNav(); }
+    if (!inCode && navMode !== "topics") { navMode = "topics"; buildNav(); }
+
+    if (inCode) {
+      state.company = null; state.sheet = null; state.topic = null;
+      if (mCodeQ) {
+        state.view = "codeQuestion"; state.codeTopic = mCodeQ[1]; state.codeSlug = mCodeQ[2];
+        renderCodeQuestion(mCodeQ[1], mCodeQ[2]);
+      } else if (mCodeT) {
+        state.view = "codeTopic"; state.codeTopic = mCodeT[1]; state.codeSlug = null;
+        renderCodeTopic(mCodeT[1]);
+      } else {
+        state.view = "code"; state.codeTopic = null; state.codeSlug = null;
+        renderCodeIndex();
+        buildCodeNav();
+      }
+      applyTheme(null);
+      markActive();
+      window.scrollTo({ top: 0, behavior: "instant" });
+      requestAnimationFrame(measure);
+      return;
+    }
 
     if (hash.indexOf("#/cheatsheets") === 0) {
       state.view = "cheatsheets"; state.topic = null; state.company = null; state.sheet = null;
