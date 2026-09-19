@@ -40,10 +40,10 @@ window.CODE_TOPICS = [
   { id: "dp",            section: "dsa", name: "Dynamic Programming",      count: 11 },
   { id: "graphs",        section: "dsa", name: "Graphs",                   count: 13 },
   /* ---- Trees ---- */
-  { id: "tree-basics",   section: "tree", name: "Binary Tree Basics",      count: 9, soon: true },
-  { id: "tree-problems", section: "tree", name: "Binary Tree Problems",    count: 13, soon: true },
-  { id: "bst",           section: "tree", name: "Binary Search Tree",      count: 7, soon: true },
-  { id: "tree-advanced", section: "tree", name: "Advanced Trees",          count: 3, soon: true },
+  { id: "tree-basics",   section: "tree", name: "Binary Tree Basics",      count: 9 },
+  { id: "tree-problems", section: "tree", name: "Binary Tree Problems",    count: 13 },
+  { id: "bst",           section: "tree", name: "Binary Search Tree",      count: 7 },
+  { id: "tree-advanced", section: "tree", name: "Advanced Trees",          count: 3 },
   /* ---- Concurrency ---- */
   { id: "thread-basics", section: "concurrency", name: "Thread Basics",              count: 3, soon: true },
   { id: "sync",          section: "concurrency", name: "Synchronization",            count: 8, soon: true },
