@@ -639,10 +639,10 @@
         "<strong>Beginner</strong> and an <strong>Advanced</strong> track, real answers, code you can quote, " +
         "and diagrams for the concepts that are easier to draw than to say.</p>" +
         '<div class="hero-stats">' +
-          '<div class="hstat"><b>' + totalQ + "</b><span>Questions</span></div>" +
-          '<div class="hstat"><b>' + Object.keys(window.TOPIC_MAP).length + "</b><span>Tech stacks</span></div>" +
-          '<div class="hstat"><b>2</b><span>Difficulty tracks</span></div>' +
-          '<div class="hstat"><b>' + totalDone + "</b><span>Marked revised</span></div>" +
+          '<div class="hstat"><b data-count="' + totalQ + '">0</b><span>Questions</span></div>' +
+          '<div class="hstat"><b data-count="' + Object.keys(window.TOPIC_MAP).length + '">0</b><span>Tech stacks</span></div>' +
+          '<div class="hstat"><b data-count="2">0</b><span>Difficulty tracks</span></div>' +
+          '<div class="hstat"><b data-count="' + totalDone + '">0</b><span>Marked revised</span></div>' +
         "</div>" +
       "</section>" + sheetStrip() + companyStrip() + groupsHtml;
   }
@@ -918,6 +918,7 @@
     }).join("");
     wireCards(list);
     wireCopyButtons(list);
+    observeReveals(list);       /* cards arrive after route(), so hook here too */
   }
 
   /* ---------------- cheatsheets ----------------
@@ -1863,6 +1864,62 @@
     else if (quiz.shown && (e.key === "2")) { e.preventDefault(); answerQuiz(false); }
   });
 
+  /* ---------------- motion helpers ----------------
+     Both of these check prefers-reduced-motion and simply skip to the final
+     state when it is set, rather than running a shorter animation. */
+  var reduceMotion = window.matchMedia
+    ? window.matchMedia("(prefers-reduced-motion: reduce)")
+    : { matches: false };
+
+  /* Counts a number up when it first scrolls into view. */
+  function animateCounts(root) {
+    var targets = root.querySelectorAll("[data-count]");
+    if (!targets.length) return;
+    targets.forEach(function (el) {
+      var end = parseInt(el.dataset.count, 10) || 0;
+      if (reduceMotion.matches || end <= 0) { el.textContent = end; return; }
+      var startedAt = null, dur = Math.min(220 + end * 0.6, 1100);
+      function step(now) {
+        if (startedAt === null) startedAt = now;
+        var p = Math.min((now - startedAt) / dur, 1);
+        /* ease-out cubic: fast first, settles gently on the real number */
+        el.textContent = Math.round(end * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  /* Reveals cards as they enter the viewport. The CSS animation-delay
+     approach fired on render, so everything below the fold had already
+     finished animating before it was ever seen. */
+  var revealObserver = window.IntersectionObserver
+    ? new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add("seen");
+          revealObserver.unobserve(e.target);
+        });
+      }, { rootMargin: "0px 0px -40px 0px", threshold: 0.02 })
+    : null;
+
+  function observeReveals(root) {
+    if (reduceMotion.matches || !revealObserver) return;
+    root.querySelectorAll(".qcard, .tcard, .code-row, .code-card").forEach(function (el) {
+      el.classList.add("reveal");
+      revealObserver.observe(el);
+    });
+  }
+
+  /* Ctrl/Cmd+K is the shortcut people reach for first. "/" already works. */
+  document.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
+  });
+
   function route() {
     var hash = location.hash || "#/";
     var mCompany = hash.match(/^#\/company\/([\w-]+)/);
@@ -1933,6 +1990,8 @@
     }
     applyTheme(mTopic ? mTopic[1] : (mSheet ? mSheet[1] : null));
     markActive();
+    animateCounts(view);
+    observeReveals(view);
     /* html{scroll-behavior:smooth} would otherwise animate this, so switching
        topic from far down a long page crawls back to the top. */
     window.scrollTo({ top: 0, behavior: "instant" });
