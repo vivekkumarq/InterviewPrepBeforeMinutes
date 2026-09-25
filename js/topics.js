@@ -4,12 +4,12 @@ window.GROUPS = [
     id: "java", name: "Java Core", icon: "☕",
     topics: [
       { id: "java-basics", parts: 6,       name: "Java Fundamentals",  icon: "☕", blurb: "Language basics, memory model of objects, strings, exceptions — the questions every Java round opens with." },
-      { id: "java-oop", parts: 5,          name: "OOP & Design",       icon: "🧩", blurb: "Encapsulation, inheritance, polymorphism, abstraction, SOLID and the classic trick questions around them." },
-      { id: "java-collections", parts: 5,  name: "Collections Framework", icon: "📦", blurb: "List, Set, Map, internal working of HashMap, ConcurrentHashMap, comparators and complexity." },
-      { id: "java-concurrency", parts: 6,  name: "Multithreading & Concurrency", icon: "🧵", blurb: "Threads, executors, locks, volatile, CompletableFuture, deadlocks and the Java Memory Model." },
-      { id: "java-8", parts: 6,            name: "Java 8+ & Streams",  icon: "🌊", blurb: "Lambdas, functional interfaces, Streams, Optional, and what landed in Java 9–21." },
-      { id: "java-versions", parts: 3,     name: "Java Versions & Features", icon: "🏷️", blurb: "What each release actually added — Java 8, 11, 17, 21 and 25 — records, sealed classes, text blocks, var, virtual threads, and what an upgrade from 8 really breaks." },
-      { id: "jvm", parts: 7,               name: "JVM & Garbage Collection", icon: "⚙️", blurb: "Class loading, runtime memory areas, GC algorithms, tuning flags and OutOfMemoryError debugging." }
+      { id: "java-oop", parts: 6,          name: "OOP & Design",       icon: "🧩", blurb: "Encapsulation, inheritance, polymorphism, abstraction, SOLID and the classic trick questions around them." },
+      { id: "java-collections", parts: 6,  name: "Collections Framework", icon: "📦", blurb: "List, Set, Map, internal working of HashMap, ConcurrentHashMap, comparators and complexity." },
+      { id: "java-concurrency", parts: 7,  name: "Multithreading & Concurrency", icon: "🧵", blurb: "Threads, executors, locks, volatile, CompletableFuture, deadlocks and the Java Memory Model." },
+      { id: "java-8", parts: 7,            name: "Java 8+ & Streams",  icon: "🌊", blurb: "Lambdas, functional interfaces, Streams, Optional, and what landed in Java 9–21." },
+      { id: "java-versions", parts: 4,     name: "Java Versions & Features", icon: "🏷️", blurb: "What each release actually added — Java 8, 11, 17, 21 and 25 — records, sealed classes, text blocks, var, virtual threads, and what an upgrade from 8 really breaks." },
+      { id: "jvm", parts: 8,               name: "JVM & Garbage Collection", icon: "⚙️", blurb: "Class loading, runtime memory areas, GC algorithms, tuning flags and OutOfMemoryError debugging." }
     ]
   },
   {
