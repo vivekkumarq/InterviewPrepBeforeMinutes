@@ -15,10 +15,10 @@ window.GROUPS = [
   {
     id: "spring", name: "Spring Ecosystem", icon: "🍃",
     topics: [
-      { id: "spring-core", parts: 5,   name: "Spring Framework",   icon: "🍃", blurb: "IoC container, dependency injection, bean scopes, lifecycle, AOP and proxies." },
-      { id: "spring-boot", parts: 6,   name: "Spring Boot",        icon: "🚀", blurb: "Auto-configuration, starters, profiles, actuator, configuration properties and exception handling." },
-      { id: "spring-security", parts: 6, name: "Spring Security & Auth", icon: "🔐", blurb: "Filter chain, authentication vs authorization, JWT, OAuth2, Keycloak, CORS and CSRF." },
-      { id: "jpa-hibernate", parts: 6, name: "JPA & Hibernate",    icon: "🗄️", blurb: "Entity lifecycle, fetch strategies, N+1, caching, locking and transaction propagation." }
+      { id: "spring-core", parts: 6,   name: "Spring Framework",   icon: "🍃", blurb: "IoC container, dependency injection, bean scopes, lifecycle, AOP and proxies." },
+      { id: "spring-boot", parts: 7,   name: "Spring Boot",        icon: "🚀", blurb: "Auto-configuration, starters, profiles, actuator, configuration properties and exception handling." },
+      { id: "spring-security", parts: 7, name: "Spring Security & Auth", icon: "🔐", blurb: "Filter chain, authentication vs authorization, JWT, OAuth2, Keycloak, CORS and CSRF." },
+      { id: "jpa-hibernate", parts: 7, name: "JPA & Hibernate",    icon: "🗄️", blurb: "Entity lifecycle, fetch strategies, N+1, caching, locking and transaction propagation." }
     ]
   },
   {
