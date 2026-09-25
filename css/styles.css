@@ -1446,7 +1446,7 @@ pre:hover .copy-btn,.copy-btn:focus-visible{opacity:1;transform:none}
 .qcard.reveal,.tcard.reveal{animation:none}
 
 /* Count-up numbers must not reflow the layout as the digits change. */
-.hstat b,.code-stats b{font-variant-numeric:tabular-nums}
+.hstat b,.code-stats b,[data-countup]{font-variant-numeric:tabular-nums}
 
 @media (prefers-reduced-motion:reduce){
   .reveal,.reveal.seen{opacity:1;transform:none;transition:none}

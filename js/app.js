@@ -639,10 +639,10 @@
         "<strong>Beginner</strong> and an <strong>Advanced</strong> track, real answers, code you can quote, " +
         "and diagrams for the concepts that are easier to draw than to say.</p>" +
         '<div class="hero-stats">' +
-          '<div class="hstat"><b data-count="' + totalQ + '">0</b><span>Questions</span></div>' +
-          '<div class="hstat"><b data-count="' + Object.keys(window.TOPIC_MAP).length + '">0</b><span>Tech stacks</span></div>' +
-          '<div class="hstat"><b data-count="2">0</b><span>Difficulty tracks</span></div>' +
-          '<div class="hstat"><b data-count="' + totalDone + '">0</b><span>Marked revised</span></div>' +
+          '<div class="hstat"><b data-countup="' + totalQ + '">0</b><span>Questions</span></div>' +
+          '<div class="hstat"><b data-countup="' + Object.keys(window.TOPIC_MAP).length + '">0</b><span>Tech stacks</span></div>' +
+          '<div class="hstat"><b data-countup="2">0</b><span>Difficulty tracks</span></div>' +
+          '<div class="hstat"><b data-countup="' + totalDone + '">0</b><span>Marked revised</span></div>' +
         "</div>" +
       "</section>" + sheetStrip() + companyStrip() + groupsHtml;
   }
@@ -1871,12 +1871,15 @@
     ? window.matchMedia("(prefers-reduced-motion: reduce)")
     : { matches: false };
 
-  /* Counts a number up when it first scrolls into view. */
+  /* Counts a number up. NOTE the attribute is data-countUP: plain
+     data-count is already taken by paintCounts() for the sidebar per-topic
+     counts, keyed by topic id, and sharing it made this function try to
+     parse "java-basics" as a number and blank those counts. */
   function animateCounts(root) {
-    var targets = root.querySelectorAll("[data-count]");
+    var targets = root.querySelectorAll("[data-countup]");
     if (!targets.length) return;
     targets.forEach(function (el) {
-      var end = parseInt(el.dataset.count, 10) || 0;
+      var end = parseInt(el.dataset.countup, 10) || 0;
       if (reduceMotion.matches || end <= 0) { el.textContent = end; return; }
       var startedAt = null, dur = Math.min(220 + end * 0.6, 1100);
       function step(now) {
@@ -2021,8 +2024,14 @@
       searchReady = true;
       paintCounts();
       measure();
-      /* Re-render home now that the company index can be built. */
-      if (state.view === "home") renderHome();
+      /* Re-render home now that the company index can be built. The
+         entrance has to run again: this replaces the markup the first
+         pass animated, which otherwise leaves the counters showing 0. */
+      if (state.view === "home") {
+        renderHome();
+        animateCounts(view);
+        observeReveals(view);
+      }
     });
   }, { timeout: 3000 });
 })();
