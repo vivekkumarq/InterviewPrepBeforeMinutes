@@ -1,3 +1,78 @@
+registerPrimer("angular", `<h3>The mental model: a tree of components, fed by injected services</h3>
+<p>An Angular app is a <strong>tree of components</strong>. Each component is a TypeScript class (the data and behaviour) plus a template (the HTML that shows it). Data flows <strong>down</strong> the tree through inputs and events flow <strong>up</strong> through outputs. Anything shared across the tree (fetching data, the logged-in user, a cart) lives in a <strong>service</strong>, which Angular's dependency injection creates once and hands to every component that asks for it.</p>
+<figure class="fig">
+<svg viewBox="0 0 620 230" role="img" aria-label="Angular component tree with inputs flowing down, outputs flowing up, and a shared service injected into components">
+  <defs><marker id="pr-ng" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
+  <rect class="dg-fill" x="150" y="12" width="150" height="46" rx="8"/><text class="dg-t" x="225" y="32" text-anchor="middle">AppComponent</text><text class="dg-s" x="225" y="48" text-anchor="middle">router outlet</text>
+  <line class="dg-line" x1="225" y1="58" x2="225" y2="84" marker-end="url(#pr-ng)"/>
+  <rect class="dg-fill" x="150" y="86" width="150" height="46" rx="8"/><text class="dg-t" x="225" y="106" text-anchor="middle">ProductListPage</text><text class="dg-s" x="225" y="122" text-anchor="middle">holds products[]</text>
+  <line class="dg-line" x1="190" y1="132" x2="110" y2="164" marker-end="url(#pr-ng)"/>
+  <line class="dg-line" x1="260" y1="132" x2="330" y2="164" marker-end="url(#pr-ng)"/>
+  <text class="dg-s" x="96" y="150">[product]="p"  (input, down)</text>
+  <rect class="dg-fill2" x="30" y="166" width="150" height="46" rx="8"/><text class="dg-t" x="105" y="186" text-anchor="middle">ProductCard</text><text class="dg-s" x="105" y="202" text-anchor="middle">shows one product</text>
+  <rect class="dg-fill2" x="260" y="166" width="150" height="46" rx="8"/><text class="dg-t" x="335" y="186" text-anchor="middle">ProductCard</text><text class="dg-s" x="335" y="202" text-anchor="middle">(addToCart) up</text>
+  <path class="dg-line" d="M410 190 H440 V110 H302" marker-end="url(#pr-ng)" stroke-dasharray="4 3"/>
+  <text class="dg-s" x="446" y="150">output: an event</text>
+  <text class="dg-s" x="446" y="164">bubbles to the parent</text>
+  <rect class="dg-box" x="470" y="12" width="140" height="80" rx="9"/><text class="dg-t" x="540" y="36" text-anchor="middle">CartService</text><text class="dg-s" x="540" y="54" text-anchor="middle">providedIn: 'root'</text><text class="dg-s" x="540" y="70" text-anchor="middle">one shared instance</text>
+  <line class="dg-line" x1="470" y1="60" x2="302" y2="100" marker-end="url(#pr-ng)"/>
+  <text class="dg-s" x="348" y="70">inject(CartService)</text>
+</svg>
+<figcaption>Inputs down, outputs up, services on the side. Keep components thin and put logic in services.</figcaption>
+</figure>
+<h3>Worked example: a standalone component with a service and signals</h3>
+<pre><code>// cart.service.ts: one instance for the whole app
+@Injectable({ providedIn: 'root' })
+export class CartService {
+  private items = signal&lt;CartItem[]&gt;([]);                  // writable, private
+  readonly count = computed(() =&gt; this.items().length);    // derived, read-only
+  readonly total = computed(() =&gt;
+    this.items().reduce((sum, i) =&gt; sum + i.price * i.qty, 0));
+
+  add(p: Product) {
+    this.items.update(list =&gt; [...list, { ...p, qty: 1 }]);   // new array: immutable
+  }
+}
+
+// product-card.component.ts
+@Component({
+  selector: 'app-product-card',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: \`
+    &lt;h3&gt;{{ product().name }}&lt;/h3&gt;
+    &lt;p&gt;{{ product().price | currency:'INR' }}&lt;/p&gt;
+    &lt;button (click)="added.emit(product())"&gt;Add to cart&lt;/button&gt;
+  \`
+})
+export class ProductCardComponent {
+  product = input.required&lt;Product&gt;();      // data IN from the parent
+  added = output&lt;Product&gt;();                 // events OUT to the parent
+}
+
+// header.component.ts: any component can read the shared state
+@Component({
+  selector: 'app-header',
+  standalone: true,
+  template: \`&lt;span&gt;Cart ({{ cart.count() }}) · {{ cart.total() | currency:'INR' }}&lt;/span&gt;\`
+})
+export class HeaderComponent {
+  cart = inject(CartService);
+}
+// Clicking "Add to cart" updates the signal; only the views that READ
+// count() or total() are updated. No manual subscription, nothing to unsubscribe.</code></pre>
+<h3>The building blocks, and what each is for</h3>
+<table>
+<tr><th>Piece</th><th>Job</th></tr>
+<tr><td>Component</td><td>A piece of UI: class plus template</td></tr>
+<tr><td>Service + DI</td><td>Shared logic and state; easy to replace with a fake in tests</td></tr>
+<tr><td>Signals</td><td>Reactive state that updates exactly the views that read it</td></tr>
+<tr><td>RxJS Observables</td><td>Streams over time: HTTP, WebSockets, debounced input</td></tr>
+<tr><td>Router</td><td>Maps URLs to components; lazy-loads feature areas</td></tr>
+<tr><td>Reactive forms</td><td>Typed form state and validation in the class, testable without a DOM</td></tr>
+<tr><td>Change detection</td><td>Keeps the DOM in sync; OnPush and signals make it cheap</td></tr>
+</table>`);
+
 appendTopic("angular", [
 {
   q: "Trace one click through Angular's change detection, with and without OnPush",

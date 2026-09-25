@@ -1,3 +1,64 @@
+registerPrimer("react", `<h3>The mental model: the screen is a function of state</h3>
+<p>In React you never change the page directly. You describe what the UI should look like <strong>for a given state</strong>, and React makes the page match. When state changes, React calls your component function again, compares the new description with the previous one, and updates only the parts of the real DOM that differ. Your job is to get the state right. React's job is to get the DOM right.</p>
+<figure class="fig">
+<svg viewBox="0 0 620 214" role="img" aria-label="React update cycle: setState triggers render, reconciliation diffs the output, commit updates the DOM, then effects run">
+  <defs><marker id="pr-re" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
+  <rect class="dg-fill" x="10" y="40" width="110" height="60" rx="9"/><text class="dg-t" x="65" y="64" text-anchor="middle">Trigger</text><text class="dg-m" x="65" y="84" text-anchor="middle">setCount(1)</text>
+  <line class="dg-line" x1="120" y1="70" x2="146" y2="70" marker-end="url(#pr-re)"/>
+  <rect class="dg-fill2" x="148" y="40" width="130" height="60" rx="9"/><text class="dg-t" x="213" y="62" text-anchor="middle">Render</text><text class="dg-s" x="213" y="78" text-anchor="middle">call the component,</text><text class="dg-s" x="213" y="91" text-anchor="middle">get new JSX (pure)</text>
+  <line class="dg-line" x1="278" y1="70" x2="304" y2="70" marker-end="url(#pr-re)"/>
+  <rect class="dg-box" x="306" y="40" width="130" height="60" rx="9"/><text class="dg-t" x="371" y="62" text-anchor="middle">Reconcile</text><text class="dg-s" x="371" y="78" text-anchor="middle">diff with the last</text><text class="dg-s" x="371" y="91" text-anchor="middle">render's output</text>
+  <line class="dg-line" x1="436" y1="70" x2="462" y2="70" marker-end="url(#pr-re)"/>
+  <rect class="dg-fill" x="464" y="40" width="146" height="60" rx="9"/><text class="dg-t" x="537" y="62" text-anchor="middle">Commit</text><text class="dg-s" x="537" y="78" text-anchor="middle">touch only changed</text><text class="dg-s" x="537" y="91" text-anchor="middle">DOM nodes</text>
+  <line class="dg-line" x1="537" y1="100" x2="537" y2="130" marker-end="url(#pr-re)"/>
+  <rect class="dg-fill2" x="444" y="132" width="166" height="54" rx="9"/><text class="dg-t" x="527" y="154" text-anchor="middle">Effects</text><text class="dg-s" x="527" y="172" text-anchor="middle">useEffect runs after paint</text>
+  <path class="dg-line" d="M444 160 H65 V104" marker-end="url(#pr-re)" stroke-dasharray="4 3"/>
+  <text class="dg-s" x="140" y="154">an effect that sets state starts the cycle again</text>
+  <text class="dg-s" x="10" y="206">Render must be pure: no fetching, no subscriptions, no DOM writes. Side effects belong in effects or event handlers.</text>
+</svg>
+<figcaption>One state change, one pass through the cycle. React batches several setState calls in the same event into one render.</figcaption>
+</figure>
+<h3>Worked example: a search box, traced</h3>
+<pre><code>function UserSearch() {
+  const [query, setQuery] = useState("");          // state: what the user typed
+  const [users, setUsers] = useState([]);          // state: the results
+
+  useEffect(() =&gt; {                                // side effect: runs AFTER render
+    if (query.length &lt; 2) { setUsers([]); return; }
+    const ctrl = new AbortController();
+    fetch("/api/users?q=" + encodeURIComponent(query), { signal: ctrl.signal })
+      .then(r =&gt; r.json())
+      .then(setUsers)
+      .catch(() =&gt; {});                            // aborted requests land here
+    return () =&gt; ctrl.abort();                     // cleanup: cancel the stale request
+  }, [query]);                                     // re-run only when query changes
+
+  return (
+    &lt;&gt;
+      &lt;input value={query} onChange={e =&gt; setQuery(e.target.value)} /&gt;
+      &lt;ul&gt;{users.map(u =&gt; &lt;li key={u.id}&gt;{u.name}&lt;/li&gt;)}&lt;/ul&gt;
+    &lt;/&gt;
+  );
+}
+
+// User types "a", then "as":
+// 1. setQuery("a")  -&gt; render -&gt; commit input value -&gt; effect: too short
+// 2. setQuery("as") -&gt; render -&gt; commit -&gt; cleanup of old effect (nothing to
+//    abort) -&gt; effect runs: fetch starts
+// 3. User types "asa" before it returns -&gt; render -&gt; cleanup ABORTS the "as"
+//    fetch -&gt; new fetch for "asa". A slow old response can never overwrite
+//    newer results.
+// 4. Response arrives -&gt; setUsers(list) -&gt; render -&gt; commit only the new &lt;li&gt;s</code></pre>
+<h3>The rules that most React questions come back to</h3>
+<table>
+<tr><th>Rule</th><th>Because</th></tr>
+<tr><td>Never mutate state; create a new object or array</td><td>React compares by reference. A mutated array is the "same" array, so nothing re-renders</td></tr>
+<tr><td>Stable, unique <code>key</code> in lists (not the index)</td><td>Keys tell React which item is which between renders; index keys mix up state when items move</td></tr>
+<tr><td>Hooks at the top level only, never inside conditions</td><td>React identifies each hook by its call order</td></tr>
+<tr><td>List every value an effect uses in its dependency array</td><td>Otherwise the effect reads stale values from an old render</td></tr>
+<tr><td>Derive, do not duplicate: compute values from state during render</td><td>Two copies of the same fact drift apart</td></tr>
+</table>`);
+
 appendTopic("react", [
 {
   q: "Walk me through exactly what React does between a setState call and the screen updating",

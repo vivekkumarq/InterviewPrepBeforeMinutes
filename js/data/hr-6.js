@@ -1,3 +1,56 @@
+registerPrimer("hr", `<h3>The mental model: every behavioural question asks for evidence</h3>
+<p>"Tell me about a time when…" is not small talk. The interviewer has a list of traits to score (ownership, handling conflict, dealing with ambiguity, learning from failure) and needs <strong>evidence</strong> for each: a real situation, what <em>you</em> did, and what happened. Opinions ("I'm a team player") score nothing. Stories score. The <strong>STAR</strong> structure exists so your story delivers the evidence in the order the interviewer is listening for it.</p>
+<figure class="fig">
+<svg viewBox="0 0 620 196" role="img" aria-label="STAR answer structure with the share of time for each part: Situation, Task, Action, Result">
+  <rect class="dg-box" x="10" y="30" width="76" height="70" rx="8"/>
+  <text class="dg-t" x="48" y="56" text-anchor="middle">S</text><text class="dg-s" x="48" y="74" text-anchor="middle">Situation</text><text class="dg-s" x="48" y="90" text-anchor="middle">~10%</text>
+  <rect class="dg-box" x="90" y="30" width="66" height="70" rx="8"/>
+  <text class="dg-t" x="123" y="56" text-anchor="middle">T</text><text class="dg-s" x="123" y="74" text-anchor="middle">Task</text><text class="dg-s" x="123" y="90" text-anchor="middle">~10%</text>
+  <rect class="dg-fill" x="160" y="30" width="300" height="70" rx="8"/>
+  <text class="dg-t" x="310" y="56" text-anchor="middle">A: Action</text><text class="dg-s" x="310" y="74" text-anchor="middle">what YOU did, step by step, and why</text><text class="dg-s" x="310" y="90" text-anchor="middle">~60%</text>
+  <rect class="dg-fill2" x="464" y="30" width="146" height="70" rx="8"/>
+  <text class="dg-t" x="537" y="56" text-anchor="middle">R: Result</text><text class="dg-s" x="537" y="74" text-anchor="middle">outcome + lesson</text><text class="dg-s" x="537" y="90" text-anchor="middle">~20%</text>
+  <text class="dg-s" x="10" y="130">Most weak answers invert this: a long Situation, a vague "we fixed it", and no Result.</text>
+  <text class="dg-s" x="10" y="150">Say "I", not "we", in the Action. The interviewer is hiring you, not your team.</text>
+  <text class="dg-s" x="10" y="170">End the Result with a number or a concrete change, then one sentence on what you learned.</text>
+</svg>
+<figcaption>About two minutes in total. The Action is where the evidence is, so give it most of the time.</figcaption>
+</figure>
+<h3>Worked example: turning a weak answer into a strong one</h3>
+<p><strong>Question:</strong> "Tell me about a time you disagreed with a teammate."</p>
+<pre><code>WEAK
+"We had a disagreement about the database once. We discussed it as a team
+ and eventually agreed on a solution. Communication is really important and
+ I always try to listen to everyone's point of view."
+ -&gt; no situation, no action, no result. Pure opinion. Scores almost nothing.
+
+STRONG
+S  "We were building a notifications service, and a senior colleague wanted
+    to store every notification in MongoDB for flexibility."
+T  "I owned the delivery-tracking part, which needed to report per-user
+    delivery counts for billing."
+A  "I thought billing needed transactions and joins, so Postgres fitted
+    better, but I did not want it to become my opinion against his. I
+    wrote down the five queries billing actually needed, and prototyped
+    the two hardest in both databases over an afternoon. In Mongo, the
+    monthly billing query needed an aggregation pipeline that took 9
+    seconds on test data; in Postgres it was one query at 200 ms. I
+    shared the numbers with him first, privately, before the team meeting."
+R  "He agreed, and suggested we keep the raw notification payload as a
+    JSONB column, which gave him the flexibility he wanted. Billing has run
+    on it for a year without issues. What I took from it: bring data to a
+    technical disagreement, and talk to the person before the meeting."</code></pre>
+<h3>How to prepare, in one evening</h3>
+<table>
+<tr><th>Step</th><th>What to do</th></tr>
+<tr><td>1. Write 6 to 8 stories</td><td>Real ones: a hard bug, a conflict, a failure, a deadline, leading something, learning something fast, a disagreement with a manager, helping a teammate</td></tr>
+<tr><td>2. Map them to questions</td><td>Each story usually answers two or three questions. "Failure" and "production incident" can be the same story</td></tr>
+<tr><td>3. Add a number to each Result</td><td>Time saved, latency cut, incidents prevented, users affected. Only real numbers</td></tr>
+<tr><td>4. Say them out loud once</td><td>Time yourself: about two minutes each. Written stories always run long when spoken</td></tr>
+<tr><td>5. Research the company</td><td>One specific reason you want to work there, and three questions to ask them</td></tr>
+</table>
+<p><strong>Honesty matters more than polish.</strong> Interviewers ask follow-ups ("what would you do differently?", "what did your manager say?") precisely to test whether a story is real. A modest true story survives follow-ups; an impressive invented one does not.</p>`);
+
 appendTopic("hr", [
 {
   q: "Tell me about a production incident you caused. What happened and what did you change?",

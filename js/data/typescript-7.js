@@ -1,3 +1,69 @@
+registerPrimer("typescript", `<h3>The mental model: JavaScript plus a checker that disappears before runtime</h3>
+<p>TypeScript is JavaScript with type annotations. The compiler (<code>tsc</code>) does two separate jobs: it <strong>checks</strong> your types and reports mistakes, and it <strong>erases</strong> the types to produce plain JavaScript. The browser or Node never sees a single type. That one fact explains most TypeScript behaviour: types cannot validate data at runtime, <code>as</code> does not convert anything, and an <code>interface</code> produces no code at all.</p>
+<p>The second key idea is that TypeScript is <strong>structural</strong>. A value fits a type if it has the right shape, whatever it is called. Java asks "was this declared as a <code>User</code>?"; TypeScript asks "does it have the fields a <code>User</code> needs?".</p>
+<figure class="fig">
+<svg viewBox="0 0 620 196" role="img" aria-label="TypeScript source is type-checked and then types are erased, producing plain JavaScript that runs without any type information">
+  <defs><marker id="pr-ts" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
+  <rect class="dg-box" x="10" y="20" width="200" height="110" rx="9"/>
+  <text class="dg-t" x="22" y="40">user.ts</text>
+  <text class="dg-m" x="22" y="64">interface User {</text>
+  <text class="dg-m" x="34" y="80">name: string</text>
+  <text class="dg-m" x="22" y="96">}</text>
+  <text class="dg-m" x="22" y="116">function greet(u: User)</text>
+  <line class="dg-line" x1="210" y1="75" x2="246" y2="75" marker-end="url(#pr-ts)"/>
+  <rect class="dg-fill" x="248" y="20" width="130" height="110" rx="9"/>
+  <text class="dg-t" x="313" y="44" text-anchor="middle">tsc</text>
+  <text class="dg-s" x="313" y="68" text-anchor="middle">1. CHECK types</text>
+  <text class="dg-s" x="313" y="84" text-anchor="middle">errors stop here</text>
+  <text class="dg-s" x="313" y="108" text-anchor="middle">2. ERASE types</text>
+  <line class="dg-line" x1="378" y1="75" x2="414" y2="75" marker-end="url(#pr-ts)"/>
+  <rect class="dg-fill2" x="416" y="20" width="194" height="110" rx="9"/>
+  <text class="dg-t" x="428" y="40">user.js</text>
+  <text class="dg-m" x="428" y="64">function greet(u) {</text>
+  <text class="dg-m" x="440" y="80">...</text>
+  <text class="dg-m" x="428" y="96">}</text>
+  <text class="dg-s" x="428" y="118">interface: gone entirely</text>
+  <text class="dg-s" x="10" y="160">Compile time: types protect you from your own code.</text>
+  <text class="dg-s" x="10" y="178">Runtime: nothing protects you from a server that sends a different shape. Validate at the boundary.</text>
+</svg>
+<figcaption>Types exist only while you write and build. At runtime it is plain JavaScript.</figcaption>
+</figure>
+<h3>Worked example: inference, structural typing and narrowing</h3>
+<pre><code>// 1. INFERENCE: you rarely need to annotate locals
+const count = 3;                    // type: 3 (a literal type, because const)
+let total = 0;                      // type: number
+const names = ["asha", "ravi"];     // type: string[]
+
+// 2. STRUCTURAL: shape matters, not the declared name
+interface Point { x: number; y: number }
+const p = { x: 1, y: 2, label: "A" };
+function draw(pt: Point) { /* ... */ }
+draw(p);                            // OK: p has x and y. The extra field is fine.
+draw({ x: 1, y: 2, label: "A" });   // ERROR: an object LITERAL with unknown
+                                    // properties is checked strictly, to catch typos
+
+// 3. UNIONS and NARROWING: the compiler follows your checks
+function format(value: string | number | null): string {
+  if (value === null) return "—";          // here: null
+  if (typeof value === "number")
+    return value.toFixed(2);               // here: number
+  return value.toUpperCase();              // here: must be string
+}
+
+// 4. The compiler cannot see runtime data
+const data = JSON.parse(text) as Point;    // 'as' checks NOTHING. If the JSON is
+                                           // {"x":"1"}, data.x is a string at runtime.</code></pre>
+<h3>Types you will use every day</h3>
+<table>
+<tr><th>Tool</th><th>Use it for</th></tr>
+<tr><td><code>interface</code> / <code>type</code></td><td>Describing object shapes; <code>type</code> also names unions</td></tr>
+<tr><td>Union <code>A | B</code></td><td>"One of these"; combine with narrowing</td></tr>
+<tr><td>Generics <code>&lt;T&gt;</code></td><td>Functions and types that work for any type while keeping it precise</td></tr>
+<tr><td><code>unknown</code></td><td>Data you have not checked yet. Safer than <code>any</code>, which turns checking off</td></tr>
+<tr><td><code>Partial</code>, <code>Pick</code>, <code>Omit</code>, <code>Record</code></td><td>Deriving new types from existing ones instead of copying fields</td></tr>
+<tr><td><code>strict: true</code></td><td>Turns on null checks and more; always on for new projects</td></tr>
+</table>`);
+
 appendTopic("typescript", [
 {
   q: "Work through what 'this' refers to in each of these five cases",
