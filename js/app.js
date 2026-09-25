@@ -740,6 +740,7 @@
           "</div>" +
           '<input class="filter-in" id="topicFilter" placeholder="🔍 Filter within ' + esc(meta.name) + '…" />' +
           firmSelect(qs) +
+          '<a class="tool-btn quiz-start" href="#/quiz/' + id + '">🎯 Quiz me</a>' +
           '<button class="tool-btn" id="expandAll">⤢ Expand all</button>' +
           '<button class="tool-btn" id="collapseAll">⤡ Collapse all</button>' +
           '<span class="count-tag" id="countTag"></span>' +
@@ -1716,11 +1717,158 @@
     });
   }
 
+  /* ================= quiz mode =================
+     Reading an answer you can already see teaches far less than trying to
+     recall it first. Quiz mode hides the answer, makes you commit, then
+     reveals — and what you mark as "needs work" feeds the same progress
+     store as the Mark-as-revised buttons, so the two stay in step. */
+
+  var quiz = { topic: null, questions: [], order: [], at: 0, shown: false, knew: [], missed: [] };
+
+  function shuffled(n) {
+    var a = [];
+    for (var i = 0; i < n; i++) a.push(i);
+    for (var j = a.length - 1; j > 0; j--) {          /* Fisher-Yates */
+      var k = Math.floor(Math.random() * (j + 1));
+      var t = a[j]; a[j] = a[k]; a[k] = t;
+    }
+    return a;
+  }
+
+  function startQuiz(id, onlyThese) {
+    var meta = window.TOPIC_MAP[id];
+    if (!meta) return renderNotFound();
+    view.innerHTML = '<div class="loading"><div class="spinner"></div>Preparing your quiz…</div>';
+
+    ensureTopic(id, function (qs) {
+      if (state.view !== "quiz" || state.topic !== id) return;
+      quiz.topic = id;
+      quiz.questions = qs;
+      quiz.order = onlyThese && onlyThese.length ? onlyThese.slice() : shuffled(qs.length);
+      quiz.at = 0; quiz.shown = false; quiz.knew = []; quiz.missed = [];
+      renderQuiz();
+    });
+  }
+
+  function renderQuiz() {
+    var meta = window.TOPIC_MAP[quiz.topic];
+    var total = quiz.order.length;
+
+    if (quiz.at >= total) return renderQuizSummary(meta, total);
+
+    var idx = quiz.order[quiz.at];
+    var q = quiz.questions[idx];
+    var pct = Math.round((quiz.at / total) * 100);
+
+    view.innerHTML =
+      '<div class="quiz-wrap">' +
+        '<div class="quiz-top">' +
+          '<a class="quiz-exit" href="#/topic/' + quiz.topic + '">← Leave quiz</a>' +
+          '<span class="quiz-count">' + (quiz.at + 1) + " of " + total + "</span>" +
+        "</div>" +
+        '<div class="quiz-bar"><i style="width:' + pct + '%"></i></div>' +
+        '<article class="quiz-card">' +
+          '<div class="quiz-badges">' +
+            (q.hot ? '<span class="badge hot">Most asked</span>' : "") +
+            '<span class="badge ' + (q.level === "beginner" ? "beg\">Beginner" : "adv\">Advanced") + "</span>" +
+            '<span class="quiz-topic">' + meta.icon + " " + esc(meta.name) + "</span>" +
+          "</div>" +
+          "<h1>" + esc(q.q) + "</h1>" +
+          (quiz.shown
+            ? '<div class="answer quiz-answer">' + q.a + "</div>"
+            : '<p class="quiz-prompt">Answer it out loud first — then reveal and compare. ' +
+              "Recalling it is what makes it stick.</p>") +
+        "</article>" +
+        '<div class="quiz-actions">' +
+          (quiz.shown
+            ? '<button class="quiz-btn knew" id="quizKnew"><b>1</b> I knew it</button>' +
+              '<button class="quiz-btn missed" id="quizMissed"><b>2</b> Needs work</button>'
+            : '<button class="quiz-btn reveal" id="quizReveal">Reveal answer <b>Space</b></button>') +
+        "</div>" +
+      "</div>";
+
+    if (quiz.shown) {
+      wireCopyButtons(view);
+      document.getElementById("quizKnew").addEventListener("click", function () { answerQuiz(true); });
+      document.getElementById("quizMissed").addEventListener("click", function () { answerQuiz(false); });
+    } else {
+      document.getElementById("quizReveal").addEventListener("click", revealQuiz);
+    }
+  }
+
+  function revealQuiz() {
+    if (quiz.shown) return;
+    quiz.shown = true;
+    renderQuiz();
+  }
+
+  function answerQuiz(knew) {
+    var idx = quiz.order[quiz.at];
+    (knew ? quiz.knew : quiz.missed).push(idx);
+    /* "I knew it" marks it revised; "needs work" clears any earlier mark, so
+       the quiz and the manual buttons never disagree about the same card. */
+    var key = qKey(quiz.topic, idx);
+    if (knew) state.done[key] = true; else delete state.done[key];
+    save(LS_DONE, state.done);
+    quiz.at++;
+    quiz.shown = false;
+    renderQuiz();
+  }
+
+  function renderQuizSummary(meta, total) {
+    var score = total ? Math.round((quiz.knew.length / total) * 100) : 0;
+    var missedList = quiz.missed.map(function (i) {
+      return '<li><a href="#/topic/' + quiz.topic + '#q-' + quiz.topic + "-" + i + '">' +
+        esc(quiz.questions[i].q) + "</a></li>";
+    }).join("");
+
+    view.innerHTML =
+      '<div class="quiz-wrap quiz-done">' +
+        '<div class="quiz-score" style="--pct:' + score + '">' +
+          "<b>" + score + "%</b><span>recalled</span>" +
+        "</div>" +
+        "<h1>" + (score === 100 ? "Every one. " : "") + quiz.knew.length + " of " + total + " recalled</h1>" +
+        '<p class="quiz-sub">' + esc(meta.name) + " · " +
+          (quiz.missed.length
+            ? quiz.missed.length + " to go back over"
+            : "Nothing left to revise here.") + "</p>" +
+        (quiz.missed.length
+          ? '<h2 class="quiz-h2">Worth another look</h2><ul class="quiz-missed">' + missedList + "</ul>"
+          : "") +
+        '<div class="quiz-actions">' +
+          (quiz.missed.length
+            ? '<button class="quiz-btn reveal" id="quizRetry">Retry just these ' + quiz.missed.length + "</button>"
+            : "") +
+          '<a class="quiz-btn ghost" href="#/quiz/' + quiz.topic + '">Shuffle again</a>' +
+          '<a class="quiz-btn ghost" href="#/topic/' + quiz.topic + '">Back to the questions</a>' +
+        "</div>" +
+      "</div>";
+
+    var retry = document.getElementById("quizRetry");
+    if (retry) retry.addEventListener("click", function () {
+      var again = quiz.missed.slice();
+      quiz.order = again; quiz.at = 0; quiz.shown = false;
+      quiz.knew = []; quiz.missed = [];
+      renderQuiz();
+    });
+  }
+
+  /* Keyboard: Space reveals, 1/2 rate. Ignored while typing in a field. */
+  document.addEventListener("keydown", function (e) {
+    if (state.view !== "quiz") return;
+    if (/input|textarea|select/i.test(document.activeElement.tagName)) return;
+    if (quiz.at >= quiz.order.length) return;
+    if ((e.key === " " || e.key === "Enter") && !quiz.shown) { e.preventDefault(); revealQuiz(); }
+    else if (quiz.shown && (e.key === "1")) { e.preventDefault(); answerQuiz(true); }
+    else if (quiz.shown && (e.key === "2")) { e.preventDefault(); answerQuiz(false); }
+  });
+
   function route() {
     var hash = location.hash || "#/";
     var mCompany = hash.match(/^#\/company\/([\w-]+)/);
     var mTopic = hash.match(/^#\/topic\/([\w-]+)/);
     var mSheet = hash.match(/^#\/cheatsheet\/([\w-]+)/);
+    var mQuiz = hash.match(/^#\/quiz\/([\w-]+)/);
     var mCodeQ = hash.match(/^#\/code\/([\w-]+)\/([\w-]+)/);
     var mCodeT = hash.match(/^#\/code\/([\w-]+)/);
     var inCode = hash.indexOf("#/code") === 0;
@@ -1745,6 +1893,17 @@
         buildCodeNav();
       }
       applyTheme(null);
+      markActive();
+      window.scrollTo({ top: 0, behavior: "instant" });
+      requestAnimationFrame(measure);
+      return;
+    }
+
+    if (mQuiz) {
+      state.view = "quiz"; state.topic = mQuiz[1];
+      state.company = null; state.sheet = null;
+      startQuiz(mQuiz[1]);
+      applyTheme(mQuiz[1]);
       markActive();
       window.scrollTo({ top: 0, behavior: "instant" });
       requestAnimationFrame(measure);
