@@ -3,7 +3,7 @@ window.GROUPS = [
   {
     id: "java", name: "Java Core", icon: "☕",
     topics: [
-      { id: "java-basics", parts: 5,       name: "Java Fundamentals",  icon: "☕", blurb: "Language basics, memory model of objects, strings, exceptions — the questions every Java round opens with." },
+      { id: "java-basics", parts: 6,       name: "Java Fundamentals",  icon: "☕", blurb: "Language basics, memory model of objects, strings, exceptions — the questions every Java round opens with." },
       { id: "java-oop", parts: 5,          name: "OOP & Design",       icon: "🧩", blurb: "Encapsulation, inheritance, polymorphism, abstraction, SOLID and the classic trick questions around them." },
       { id: "java-collections", parts: 5,  name: "Collections Framework", icon: "📦", blurb: "List, Set, Map, internal working of HashMap, ConcurrentHashMap, comparators and complexity." },
       { id: "java-concurrency", parts: 6,  name: "Multithreading & Concurrency", icon: "🧵", blurb: "Threads, executors, locks, volatile, CompletableFuture, deadlocks and the Java Memory Model." },
@@ -113,6 +113,13 @@ window.registerTopic = function (id, questions) {
 window.appendTopic = function (id, questions) {
   window.TOPIC_DATA[id] = (window.TOPIC_DATA[id] || []).concat(questions);
   document.dispatchEvent(new CustomEvent("topic:loaded", { detail: { id } }));
+};
+
+/* A topic's "Start here" primer: how it works, a diagram and a worked
+   example, shown above the question list. Any part file may register it. */
+window.PRIMERS = {};
+window.registerPrimer = function (id, html) {
+  window.PRIMERS[id] = html;
 };
 
 /* Cheatsheet bundles -> the topics each one registers. */

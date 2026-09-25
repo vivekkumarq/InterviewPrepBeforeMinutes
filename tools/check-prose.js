@@ -32,7 +32,9 @@ fs.readdirSync(codeDir).filter(f => f.endsWith(".js")).forEach(f =>
 /* ---------- load the topic data ---------- */
 const topicDir = path.join(root, "js", "data");
 const topicData = {};
+const primers = {};
 const topicBox = {
+  registerPrimer(id, html) { primers[id] = html; },
   registerTopic(id, qs) { topicData[id] = (topicData[id] || []).concat(qs); },
   appendTopic(id, qs) { topicData[id] = (topicData[id] || []).concat(qs); },
   registerSheet() {}, window: {},
@@ -173,6 +175,6 @@ Object.keys(topicData).forEach(id => {
 });
 
 console.log(`\n  coding: ${codeQ} questions, ${codeA} approaches`);
-console.log(`  topics: ${topicQ} questions`);
+console.log(`  topics: ${topicQ} questions, ${Object.keys(primers).length} primers`);
 console.log(`\n${problems === 0 ? "NO PROSE OR MARKUP PROBLEMS" : problems + " PROBLEM(S) FOUND"}`);
 process.exit(problems ? 1 : 0);

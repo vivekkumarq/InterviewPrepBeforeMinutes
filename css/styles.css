@@ -1451,3 +1451,40 @@ pre:hover .copy-btn,.copy-btn:focus-visible{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){
   .reveal,.reveal.seen{opacity:1;transform:none;transition:none}
 }
+
+/* ---------- "Start here" primer above each topic's questions ---------- */
+.primer{
+  margin:0 0 20px;border-radius:16px;border:1px solid var(--border);
+  background:var(--panel);overflow:hidden;
+  box-shadow:0 1px 0 color-mix(in srgb, var(--accent) 30%, transparent) inset;
+  animation:rise .42s .06s cubic-bezier(.22,1,.36,1) both;
+}
+.primer summary{
+  display:flex;align-items:center;gap:13px;padding:15px 18px;
+  cursor:pointer;list-style:none;user-select:none;
+  background:linear-gradient(90deg,var(--accent-soft),transparent 70%);
+}
+.primer summary::-webkit-details-marker{display:none}
+.primer summary:hover .primer-chev{color:var(--accent)}
+.primer summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.primer-ico{
+  flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:11px;
+  background:var(--accent-soft);font-size:19px;
+}
+.primer-title{display:flex;flex-direction:column;gap:2px;min-width:0}
+.primer-title b{font-size:15.5px;color:var(--text)}
+.primer-title small{font-size:12.5px;color:var(--text-mute)}
+.primer-chev{margin-left:auto;color:var(--text-mute);transition:transform .25s ease,color .2s}
+.primer[open] .primer-chev{transform:rotate(180deg)}
+.primer .primer-body{padding:18px 22px 8px;border-top:1px solid var(--border)}
+.primer[open] .primer-body{animation:primer-in .35s ease both}
+.primer-body h3{margin:18px 0 8px;font-size:15px;color:var(--text);letter-spacing:-.2px}
+.primer-body h3:first-child{margin-top:0}
+@keyframes primer-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (max-width:640px){
+  .primer summary{padding:13px 14px;gap:10px}
+  .primer .primer-body{padding:14px 14px 4px}
+}
+@media (prefers-reduced-motion:reduce){
+  .primer,.primer[open] .primer-body{animation:none}
+}

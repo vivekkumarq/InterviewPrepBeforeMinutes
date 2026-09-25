@@ -14,6 +14,7 @@
   var LS_OPEN = "ipbm.groups";
   var LS_FONT = "ipbm.font";
   var LS_SIZE = "ipbm.size";
+  var LS_PRIMER = "ipbm.primer.shut";
 
   /* ---------------- typefaces ----------------
      'google' fonts are fetched only when the reader actually selects them (or
@@ -700,6 +701,30 @@
       "</header>";
   }
 
+  /* Open by default; once collapsed it stays collapsed for that topic. */
+  function primerBlock(id, meta) {
+    var html = window.PRIMERS[id];
+    if (!html) return "";
+    var shut = load(LS_PRIMER, {})[id];
+    return '<details class="primer" id="primer"' + (shut ? "" : " open") + ">" +
+        '<summary><span class="primer-ico" aria-hidden="true">📘</span>' +
+          '<span class="primer-title"><b>Start here</b><small>How ' + esc(meta.name) +
+          " works, with a diagram and a worked example</small></span>" +
+          '<span class="primer-chev" aria-hidden="true">▾</span></summary>' +
+        '<div class="answer primer-body">' + html + "</div>" +
+      "</details>";
+  }
+  function wirePrimer(id) {
+    var el = document.getElementById("primer");
+    if (!el) return;
+    wireCopyButtons(el);
+    el.addEventListener("toggle", function () {
+      var shut = load(LS_PRIMER, {});
+      if (el.open) delete shut[id]; else shut[id] = 1;
+      save(LS_PRIMER, shut);
+    });
+  }
+
   /* Sets --accent for the current view so cards, badges and rules pick up the
      technology's colour without every rule needing a per-topic override. */
   function applyTheme(id) {
@@ -732,6 +757,7 @@
       var head =
         '<div class="crumbs"><a href="#/">Home</a> &nbsp;›&nbsp; ' + esc(meta.group) + " &nbsp;›&nbsp; " + esc(meta.name) + "</div>" +
         topicBanner(id, meta) +
+        primerBlock(id, meta) +
         '<div class="toolbar">' +
           '<div class="seg" id="levelSeg">' +
             '<button data-level="all">All</button>' +
@@ -747,6 +773,7 @@
         "</div>" +
         '<div class="qlist" id="qlist"></div>';
       view.innerHTML = head;
+      wirePrimer(id);
 
       var seg = document.getElementById("levelSeg");
       seg.querySelectorAll("button").forEach(function (b) {
