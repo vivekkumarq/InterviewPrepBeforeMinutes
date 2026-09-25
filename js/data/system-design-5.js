@@ -16,18 +16,18 @@ appendTopic("system-design", [
 <svg viewBox="0 0 620 155" role="img" aria-label="Hybrid feed with push for normal users and pull for celebrities">
   <rect class="dg-fill" x="16" y="24" width="150" height="46" rx="8"/>
   <text class="dg-s" x="91" y="44" text-anchor="middle">normal user posts</text><text class="dg-s" x="91" y="61" text-anchor="middle">~500 followers</text>
-  <path class="dg-line" d="M170 47 H226" marker-end="url(#fd1)"/>
+  <path class="dg-line" d="M170 47 H226" marker-end="url(#fd9)"/>
   <rect class="dg-fill2" x="230" y="24" width="170" height="46" rx="8"/>
   <text class="dg-s" x="315" y="44" text-anchor="middle">PUSH into 500 feeds</text><text class="dg-s" x="315" y="61" text-anchor="middle">cheap, done async</text>
   <rect class="dg-box" x="16" y="88" width="150" height="46" rx="8"/>
   <text class="dg-s" x="91" y="108" text-anchor="middle">celebrity posts</text><text class="dg-s" x="91" y="125" text-anchor="middle">50M followers</text>
-  <path class="dg-line" d="M170 111 H226" marker-end="url(#fd1)"/>
+  <path class="dg-line" d="M170 111 H226" marker-end="url(#fd9)"/>
   <rect class="dg-box" x="230" y="88" width="170" height="46" rx="8"/>
   <text class="dg-s" x="315" y="108" text-anchor="middle">do NOTHING</text><text class="dg-s" x="315" y="125" text-anchor="middle">merged in at read time</text>
   <text class="dg-s" x="418" y="82">the hybrid avoids both</text>
   <text class="dg-s" x="418" y="100">the write storm and the</text>
   <text class="dg-s" x="418" y="118">slow read</text>
-  <defs><marker id="fd1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="currentColor" stroke="none" class="dg-line"/></marker></defs>
+  <defs><marker id="fd9" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="currentColor" stroke="none" class="dg-line"/></marker></defs>
 </svg>
 </figure>
 <pre><code>// The hybrid, which is what real systems do:

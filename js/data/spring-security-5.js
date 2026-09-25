@@ -22,15 +22,15 @@ ResponseCookie refresh = ResponseCookie.from("refresh_token", token)
 <svg viewBox="0 0 620 165" role="img" aria-label="Access token refresh cycle with rotation and reuse detection">
   <rect class="dg-fill" x="16" y="26" width="120" height="34" rx="6"/><text class="dg-s" x="76" y="48" text-anchor="middle">access token</text>
   <text class="dg-s" x="76" y="76" text-anchor="middle">15 min, in memory</text>
-  <path class="dg-line" d="M140 43 H210" marker-end="url(#jw1)"/>
+  <path class="dg-line" d="M140 43 H210" marker-end="url(#jw9)"/>
   <text class="dg-s" x="175" y="34" text-anchor="middle">expires</text>
   <rect class="dg-fill2" x="214" y="26" width="130" height="34" rx="6"/><text class="dg-s" x="279" y="48" text-anchor="middle">POST /auth/refresh</text>
-  <path class="dg-line" d="M348 43 H418" marker-end="url(#jw1)"/>
+  <path class="dg-line" d="M348 43 H418" marker-end="url(#jw9)"/>
   <rect class="dg-fill" x="422" y="26" width="182" height="34" rx="6"/><text class="dg-s" x="513" y="48" text-anchor="middle">new access + NEW refresh</text>
   <text class="dg-s" x="513" y="76" text-anchor="middle">old refresh is invalidated</text>
   <rect class="dg-box" x="150" y="106" width="330" height="34" rx="6"/>
   <text class="dg-s" x="315" y="128" text-anchor="middle">old refresh reused → revoke the whole family (theft detected)</text>
-  <defs><marker id="jw1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="currentColor" stroke="none" class="dg-line"/></marker></defs>
+  <defs><marker id="jw9" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="currentColor" stroke="none" class="dg-line"/></marker></defs>
 </svg>
 </figure>
 <p><strong>Refresh token rotation with reuse detection</strong> is the part that turns a design into a secure one: every refresh issues a <em>new</em> refresh token and invalidates the old one. If an old token is ever presented again, either the client is buggy or the token was stolen — so you revoke the entire token family and force a re-login. Without rotation, a stolen refresh token is valid until it expires and you cannot tell it was stolen.</p>

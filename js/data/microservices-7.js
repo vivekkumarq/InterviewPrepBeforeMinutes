@@ -42,12 +42,12 @@ public void placeOrder(Order o) {
   <rect class="dg-fill" x="150" y="24" width="106" height="38" rx="6"/><text class="dg-t" x="203" y="48" text-anchor="middle">Payment</text>
   <rect class="dg-fill" x="286" y="24" width="106" height="38" rx="6"/><text class="dg-t" x="339" y="48" text-anchor="middle">Inventory</text>
   <rect class="dg-fill2" x="422" y="24" width="106" height="38" rx="6"/><text class="dg-t" x="475" y="48" text-anchor="middle">Shipping ✗</text>
-  <path class="dg-line" d="M120 43 L150 43 M256 43 L286 43 M392 43 L422 43" marker-end="url(#sg1)"/>
+  <path class="dg-line" d="M120 43 L150 43 M256 43 L286 43 M392 43 L422 43" marker-end="url(#sg9)"/>
   <text class="dg-s" x="14" y="96">forward: each step commits locally and emits an event</text>
-  <path class="dg-line" d="M422 128 L392 128 M286 128 L256 128 M150 128 L120 128" marker-end="url(#sg1)"/>
+  <path class="dg-line" d="M422 128 L392 128 M286 128 L256 128 M150 128 L120 128" marker-end="url(#sg9)"/>
   <text class="dg-s" x="14" y="158">compensate: refund payment, release stock, cancel order —</text>
   <text class="dg-s" x="14" y="180">in REVERSE order, and every compensation must be idempotent</text>
-  <defs><marker id="sg1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="currentColor" stroke="none" class="dg-line"/></marker></defs>
+  <defs><marker id="sg9" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="currentColor" stroke="none" class="dg-line"/></marker></defs>
 </svg>
 </figure>
 <table>
