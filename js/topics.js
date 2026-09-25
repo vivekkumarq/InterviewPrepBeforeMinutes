@@ -47,15 +47,15 @@ window.GROUPS = [
   {
     id: "devops", name: "DevOps & Cloud", icon: "🐳",
     topics: [
-      { id: "docker", parts: 6,     name: "Docker",         icon: "🐳", blurb: "Images vs containers, layers, multi-stage builds, networking, volumes and Compose." },
-      { id: "kubernetes", parts: 7, name: "Kubernetes",     icon: "☸️", blurb: "Pods, deployments, services, ingress, config, probes, HPA and rollout strategies." },
-      { id: "cicd", parts: 6,       name: "CI/CD & Git",    icon: "🔁", blurb: "Pipelines, GitLab CI, Jenkins, GitHub Actions, branching strategies and deployment patterns." }
+      { id: "docker", parts: 7,     name: "Docker",         icon: "🐳", blurb: "Images vs containers, layers, multi-stage builds, networking, volumes and Compose." },
+      { id: "kubernetes", parts: 8, name: "Kubernetes",     icon: "☸️", blurb: "Pods, deployments, services, ingress, config, probes, HPA and rollout strategies." },
+      { id: "cicd", parts: 7,       name: "CI/CD & Git",    icon: "🔁", blurb: "Pipelines, GitLab CI, Jenkins, GitHub Actions, branching strategies and deployment patterns." }
     ]
   },
   {
     id: "quality", name: "Testing & Quality", icon: "🧪",
     topics: [
-      { id: "testing", parts: 6, name: "JUnit 5, Mockito & Testing", icon: "🧪", blurb: "Unit vs integration tests, mocking, Testcontainers, coverage and testing Spring slices." }
+      { id: "testing", parts: 7, name: "JUnit 5, Mockito & Testing", icon: "🧪", blurb: "Unit vs integration tests, mocking, Testcontainers, coverage and testing Spring slices." }
     ]
   },
   {
