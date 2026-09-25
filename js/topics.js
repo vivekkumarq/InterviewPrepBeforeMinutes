@@ -33,15 +33,15 @@ window.GROUPS = [
     id: "arch", name: "Architecture & Design", icon: "🏛️",
     topics: [
       { id: "microservices", parts: 8,   name: "Microservices",       icon: "🧱", blurb: "Decomposition, service discovery, resilience, saga, outbox, idempotency and observability." },
-      { id: "system-design", parts: 8,   name: "System Design (HLD)", icon: "🏛️", blurb: "Scaling, caching, load balancing, CAP, sharding, rate limiting and end-to-end design walkthroughs." },
-      { id: "design-patterns", parts: 6, name: "Design Patterns & LLD", icon: "📐", blurb: "Creational, structural and behavioural patterns with the Java code interviewers expect on the board." }
+      { id: "system-design", parts: 9,   name: "System Design (HLD)", icon: "🏛️", blurb: "Scaling, caching, load balancing, CAP, sharding, rate limiting and end-to-end design walkthroughs." },
+      { id: "design-patterns", parts: 7, name: "Design Patterns & LLD", icon: "📐", blurb: "Creational, structural and behavioural patterns with the Java code interviewers expect on the board." }
     ]
   },
   {
     id: "data", name: "Databases", icon: "🗃️",
     topics: [
-      { id: "sql", parts: 6,        name: "SQL & Query Tuning", icon: "🗃️", blurb: "Joins, aggregates, window functions, indexes, execution plans and the classic query puzzles." },
-      { id: "postgresql", parts: 6, name: "PostgreSQL",         icon: "🐘", blurb: "MVCC, isolation levels, index types, VACUUM, partitioning, JSONB and locking." }
+      { id: "sql", parts: 7,        name: "SQL & Query Tuning", icon: "🗃️", blurb: "Joins, aggregates, window functions, indexes, execution plans and the classic query puzzles." },
+      { id: "postgresql", parts: 7, name: "PostgreSQL",         icon: "🐘", blurb: "MVCC, isolation levels, index types, VACUUM, partitioning, JSONB and locking." }
     ]
   },
   {
