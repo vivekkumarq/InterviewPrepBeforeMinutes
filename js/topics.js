@@ -24,15 +24,15 @@ window.GROUPS = [
   {
     id: "api", name: "APIs & Messaging", icon: "🔌",
     topics: [
-      { id: "rest-api", parts: 5, name: "REST API Design", icon: "🔌", blurb: "HTTP verbs, status codes, idempotency, versioning, pagination, HATEOAS and OpenAPI." },
-      { id: "graphql", parts: 6,  name: "GraphQL",         icon: "◈",  blurb: "Schema, queries, mutations, resolvers, N+1 with DataLoader and GraphQL-vs-REST trade-offs." },
-      { id: "kafka", parts: 6,    name: "Apache Kafka",    icon: "📨", blurb: "Topics, partitions, consumer groups, offsets, delivery semantics, ISR and exactly-once." }
+      { id: "rest-api", parts: 6, name: "REST API Design", icon: "🔌", blurb: "HTTP verbs, status codes, idempotency, versioning, pagination, HATEOAS and OpenAPI." },
+      { id: "graphql", parts: 7,  name: "GraphQL",         icon: "◈",  blurb: "Schema, queries, mutations, resolvers, N+1 with DataLoader and GraphQL-vs-REST trade-offs." },
+      { id: "kafka", parts: 7,    name: "Apache Kafka",    icon: "📨", blurb: "Topics, partitions, consumer groups, offsets, delivery semantics, ISR and exactly-once." }
     ]
   },
   {
     id: "arch", name: "Architecture & Design", icon: "🏛️",
     topics: [
-      { id: "microservices", parts: 7,   name: "Microservices",       icon: "🧱", blurb: "Decomposition, service discovery, resilience, saga, outbox, idempotency and observability." },
+      { id: "microservices", parts: 8,   name: "Microservices",       icon: "🧱", blurb: "Decomposition, service discovery, resilience, saga, outbox, idempotency and observability." },
       { id: "system-design", parts: 8,   name: "System Design (HLD)", icon: "🏛️", blurb: "Scaling, caching, load balancing, CAP, sharding, rate limiting and end-to-end design walkthroughs." },
       { id: "design-patterns", parts: 6, name: "Design Patterns & LLD", icon: "📐", blurb: "Creational, structural and behavioural patterns with the Java code interviewers expect on the board." }
     ]
