@@ -36,7 +36,7 @@ registerPrimer("kafka", `<h3>The mental model: an append-only log that many read
   <rect class="dg-fill" x="388" y="124" width="206" height="56" rx="7"/>
   <text class="dg-t" x="400" y="144">Consumer B</text>
   <text class="dg-s" x="400" y="162">owns P2 (at offset 4)</text>
-  <text class="dg-s" x="384" y="200">each partition: exactly ONE consumer per group</text>
+  <text class="dg-s" x="384" y="200">ONE consumer per partition</text>
   <line class="dg-line" x1="292" y1="45" x2="386" y2="76" marker-end="url(#pr-kaf)" stroke-dasharray="3 3"/>
   <line class="dg-line" x1="322" y1="183" x2="386" y2="152" marker-end="url(#pr-kaf)" stroke-dasharray="3 3"/>
 </svg>

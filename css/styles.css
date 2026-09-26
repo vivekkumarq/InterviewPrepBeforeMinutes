@@ -683,8 +683,10 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
 .answer .fig figcaption{margin-top:10px;font-size:11.5px;color:var(--text-mute);letter-spacing:.3px}
 /* diagram tokens */
 .dg-box{fill:var(--panel);stroke:var(--border-strong)}
-.dg-fill{fill:var(--accent-soft);stroke:var(--accent)}
-.dg-fill2{fill:rgba(14,165,233,.12);stroke:var(--accent-2)}
+/* Opaque tints (mixed onto the figure background) so connector lines drawn
+   beneath a shape never show through its label. */
+.dg-fill{fill:color-mix(in srgb,var(--accent) 14%,var(--bg-soft));stroke:var(--accent)}
+.dg-fill2{fill:color-mix(in srgb,var(--accent-2) 12%,var(--bg-soft));stroke:var(--accent-2)}
 .dg-line{stroke:var(--text-mute);fill:none}
 .dg-t{fill:var(--text);font:600 12px var(--sans);stroke:none}
 .dg-s{fill:var(--text-mute);font:400 10.5px var(--sans);stroke:none}

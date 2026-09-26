@@ -18,7 +18,7 @@ registerPrimer("cicd", `<h3>The mental model: every commit takes the same road t
   <line class="dg-line" x1="532" y1="58" x2="542" y2="58" marker-end="url(#pr-ci)"/>
   <rect class="dg-fill" x="544" y="30" width="70" height="56" rx="8"/><text class="dg-t" x="579" y="50" text-anchor="middle">100%</text><text class="dg-s" x="579" y="66" text-anchor="middle">rollout</text>
   <path class="dg-line" d="M579 86 V130 H496 V92" marker-end="url(#pr-ci)" stroke-dasharray="4 3"/>
-  <text class="dg-s" x="440" y="146">error rate or latency up? automatic rollback</text>
+  <text class="dg-s" x="360" y="146">error rate or latency up? automatic rollback</text>
   <text class="dg-s" x="6" y="120">fails here: the author knows in minutes,</text>
   <text class="dg-s" x="6" y="136">while the change is still fresh in their head</text>
   <text class="dg-s" x="6" y="180">The SAME image, identified by its digest, moves through staging and production.</text>

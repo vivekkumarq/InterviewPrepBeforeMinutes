@@ -8,7 +8,7 @@ registerPrimer("angular", `<h3>The mental model: a tree of components, fed by in
   <rect class="dg-fill" x="150" y="86" width="150" height="46" rx="8"/><text class="dg-t" x="225" y="106" text-anchor="middle">ProductListPage</text><text class="dg-s" x="225" y="122" text-anchor="middle">holds products[]</text>
   <line class="dg-line" x1="190" y1="132" x2="110" y2="164" marker-end="url(#pr-ng)"/>
   <line class="dg-line" x1="260" y1="132" x2="330" y2="164" marker-end="url(#pr-ng)"/>
-  <text class="dg-s" x="96" y="150">[product]="p"  (input, down)</text>
+  <text class="dg-s" x="130" y="146" text-anchor="end">[product] input, down</text>
   <rect class="dg-fill2" x="30" y="166" width="150" height="46" rx="8"/><text class="dg-t" x="105" y="186" text-anchor="middle">ProductCard</text><text class="dg-s" x="105" y="202" text-anchor="middle">shows one product</text>
   <rect class="dg-fill2" x="260" y="166" width="150" height="46" rx="8"/><text class="dg-t" x="335" y="186" text-anchor="middle">ProductCard</text><text class="dg-s" x="335" y="202" text-anchor="middle">(addToCart) up</text>
   <path class="dg-line" d="M410 190 H440 V110 H302" marker-end="url(#pr-ng)" stroke-dasharray="4 3"/>
@@ -16,7 +16,7 @@ registerPrimer("angular", `<h3>The mental model: a tree of components, fed by in
   <text class="dg-s" x="446" y="164">bubbles to the parent</text>
   <rect class="dg-box" x="470" y="12" width="140" height="80" rx="9"/><text class="dg-t" x="540" y="36" text-anchor="middle">CartService</text><text class="dg-s" x="540" y="54" text-anchor="middle">providedIn: 'root'</text><text class="dg-s" x="540" y="70" text-anchor="middle">one shared instance</text>
   <line class="dg-line" x1="470" y1="60" x2="302" y2="100" marker-end="url(#pr-ng)"/>
-  <text class="dg-s" x="348" y="70">inject(CartService)</text>
+  <text class="dg-s" x="464" y="40" text-anchor="end">inject(CartService)</text>
 </svg>
 <figcaption>Inputs down, outputs up, services on the side. Keep components thin and put logic in services.</figcaption>
 </figure>

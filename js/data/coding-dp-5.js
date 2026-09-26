@@ -21,7 +21,7 @@ registerPrimer("coding-dp", `<h3>The mental model: recursion that remembers its 
   <rect class="dg-box" x="254" y="178" width="52" height="24" rx="6"/><text class="dg-s" x="280" y="195" text-anchor="middle">f(0)</text>
   <rect class="dg-box" x="324" y="178" width="52" height="24" rx="6"/><text class="dg-s" x="350" y="195" text-anchor="middle">f(1)</text>
   <rect class="dg-box" x="384" y="178" width="52" height="24" rx="6"/><text class="dg-s" x="410" y="195" text-anchor="middle">f(0)</text>
-  <text class="dg-s" x="10" y="224">f(3) is computed twice and f(2) three times. At n = 50 that is billions of calls. With a memo, each f(k) is computed once: n calls.</text>
+  <text class="dg-s" x="10" y="224">f(3) runs twice and f(2) three times. At n = 50: billions of calls. With a memo, each f(k) runs once.</text>
 </svg>
 <figcaption>Overlapping subproblems (the repeats) plus optimal substructure (answers built from smaller answers) is the signal for DP.</figcaption>
 </figure>

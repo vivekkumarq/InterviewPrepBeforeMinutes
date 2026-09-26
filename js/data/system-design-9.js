@@ -14,7 +14,7 @@ registerPrimer("system-design", `<h3>The mental model: a handful of building blo
   <rect class="dg-fill" x="236" y="104" width="84" height="18" rx="4"/>
   <rect class="dg-fill" x="236" y="126" width="84" height="18" rx="4"/>
   <rect class="dg-fill" x="236" y="148" width="84" height="18" rx="4"/>
-  <text class="dg-s" x="278" y="186" text-anchor="middle">stateless: add more</text>
+  <text class="dg-s" x="214" y="190" text-anchor="end">stateless: add more</text>
   <line class="dg-line" x1="334" y1="96" x2="378" y2="52" marker-end="url(#pr-sd)"/>
   <rect class="dg-fill2" x="380" y="20" width="100" height="44" rx="8"/><text class="dg-t" x="430" y="40" text-anchor="middle">Cache</text><text class="dg-s" x="430" y="55" text-anchor="middle">Redis: hot reads</text>
   <line class="dg-line" x1="334" y1="123" x2="378" y2="123" marker-end="url(#pr-sd)"/>
@@ -95,11 +95,11 @@ Why chunks win:
   <defs><marker id="sd-drv" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
   <rect class="dg-fill" x="10" y="74" width="96" height="52" rx="8"/><text class="dg-t" x="58" y="96" text-anchor="middle">Client</text><text class="dg-s" x="58" y="112" text-anchor="middle">chunks + hashes</text>
   <line class="dg-line" x1="106" y1="88" x2="226" y2="44" marker-end="url(#sd-drv)"/>
-  <text class="dg-s" x="150" y="52">1. which of these do you lack?</text>
+  <text class="dg-s" x="10" y="64">1. which are missing?</text>
   <rect class="dg-box" x="228" y="18" width="150" height="52" rx="8"/><text class="dg-t" x="303" y="40" text-anchor="middle">Metadata service</text><text class="dg-s" x="303" y="56" text-anchor="middle">files, versions, shares</text>
   <line class="dg-line" x1="106" y1="112" x2="226" y2="150" marker-end="url(#sd-drv)"/>
-  <text class="dg-s" x="118" y="152">2. upload missing chunks</text>
-  <text class="dg-s" x="118" y="166">(pre-signed URLs)</text>
+  <text class="dg-s" x="10" y="146">2. upload missing chunks</text>
+  <text class="dg-s" x="10" y="160">(pre-signed URLs)</text>
   <rect class="dg-fill2" x="228" y="126" width="150" height="52" rx="8"/><text class="dg-t" x="303" y="148" text-anchor="middle">Object storage</text><text class="dg-s" x="303" y="164" text-anchor="middle">chunks by hash</text>
   <line class="dg-line" x1="378" y1="44" x2="448" y2="44" marker-end="url(#sd-drv)"/>
   <text class="dg-s" x="384" y="36">3. commit v4</text>
