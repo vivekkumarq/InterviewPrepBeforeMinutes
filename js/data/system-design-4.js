@@ -17,8 +17,7 @@ appendTopic("system-design", [
   <rect class="dg-fill2" x="434" y="80" width="120" height="34" rx="6"/><text class="dg-s" x="494" y="102" text-anchor="middle">key-value store</text>
   <path class="dg-line" d="M333 108 V138" marker-end="url(#us1)"/>
   <rect class="dg-box" x="256" y="138" width="160" height="30" rx="6"/><text class="dg-s" x="336" y="158" text-anchor="middle">counter service (ZooKeeper ranges)</text>
-  <text class="dg-s" x="386" y="42">cache hit ≈ 90% —</text>
-  <text class="dg-s" x="386" y="60">reads rarely touch the DB</text>
+  <text class="dg-s" x="300" y="16">cache hit ≈ 90%: reads rarely touch the DB</text>
   <defs><marker id="us1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="currentColor" stroke="none" class="dg-line"/></marker></defs>
 </svg>
 </figure>

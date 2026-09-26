@@ -169,7 +169,8 @@ public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
   <path class="dg-line" d="M286 40 L230 68 M314 40 L372 68 M202 96 L174 126 M230 96 L250 126 M372 96 L350 126 M400 96 L426 126"/>
   <text class="dg-s" x="470" y="34">LCA(5, 1) = 3</text>
   <text class="dg-s" x="470" y="56">one match in each subtree,</text>
-  <text class="dg-s" x="470" y="78">so the split point is the answer</text>
+  <text class="dg-s" x="470" y="78">so the split point</text>
+  <text class="dg-s" x="470" y="96">is the answer</text>
   <text class="dg-s" x="16" y="166">LCA(5, 6) = 5 — a node is allowed to be its own ancestor, which the first line handles</text>
 </svg>
 </figure>

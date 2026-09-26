@@ -143,7 +143,8 @@ pact-broker can-i-deploy --pacticipant order-service --version $GIT_SHA \\
   <rect class="dg-fill" x="20" y="106" width="86" height="30" rx="6"/><text class="dg-s" x="63" y="125" text-anchor="middle">Payment</text>
   <path class="dg-line" d="M110 121 H150" marker-end="url(#ch1)"/>
   <rect class="dg-fill" x="154" y="106" width="86" height="30" rx="6"/><text class="dg-s" x="197" y="125" text-anchor="middle">Shipping</text>
-  <text class="dg-s" x="130" y="166" text-anchor="middle">no central view — "where is order 42?" is unanswerable</text>
+  <text class="dg-s" x="16" y="160">no central view: nobody can answer</text>
+  <text class="dg-s" x="16" y="176">"where is order 42?"</text>
   <text class="dg-t" x="460" y="16" text-anchor="middle">Orchestration — commands</text>
   <rect class="dg-fill2" x="400" y="66" width="110" height="40" rx="8"/><text class="dg-s" x="455" y="82" text-anchor="middle">Saga</text><text class="dg-s" x="455" y="98" text-anchor="middle">orchestrator</text>
   <path class="dg-line" d="M400 76 H344 M400 86 H344 M400 96 H344" marker-end="url(#ch1)"/>

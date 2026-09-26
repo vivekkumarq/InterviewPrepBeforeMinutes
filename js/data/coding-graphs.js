@@ -332,9 +332,10 @@ private Node clone(Node n, Map&lt;Node, Node&gt; seen) {
   <circle class="dg-fill2" cx="330" cy="118" r="18"/><text class="dg-t" x="330" y="123" text-anchor="middle">4'</text>
   <circle class="dg-fill2" cx="430" cy="118" r="18"/><text class="dg-t" x="430" y="123" text-anchor="middle">3'</text>
   <path class="dg-line" d="M348 46 H412 M330 64 V100 M430 64 V100 M348 118 H412"/>
-  <text class="dg-s" x="490" y="76">every original maps to exactly</text>
-  <text class="dg-s" x="490" y="96">one copy — so shared nodes stay</text>
-  <text class="dg-s" x="490" y="116">shared, and cycles stay cycles</text>
+  <text class="dg-s" x="468" y="60">each original maps to</text>
+  <text class="dg-s" x="468" y="78">exactly one copy, so</text>
+  <text class="dg-s" x="468" y="96">shared nodes stay shared</text>
+  <text class="dg-s" x="468" y="114">and cycles stay cycles</text>
   <defs><marker id="cg1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z" fill="currentColor" stroke="none" class="dg-line"/></marker></defs>
 </svg>
 </figure>

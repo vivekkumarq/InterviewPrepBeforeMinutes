@@ -20,7 +20,7 @@ appendTopic("algorithms", [
 //   denial-of-service attack at O(log n) instead of O(n)</code></pre>
 <p><strong>Now the distributed problem.</strong> With <code>server = hash(key) % N</code>, adding one server changes N — and <strong>almost every key remaps</strong>. Your entire cache misses at once, and the stampede hits the database.</p>
 <figure class="fig">
-<svg viewBox="0 0 620 155" role="img" aria-label="Consistent hashing ring with virtual nodes">
+<svg viewBox="0 0 620 175" role="img" aria-label="Consistent hashing ring with virtual nodes">
   <circle class="dg-box" cx="150" cy="76" r="58" fill="none"/>
   <circle class="dg-fill" cx="150" cy="18" r="8"/><text class="dg-s" x="150" y="12" text-anchor="middle">A</text>
   <circle class="dg-fill2" cx="205" cy="60" r="8"/><text class="dg-s" x="224" y="58">B</text>
@@ -31,7 +31,7 @@ appendTopic("algorithms", [
   <text class="dg-s" x="270" y="68">CLOCKWISE to the first node</text>
   <text class="dg-s" x="270" y="98">adding a node only steals keys from</text>
   <text class="dg-s" x="270" y="120">its immediate neighbour — about K/N</text>
-  <text class="dg-s" x="16" y="150">VIRTUAL NODES (each server appears many times) even out the distribution</text>
+  <text class="dg-s" x="16" y="168">VIRTUAL NODES (each server appears many times) even out the distribution</text>
 </svg>
 </figure>
 <pre><code>// Consistent hashing with virtual nodes, in about ten lines

@@ -98,7 +98,7 @@ http.headers(h -&gt; h
   <rect class="dg-fill" x="200" y="92" width="130" height="36" rx="6"/><text class="dg-s" x="265" y="115" text-anchor="middle">bank.com</text>
   <path class="dg-line" d="M130 62 L196 40" marker-end="url(#cs1)"/>
   <path class="dg-line" d="M200 44 L130 74" marker-end="url(#cs1)"/>
-  <text class="dg-s" x="150" y="30">loads a page that auto-submits a form</text>
+  <text class="dg-s" x="340" y="38">loads a page that auto-submits a form</text>
   <path class="dg-line" d="M130 82 L196 106" marker-end="url(#cs1)"/>
   <text class="dg-s" x="352" y="112">cookie is sent automatically →</text>
   <text class="dg-s" x="352" y="130">the request looks authentic</text>
