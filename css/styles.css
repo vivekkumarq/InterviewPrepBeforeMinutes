@@ -680,6 +680,9 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
   background:var(--bg-soft);border:1px solid var(--border);text-align:center;
 }
 .answer .fig svg{width:100%;height:auto;max-width:640px;stroke-width:1.4}
+/* Keep the spacing authors typed into labels ("level 0: A    level 1: B C");
+   SVG collapses runs of spaces by default. */
+.answer .fig text{white-space:pre}
 .answer .fig figcaption{margin-top:10px;font-size:11.5px;color:var(--text-mute);letter-spacing:.3px}
 /* diagram tokens */
 .dg-box{fill:var(--panel);stroke:var(--border-strong)}

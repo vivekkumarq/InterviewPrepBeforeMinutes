@@ -375,11 +375,15 @@ private TreeNode build(int[] preorder, int preL, int preR, int inL,
 // time is the common mistake and makes it O(n^2).</code></pre>
 <figure class="fig">
 <svg viewBox="0 0 620 150" role="img" aria-label="Splitting inorder around the preorder root">
-  <rect class="dg-fill2" x="80" y="10" width="22" height="20" rx="4"/>
-  <text class="dg-s" x="16" y="24">preorder:  [3]  9  20  15  7        first element is the root</text>
-  <text class="dg-s" x="16" y="66">inorder:   9  | 3 |  15  20  7</text>
-  <rect class="dg-fill" x="16" y="76" width="66" height="20" rx="4"/><text class="dg-s" x="49" y="91" text-anchor="middle">left</text>
-  <rect class="dg-fill2" x="130" y="76" width="130" height="20" rx="4"/><text class="dg-s" x="195" y="91" text-anchor="middle">right</text>
+  <text class="dg-s" x="16" y="24">preorder:</text>
+  <rect class="dg-fill2" x="84" y="9" width="24" height="21" rx="4"/>
+  <text class="dg-m" x="96" y="24" text-anchor="middle">3</text><text class="dg-m" x="126" y="24" text-anchor="middle">9</text><text class="dg-m" x="152" y="24" text-anchor="middle">20</text><text class="dg-m" x="180" y="24" text-anchor="middle">15</text><text class="dg-m" x="206" y="24" text-anchor="middle">7</text>
+  <text class="dg-s" x="234" y="24">first element is the root</text>
+  <text class="dg-s" x="16" y="66">inorder:</text>
+  <rect class="dg-fill2" x="114" y="51" width="24" height="21" rx="4"/>
+  <text class="dg-m" x="96" y="66" text-anchor="middle">9</text><text class="dg-m" x="126" y="66" text-anchor="middle">3</text><text class="dg-m" x="152" y="66" text-anchor="middle">15</text><text class="dg-m" x="180" y="66" text-anchor="middle">20</text><text class="dg-m" x="206" y="66" text-anchor="middle">7</text>
+  <rect class="dg-fill" x="82" y="76" width="28" height="20" rx="4"/><text class="dg-s" x="96" y="91" text-anchor="middle">left</text>
+  <rect class="dg-fill" x="140" y="76" width="78" height="20" rx="4"/><text class="dg-s" x="179" y="91" text-anchor="middle">right</text>
   <text class="dg-s" x="300" y="66">the root's position in inorder</text>
   <text class="dg-s" x="300" y="88">splits it into the two subtrees,</text>
   <text class="dg-s" x="300" y="110">and their SIZES slice preorder</text>
