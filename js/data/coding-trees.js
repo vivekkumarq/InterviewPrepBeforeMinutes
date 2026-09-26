@@ -375,8 +375,8 @@ private TreeNode build(int[] preorder, int preL, int preR, int inL,
 // time is the common mistake and makes it O(n^2).</code></pre>
 <figure class="fig">
 <svg viewBox="0 0 620 150" role="img" aria-label="Splitting inorder around the preorder root">
+  <rect class="dg-fill2" x="80" y="10" width="22" height="20" rx="4"/>
   <text class="dg-s" x="16" y="24">preorder:  [3]  9  20  15  7        first element is the root</text>
-  <rect class="dg-fill2" x="80" y="10" width="22" height="20" rx="4" opacity=".5"/>
   <text class="dg-s" x="16" y="66">inorder:   9  | 3 |  15  20  7</text>
   <rect class="dg-fill" x="16" y="76" width="66" height="20" rx="4"/><text class="dg-s" x="49" y="91" text-anchor="middle">left</text>
   <rect class="dg-fill2" x="130" y="76" width="130" height="20" rx="4"/><text class="dg-s" x="195" y="91" text-anchor="middle">right</text>

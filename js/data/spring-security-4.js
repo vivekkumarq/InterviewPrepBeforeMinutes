@@ -6,7 +6,7 @@ appendTopic("spring-security", [
   a: `<figure class="fig">
 <svg viewBox="0 0 620 200" role="img" aria-label="JWT login and validation flow through the filter chain">
   <rect class="dg-box" x="8" y="80" width="80" height="34" rx="7"/><text class="dg-s" x="48" y="102" text-anchor="middle">Client</text>
-  <path class="dg-line" d="M92 88 H150" marker-end="url(#jw1)"/><text class="dg-m" x="121" y="80" text-anchor="middle">POST /login</text>
+  <path class="dg-line" d="M92 88 H150" marker-end="url(#jw1)"/><text class="dg-m" x="124" y="106" text-anchor="middle">POST /login</text>
   <rect class="dg-fill" x="154" y="20" width="124" height="52" rx="8"/>
   <text class="dg-s" x="216" y="40" text-anchor="middle">AuthController</text><text class="dg-s" x="216" y="58" text-anchor="middle">AuthenticationManager</text>
   <path class="dg-line" d="M282 46 H340" marker-end="url(#jw1)"/>

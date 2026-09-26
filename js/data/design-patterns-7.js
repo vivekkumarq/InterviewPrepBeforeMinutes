@@ -13,7 +13,7 @@ registerPrimer("design-patterns", `<h3>The mental model: named solutions to prob
   <text class="dg-t" x="310" y="38" text-anchor="middle">Structural</text>
   <text class="dg-s" x="310" y="56" text-anchor="middle">"How do objects fit together?"</text>
   <text class="dg-m" x="231" y="88">Adapter</text><text class="dg-s" x="301" y="88">make APIs match</text>
-  <text class="dg-m" x="231" y="112">Decorator</text><text class="dg-s" x="301" y="112">add behaviour, same API</text>
+  <text class="dg-m" x="231" y="112">Decorator</text><text class="dg-s" x="301" y="112">adds behaviour</text>
   <text class="dg-m" x="231" y="136">Proxy</text><text class="dg-s" x="301" y="136">control access</text>
   <text class="dg-m" x="231" y="160">Facade</text><text class="dg-s" x="301" y="160">one simple front door</text>
   <rect class="dg-fill" x="420" y="14" width="190" height="186" rx="10"/>

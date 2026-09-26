@@ -86,7 +86,7 @@ registerTopic("jvm", [
   <rect class="dg-fill2" x="230" y="42" width="72" height="46" rx="6"/><text class="dg-s" x="266" y="70" text-anchor="middle">S0</text>
   <rect class="dg-fill2" x="308" y="42" width="72" height="46" rx="6"/><text class="dg-s" x="344" y="70" text-anchor="middle">S1</text>
   <path class="dg-line" d="M394 65 H424" marker-end="url(#g1)"/>
-  <text class="dg-m" x="409" y="56" text-anchor="middle">age &gt; 15</text>
+  <text class="dg-m" x="409" y="20" text-anchor="middle">age &gt; 15</text>
   <rect class="dg-fill" x="428" y="30" width="182" height="70" rx="8"/>
   <text class="dg-t" x="519" y="62" text-anchor="middle">Old Generation</text>
   <text class="dg-s" x="519" y="82" text-anchor="middle">major GC — slow</text>
