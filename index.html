@@ -5,11 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>InterviewPrepBeforeMinutes — Last Minute Interview Preparation</title>
 <meta name="description" content="Last-minute interview preparation hub: Java, Spring Boot, Microservices, Kafka, SQL, Docker, Kubernetes, Angular, React, DSA and more — with beginner and advanced questions, answers, diagrams and code." />
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <meta name="theme-color" content="#0b0e14" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="InterviewPrep" />
 <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -72,6 +76,15 @@
     </footer>
   </main>
 </div>
+
+<!-- Phone navigation: the most-used destinations within thumb reach. -->
+<nav class="bottom-nav" aria-label="Quick navigation">
+  <a class="bn-item" data-view="home" href="#/"><span aria-hidden="true">🏠</span><b>Home</b></a>
+  <button class="bn-item" data-action="menu" type="button"><span aria-hidden="true">📚</span><b>Topics</b></button>
+  <button class="bn-item" data-action="search" type="button"><span aria-hidden="true">🔍</span><b>Search</b></button>
+  <a class="bn-item" data-view="saved" href="#/saved"><span aria-hidden="true">⭐</span><b>Saved</b><i class="saved-count"></i></a>
+  <button class="bn-item" data-action="surprise" type="button"><span aria-hidden="true">🎲</span><b>Surprise</b></button>
+</nav>
 
 <button class="fab" id="toTop" aria-label="Back to top" hidden>
   <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>

@@ -15,6 +15,9 @@
   var LS_FONT = "ipbm.font";
   var LS_SIZE = "ipbm.size";
   var LS_PRIMER = "ipbm.primer.shut";
+  var LS_SAVED = "ipbm.saved";        // { "topic:idx": savedAtMillis }
+  var LS_ACT = "ipbm.activity";       // { "YYYY-MM-DD": actions that day }
+  var LS_LAST = "ipbm.last";          // { topic, idx, t } — the last question opened
 
   /* ---------------- typefaces ----------------
      'google' fonts are fetched only when the reader actually selects them (or
@@ -224,6 +227,8 @@
     firm: "",
     hotOnly: false,
     done: load(LS_DONE, {}),
+    saved: load(LS_SAVED, {}),
+    pendingQ: null,        // question index to open once a deep-linked topic renders
     codeTopic: null,      // topic id inside the coding section
     codeSlug: null        // question slug inside that topic
   };
@@ -547,7 +552,12 @@
       "</a>" +
       '<a class="nav-special" id="navCode" href="#/code">' +
         '<span class="ic">💻</span><span>Important coding questions</span>' +
+      "</a>" +
+      '<a class="nav-special" id="navSaved" href="#/saved">' +
+        '<span class="ic">⭐</span><span>Saved for later</span>' +
+        '<span class="n saved-count" id="savedCount"></span>' +
       "</a>" + html;
+    paintSavedCount();
 
     navTree.querySelectorAll(".nav-group-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -582,6 +592,16 @@
     if (sheets) {
       sheets.classList.toggle("active", state.view === "cheatsheet" || state.view === "cheatsheets");
     }
+    var saved = document.getElementById("navSaved");
+    if (saved) saved.classList.toggle("active", state.view === "saved");
+    document.querySelectorAll(".bn-item").forEach(function (b) {
+      b.classList.toggle("on", b.dataset.view === state.view);
+    });
+  }
+
+  function paintSavedCount() {
+    var n = Object.keys(state.saved).length;
+    document.querySelectorAll(".saved-count").forEach(function (el) { el.textContent = n || ""; });
   }
 
   function paintCounts() {
@@ -612,6 +632,7 @@
       qs.forEach(function (_, i) { if (state.done[qKey(id, i)]) totalDone++; });
     });
 
+    var theme = window.TOPIC_THEME;
     var groupsHtml = window.GROUPS.map(function (g) {
       var cards = g.topics.map(function (t, i) {
         var qs = window.TOPIC_DATA[t.id] || [];
@@ -619,33 +640,110 @@
         var adv = qs.length - beg;
         var done = qs.reduce(function (a, _, idx) { return a + (state.done[qKey(t.id, idx)] ? 1 : 0); }, 0);
         var pct = qs.length ? Math.round((done / qs.length) * 100) : 0;
-        return '<a class="tcard" href="#/topic/' + t.id + '" style="animation-delay:' + (i * 40) + 'ms">' +
-          '<span class="ic">' + t.icon + "</span>" +
+        var tint = theme ? theme.accent(t.id) : "#4f46e5";
+        return '<a class="tcard spot" href="#/topic/' + t.id + '" style="--tc:' + tint + ";animation-delay:" + (i * 40) + 'ms">' +
+          '<div class="tc-top"><span class="ic">' + t.icon + "</span>" + ring(pct, "tring") + "</div>" +
           "<h3>" + esc(t.name) + "</h3>" +
           "<p>" + esc(t.blurb) + "</p>" +
-          '<div class="foot"><span class="dot"></span>' + qs.length + " questions &nbsp;·&nbsp; " +
+          '<div class="foot"><span class="dot"></span>' + (qs.length || "…") + " questions &nbsp;·&nbsp; " +
           beg + " beginner · " + adv + " advanced</div>" +
-          '<div class="prog-track"><div class="prog-fill" style="width:' + pct + '%"></div></div>' +
           "</a>";
       }).join("");
       return '<h2 class="sec-title">' + g.icon + " " + esc(g.name) + "</h2>" +
         '<div class="card-grid">' + cards + "</div>";
     }).join("");
 
+    var pctAll = totalQ ? Math.round((totalDone / totalQ) * 100) : 0;
+    var last = load(LS_LAST, null);
+    var lastMeta = last && window.TOPIC_MAP[last.topic];
+    var lastQ = lastMeta && (window.TOPIC_DATA[last.topic] || [])[last.idx];
+    var startHref = lastMeta ? "#/topic/" + last.topic + "/q/" + last.idx : "#/topic/java-basics";
+    var quizTopic = lastMeta ? last.topic : "java-basics";
+    var savedN = Object.keys(state.saved).length;
+    var act = load(LS_ACT, {});
+
     view.innerHTML =
-      '<section class="hero">' +
-        "<h1>Walk in <span>confident</span>.<br/>Revise everything that actually gets asked.</h1>" +
-        "<p>A focused, last-minute revision hub for the stack I work with every day — Java, Spring Boot, " +
-        "Microservices, Kafka, SQL, Docker, Kubernetes and the frontend. Every topic ships a " +
-        "<strong>Beginner</strong> and an <strong>Advanced</strong> track, real answers, code you can quote, " +
-        "and diagrams for the concepts that are easier to draw than to say.</p>" +
-        '<div class="hero-stats">' +
-          '<div class="hstat"><b data-countup="' + totalQ + '">0</b><span>Questions</span></div>' +
-          '<div class="hstat"><b data-countup="' + Object.keys(window.TOPIC_MAP).length + '">0</b><span>Tech stacks</span></div>' +
-          '<div class="hstat"><b data-countup="2">0</b><span>Difficulty tracks</span></div>' +
-          '<div class="hstat"><b data-countup="' + totalDone + '">0</b><span>Marked revised</span></div>' +
+      '<section class="hero hero2">' +
+        '<div class="hero-orb o1" aria-hidden="true"></div><div class="hero-orb o2" aria-hidden="true"></div>' +
+        '<div class="hero-copy">' +
+          '<span class="eyebrow"><i></i>Java · Spring · Microservices · DevOps · DSA</span>' +
+          "<h1>Walk in <span>confident</span>.<br/>Revise what actually gets asked.</h1>" +
+          "<p>A focused, last-minute revision hub. Every topic has a <strong>Start here</strong> primer, " +
+          "<strong>Beginner</strong> and <strong>Advanced</strong> questions, real answers, code you can quote, " +
+          "and diagrams for the ideas that are easier to draw than to say.</p>" +
+          '<div class="hero-cta">' +
+            '<a class="btn btn-primary" href="' + startHref + '">' +
+              (lastMeta ? "Continue where you left off" : "Start revising") + ' <span aria-hidden="true">→</span></a>' +
+            '<button class="btn btn-ghost" data-action="surprise" type="button">🎲 Surprise me</button>' +
+            '<a class="btn btn-ghost" href="#/quiz/' + quizTopic + '">🎯 Quick quiz</a>' +
+          "</div>" +
+          '<div class="hero-stats">' +
+            '<div class="hstat"><b data-countup="' + totalQ + '">0</b><span>Questions</span></div>' +
+            '<div class="hstat"><b data-countup="' + Object.keys(window.TOPIC_MAP).length + '">0</b><span>Tech stacks</span></div>' +
+            '<div class="hstat"><b data-countup="' + Object.keys(window.PRIMERS || {}).length + '">0</b><span>Visual primers</span></div>' +
+          "</div>" +
         "</div>" +
+        '<aside class="dash" aria-label="Your progress">' +
+          '<div class="dash-head">' +
+            ring(pctAll, "dring") +
+            '<div class="dash-sum"><b>Your progress</b>' +
+              "<span>" + totalDone + " of " + (totalQ || "…") + " revised</span></div>" +
+          "</div>" +
+          '<div class="dash-stats">' +
+            '<div class="dstat"><b>🔥 ' + streak(act) + "</b><span>day streak</span></div>" +
+            '<a class="dstat" href="#/saved"><b>⭐ ' + savedN + "</b><span>saved</span></a>" +
+            '<div class="dstat"><b>📅 ' + (act[dayKey(new Date())] || 0) + "</b><span>today</span></div>" +
+          "</div>" +
+          heatmap(act) +
+          (lastQ
+            ? '<a class="dash-continue" href="' + startHref + '">' +
+                '<span class="dc-k">Continue · ' + lastMeta.icon + " " + esc(lastMeta.name) + "</span>" +
+                '<span class="dc-q">' + esc(lastQ.q) + "</span></a>"
+            : '<p class="dash-tip">Open any question and it will show up here, so you can pick up exactly where you stopped.</p>') +
+        "</aside>" +
       "</section>" + sheetStrip() + companyStrip() + groupsHtml;
+  }
+
+  /* A progress ring: one SVG circle whose dash length is the percentage. */
+  function ring(pct, cls) {
+    return '<span class="ring ' + cls + '" role="img" aria-label="' + pct + '% revised">' +
+      '<svg viewBox="0 0 36 36" aria-hidden="true">' +
+        '<circle class="rg-bg" cx="18" cy="18" r="15.9"/>' +
+        (pct > 0 ? '<circle class="rg-fg" cx="18" cy="18" r="15.9" pathLength="100" style="stroke-dasharray:' + pct + ' 100"/>' : "") +
+      "</svg><b>" + pct + "%</b></span>";
+  }
+
+  /* ---- daily activity: streak and a 12-week heatmap ---- */
+  function dayKey(d) {
+    return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+  }
+  function bumpActivity() {
+    var a = load(LS_ACT, {}), k = dayKey(new Date());
+    a[k] = (a[k] || 0) + 1;
+    save(LS_ACT, a);
+  }
+  /* Consecutive active days ending today — or yesterday, so the streak does
+     not read 0 in the morning before you have studied. */
+  function streak(act) {
+    var d = new Date(), n = 0;
+    if (!act[dayKey(d)]) d.setDate(d.getDate() - 1);
+    while (act[dayKey(d)]) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  }
+  function heatmap(act) {
+    /* Columns are weeks, rows are Sunday..Saturday: start on the Sunday 11
+       weeks before this week's, and stop at today. */
+    var cells = "", d = new Date(), dow = d.getDay();
+    d.setDate(d.getDate() - dow - 7 * 11);
+    var today = dayKey(new Date());
+    for (var i = 0; i < 7 * 11 + dow + 1; i++) {
+      var k = dayKey(d), n = act[k] || 0;
+      var lvl = n === 0 ? 0 : n < 3 ? 1 : n < 8 ? 2 : n < 16 ? 3 : 4;
+      cells += '<i class="hm l' + lvl + (k === today ? " today" : "") + '" title="' + k + ": " + n + (n === 1 ? " action" : " actions") + '"></i>';
+      d.setDate(d.getDate() + 1);
+    }
+    return '<div class="heat" aria-label="Activity over the last 12 weeks">' + cells + "</div>" +
+      '<div class="heat-legend"><span>12 weeks</span><span>less <i class="hm l0"></i><i class="hm l1"></i><i class="hm l2"></i><i class="hm l3"></i><i class="hm l4"></i> more</span></div>';
   }
 
   /* Shortcut into the cheatsheets, coloured per stack. */
@@ -828,6 +926,7 @@
   function cardHtml(tid, qi, q, n, term) {
     var key = qKey(tid, qi);
     var done = !!state.done[key];
+    var saved = !!state.saved[key];
     var badges = "";
     if (q.hot) badges += '<span class="badge hot">Most asked</span>';
     badges += '<span class="badge ' + (q.level === "beginner" ? "beg\">Beginner" : "adv\">Advanced") + "</span>";
@@ -839,19 +938,24 @@
     var firmRow = firms
       ? '<div class="qfirms"><span class="qfirms-label">Asked at</span>' + firms + "</div>"
       : "";
-    return '<article class="qcard" data-key="' + key + '" id="q-' + tid + "-" + qi + '" style="animation-delay:' + Math.min(n * 18, 400) + 'ms">' +
+    return '<article class="qcard' + (saved ? " saved" : "") + '" data-key="' + key + '" id="q-' + tid + "-" + qi + '" style="animation-delay:' + Math.min(n * 18, 400) + 'ms">' +
       '<button class="qhead" aria-expanded="false">' +
         '<span class="qnum">' + (n + 1) + "</span>" +
         '<span class="qicon" aria-hidden="true">' + iconFor(q) + "</span>" +
         '<span class="qtext">' + highlight(q.q, term) + "</span>" +
-        '<span class="qbadges">' + badges + "</span>" +
+        '<span class="qbadges"><span class="qstar" title="Saved" aria-label="Saved">★</span>' + badges + "</span>" +
         '<svg class="qchev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>' +
       "</button>" +
       '<div class="qbody"><div class="qbody-inner">' +
         '<div class="answer">' + q.a + firmRow + "</div>" +
         '<div class="qfoot">' + chips +
-          '<button class="mark-btn' + (done ? " done" : "") + '" data-key="' + key + '">' +
-          (done ? "✓ Revised" : "Mark as revised") + "</button>" +
+          '<span class="qactions">' +
+            '<button class="qact save-btn' + (saved ? " on" : "") + '" data-key="' + key + '" aria-pressed="' + saved + '" title="Save for later (s)">' +
+              (saved ? "★ Saved" : "☆ Save") + "</button>" +
+            '<button class="qact link-btn" data-key="' + key + '" title="Copy a link to this question (c)">🔗 Link</button>' +
+            '<button class="mark-btn' + (done ? " done" : "") + '" data-key="' + key + '" title="Mark as revised (r)">' +
+            (done ? "✓ Revised" : "Mark as revised") + "</button>" +
+          "</span>" +
         "</div>" +
       "</div></div></article>";
   }
@@ -902,19 +1006,69 @@
   function wireCards(root) {
     root.querySelectorAll(".qhead").forEach(function (h) {
       h.addEventListener("click", function () {
-        var open = h.parentElement.classList.toggle("open");
+        var card = h.parentElement;
+        var open = card.classList.toggle("open");
         h.setAttribute("aria-expanded", String(open));
+        if (open) noteOpened(card);
       });
     });
     root.querySelectorAll(".mark-btn").forEach(function (b) {
-      b.addEventListener("click", function (e) {
-        e.stopPropagation();
-        var key = b.dataset.key;
-        if (state.done[key]) { delete state.done[key]; b.classList.remove("done"); b.textContent = "Mark as revised"; }
-        else { state.done[key] = 1; b.classList.add("done"); b.textContent = "✓ Revised"; }
-        save(LS_DONE, state.done);
-      });
+      b.addEventListener("click", function (e) { e.stopPropagation(); toggleDone(b.dataset.key); });
     });
+    root.querySelectorAll(".save-btn").forEach(function (b) {
+      b.addEventListener("click", function (e) { e.stopPropagation(); toggleSaved(b.dataset.key); });
+    });
+    root.querySelectorAll(".link-btn").forEach(function (b) {
+      b.addEventListener("click", function (e) { e.stopPropagation(); copyQuestionLink(b.dataset.key); });
+    });
+  }
+
+  /* ---- per-question actions, shared by clicks and keyboard shortcuts ---- */
+  function cardsFor(key) {
+    return document.querySelectorAll('.qcard[data-key="' + key + '"]');
+  }
+  function toggleDone(key) {
+    var on = !state.done[key];
+    if (on) { state.done[key] = 1; bumpActivity(); } else delete state.done[key];
+    save(LS_DONE, state.done);
+    cardsFor(key).forEach(function (c) {
+      var b = c.querySelector(".mark-btn");
+      if (!b) return;
+      b.classList.toggle("done", on);
+      b.textContent = on ? "✓ Revised" : "Mark as revised";
+    });
+    toast(on ? "✓ Marked as revised" : "Revised mark removed");
+  }
+  function toggleSaved(key) {
+    var on = !state.saved[key];
+    if (on) state.saved[key] = Date.now(); else delete state.saved[key];
+    save(LS_SAVED, state.saved);
+    cardsFor(key).forEach(function (c) {
+      c.classList.toggle("saved", on);
+      var b = c.querySelector(".save-btn");
+      if (!b) return;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", String(on));
+      b.textContent = on ? "★ Saved" : "☆ Save";
+    });
+    paintSavedCount();
+    toast(on ? "★ Saved for later" : "Removed from saved");
+  }
+  function questionUrl(key) {
+    var p = key.split(":");
+    return location.href.split("#")[0] + "#/topic/" + p[0] + "/q/" + p[1];
+  }
+  function copyQuestionLink(key) {
+    copyText(questionUrl(key), function (ok) {
+      toast(ok ? "🔗 Link copied" : "Could not copy the link");
+    });
+  }
+  /* Remembers the last question read (for "Continue") and counts the day
+     as active. Only the first open of a card per render counts. */
+  function noteOpened(card) {
+    var p = card.dataset.key.split(":");
+    save(LS_LAST, { topic: p[0], idx: +p[1], t: Date.now() });
+    if (!card.dataset.counted) { card.dataset.counted = "1"; bumpActivity(); }
   }
 
   var EMPTY_FILTER = '<div class="empty"><h3>Nothing matches that filter</h3><p>Try another keyword or switch the difficulty track.</p></div>';
@@ -946,6 +1100,7 @@
     wireCards(list);
     wireCopyButtons(list);
     observeReveals(list);       /* cards arrive after route(), so hook here too */
+    openPendingQuestion(id);
   }
 
   /* ---------------- cheatsheets ----------------
@@ -1217,6 +1372,75 @@
   }
 
   /* Shared by the topic and company toolbars. */
+  /* ---------------- saved for later ---------------- */
+  function renderSaved() {
+    var keys = Object.keys(state.saved).sort(function (a, b) { return state.saved[b] - state.saved[a]; });
+    var head =
+      '<div class="crumbs"><a href="#/">Home</a> &nbsp;›&nbsp; Saved</div>' +
+      '<section class="page-head"><h1>⭐ Saved for later</h1>' +
+      "<p>Questions you starred to come back to, newest first. Press <kbd>s</kbd> on any open question to add or remove it.</p></section>";
+    if (!keys.length) {
+      view.innerHTML = head +
+        '<div class="empty empty-big"><div class="empty-ic">☆</div><h3>Nothing saved yet</h3>' +
+        "<p>Open any question and tap <b>☆ Save</b>. Saved questions collect here so you can revise just those before an interview.</p>" +
+        '<a class="btn btn-primary" href="#/topic/java-basics">Browse questions</a></div>';
+      return;
+    }
+    view.innerHTML = head + '<div class="loading"><div class="spinner"></div>Loading your saved questions…</div>';
+    var topics = [];
+    keys.forEach(function (k) { var t = k.split(":")[0]; if (topics.indexOf(t) === -1 && window.TOPIC_MAP[t]) topics.push(t); });
+    var pending = topics.length;
+    if (!pending) { view.innerHTML = head + EMPTY_FILTER; return; }
+    topics.forEach(function (t) {
+      ensureTopic(t, function () {
+        if (--pending || state.view !== "saved") return;
+        var n = 0, html = "";
+        topics.forEach(function (tid) {
+          var meta = window.TOPIC_MAP[tid];
+          var rows = keys.filter(function (k) { return k.split(":")[0] === tid; })
+            .map(function (k) { var i = +k.split(":")[1]; return { i: i, q: window.TOPIC_DATA[tid][i] }; })
+            .filter(function (r) { return r.q; });
+          if (!rows.length) return;
+          html += '<div class="qgroup-head"><span class="ic">' + meta.icon + '</span><a href="#/topic/' + tid + '">' +
+            esc(meta.name) + '</a><span class="qgroup-n">' + rows.length + "</span></div>" +
+            rows.map(function (r) { return cardHtml(tid, r.i, r.q, n++, ""); }).join("");
+        });
+        view.innerHTML = head + '<div class="qlist" id="qlist">' + html + "</div>";
+        var list = document.getElementById("qlist");
+        wireCards(list);
+        wireCopyButtons(list);
+        observeReveals(list);
+      });
+    });
+  }
+
+  /* Opens and centres the deep-linked question once its topic has painted. */
+  function openPendingQuestion(tid) {
+    if (state.pendingQ === null) return;
+    var idx = state.pendingQ;
+    state.pendingQ = null;
+    /* Two frames: route() scrolls to the top after rendering, and the cards
+       use content-visibility, so their heights settle a frame later. */
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        var card = document.getElementById("q-" + tid + "-" + idx);
+        if (!card) return toast("That question no longer exists");
+        card.classList.add("open");
+        card.querySelector(".qhead").setAttribute("aria-expanded", "true");
+        noteOpened(card);
+        card.classList.add("flash");
+        card.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
+        /* Cards above were laid out at an estimated height (content-visibility),
+           so the first scroll can land short. Correct it once it settles. */
+        setTimeout(function () {
+          var top = card.getBoundingClientRect().top;
+          if (top < 60 || top > 140) card.scrollIntoView({ behavior: "auto", block: "start" });
+        }, 700);
+        setTimeout(function () { card.classList.remove("flash"); }, 1600);
+      });
+    });
+  }
+
   function setAllOpen(open) {
     view.querySelectorAll(".qcard").forEach(function (c) {
       c.classList.toggle("open", open);
@@ -1233,7 +1457,11 @@
   var searchTimer, searchReady = false;
   function runSearch() {
     var term = searchInput.value.trim();
-    if (term.length < 2) { searchBox.hidden = true; return; }
+    if (term.length < 2) {
+      if (document.activeElement === searchInput) showQuickActions();
+      else searchBox.hidden = true;
+      return;
+    }
     if (!searchReady) {
       searchBox.hidden = false;
       searchBox.innerHTML = '<div class="sr-empty"><div class="spinner"></div>Indexing all questions…</div>';
@@ -1282,7 +1510,20 @@
         Object.keys(c.byTopic).length + " topics</span></button>";
     }).join("");
 
-    if (!hits.length && !companyHits.length) {
+    /* Topic names jump straight to the topic, palette-style. */
+    var topicHits = Object.keys(window.TOPIC_MAP).filter(function (id) {
+      var nLow = window.TOPIC_MAP[id].name.toLowerCase() + " " + id.replace(/-/g, " ");
+      return words.every(function (w) { return nLow.indexOf(w) !== -1; });
+    }).slice(0, 3);
+    var topicHtml = topicHits.map(function (id) {
+      var t = window.TOPIC_MAP[id];
+      return '<button class="sr-item sr-go" data-href="#/topic/' + id + '">' +
+        '<span class="sr-q">' + t.icon + " Go to " + highlight(t.name, term) + "</span>" +
+        '<span class="sr-meta">Topic · ' + ((window.TOPIC_DATA[id] || []).length || "") + " questions</span></button>";
+    }).join("");
+    companyHtml = topicHtml + companyHtml;
+
+    if (!hits.length && !companyHits.length && !topicHits.length) {
       searchBox.innerHTML = '<div class="sr-empty">No question matches “' + esc(term) + '”.</div>';
       searchBox.hidden = false;
       return;
@@ -1313,6 +1554,8 @@
       location.hash = "#/company/" + b.dataset.company;
       return;
     }
+    if (b.dataset.href) { location.hash = b.dataset.href; return; }
+    if (b.dataset.action) { runAction(b.dataset.action); return; }
 
     var tid = b.dataset.id, idx = +b.dataset.idx;
     state.level = "all"; state.filter = ""; state.firm = ""; state.hotOnly = false;
@@ -1367,7 +1610,35 @@
     clearTimeout(searchTimer);
     searchTimer = setTimeout(runSearch, 140);
   });
-  searchInput.addEventListener("focus", function () { if (searchInput.value.trim().length >= 2) runSearch(); });
+  searchInput.addEventListener("focus", runSearch);
+
+  /* With an empty box, search doubles as a command palette. */
+  function showQuickActions() {
+    var last = load(LS_LAST, null);
+    var lastMeta = last && window.TOPIC_MAP[last.topic];
+    var items = [];
+    if (lastMeta) items.push({ href: "#/topic/" + last.topic + "/q/" + last.idx, ic: "▶", t: "Continue: " + lastMeta.name, m: "Where you left off" });
+    items.push(
+      { action: "surprise", ic: "🎲", t: "Surprise me", m: "A random unrevised question · n" },
+      { href: "#/saved", ic: "⭐", t: "Saved for later", m: Object.keys(state.saved).length + " saved" },
+      { href: "#/cheatsheets", ic: "⚡", t: "Cheatsheets", m: "One screen per stack" },
+      { href: "#/companies", ic: "🏢", t: "Prepare by company", m: "Questions grouped by company" },
+      { href: "#/code", ic: "💻", t: "Important coding questions", m: "Java and Python solutions" },
+      { action: "theme", ic: "🌓", t: "Switch light / dark", m: "t" },
+      { action: "keys", ic: "⌨️", t: "Keyboard shortcuts", m: "?" }
+    );
+    searchBox.innerHTML = '<div class="sr-label">Quick actions</div>' + items.map(function (it) {
+      return '<button class="sr-item sr-action"' +
+        (it.href ? ' data-href="' + it.href + '"' : ' data-action="' + it.action + '"') + ">" +
+        '<span class="sr-q"><span class="sr-ic">' + it.ic + "</span>" + esc(it.t) + "</span>" +
+        '<span class="sr-meta">' + esc(it.m) + "</span></button>";
+    }).join("") + '<div class="sr-hint">Type to search every question and topic</div>';
+    searchBox.hidden = false;
+    cursor = -1;
+    searchBox.querySelectorAll(".sr-item").forEach(function (b) {
+      b.addEventListener("click", function () { openHit(b); });
+    });
+  }
   document.addEventListener("click", function (e) {
     if (!e.target.closest(".search-wrap")) searchBox.hidden = true;
   });
@@ -1394,7 +1665,8 @@
   /* ---------------- scroll extras ---------------- */
   var toTop = document.getElementById("toTop");
   var bar = document.getElementById("scrollProgress");
-  var scrollQueued = false, docHeight = 0, lastToTop = null;
+  var scrollQueued = false, docHeight = 0, lastToTop = null, lastRaised = null;
+  var topbar = document.querySelector(".topbar");
 
   function measure() { docHeight = document.documentElement.scrollHeight - window.innerHeight; }
 
@@ -1406,6 +1678,8 @@
     bar.style.transform = "scaleX(" + (pct / 100).toFixed(4) + ")";
     var show = window.scrollY > 400;
     if (show !== lastToTop) { toTop.hidden = !show; lastToTop = show; }
+    var raised = window.scrollY > 4;
+    if (raised !== lastRaised) { topbar.classList.toggle("raised", raised); lastRaised = raised; }
   }
   window.addEventListener("scroll", function () {
     if (!scrollQueued) { scrollQueued = true; requestAnimationFrame(onScrollFrame); }
@@ -1838,6 +2112,7 @@
     var key = qKey(quiz.topic, idx);
     if (knew) state.done[key] = true; else delete state.done[key];
     save(LS_DONE, state.done);
+    bumpActivity();
     quiz.at++;
     quiz.shown = false;
     renderQuiz();
@@ -1846,7 +2121,7 @@
   function renderQuizSummary(meta, total) {
     var score = total ? Math.round((quiz.knew.length / total) * 100) : 0;
     var missedList = quiz.missed.map(function (i) {
-      return '<li><a href="#/topic/' + quiz.topic + '#q-' + quiz.topic + "-" + i + '">' +
+      return '<li><a href="#/topic/' + quiz.topic + "/q/" + i + '">' +
         esc(quiz.questions[i].q) + "</a></li>";
     }).join("");
 
@@ -1950,10 +2225,165 @@
     }
   });
 
+  /* ================= shared actions ================= */
+  function runAction(name) {
+    if (name === "surprise") surprise();
+    else if (name === "theme") document.getElementById("themeToggle").click();
+    else if (name === "keys") showKeys(true);
+    else if (name === "search") { searchInput.focus(); searchInput.select(); }
+    else if (name === "menu") { sidebar.classList.contains("open") ? closeSidebar() : openSidebar(); }
+  }
+  document.addEventListener("click", function (e) {
+    var el = e.target.closest("[data-action]");
+    if (!el || el.closest(".search-results")) return;     // palette items handle themselves
+    e.preventDefault();
+    runAction(el.dataset.action);
+  });
+
+  /* A random question, preferring ones not yet revised. */
+  function surprise() {
+    var ids = Object.keys(window.TOPIC_MAP);
+    var id = ids[Math.floor(Math.random() * ids.length)];
+    toast("🎲 Picking a question…");
+    ensureTopic(id, function (qs) {
+      var fresh = [];
+      qs.forEach(function (_, i) { if (!state.done[qKey(id, i)]) fresh.push(i); });
+      var pool = fresh.length ? fresh : qs.map(function (_, i) { return i; });
+      if (!pool.length) return;
+      location.hash = "#/topic/" + id + "/q/" + pool[Math.floor(Math.random() * pool.length)];
+    });
+  }
+
+  /* ---- toast: one reusable, screen-reader-announced message ---- */
+  var toastEl = null, toastTimer = 0;
+  function toast(msg) {
+    if (!toastEl) {
+      toastEl = document.createElement("div");
+      toastEl.className = "toast";
+      toastEl.setAttribute("role", "status");
+      toastEl.setAttribute("aria-live", "polite");
+      document.body.appendChild(toastEl);
+    }
+    toastEl.textContent = msg;
+    toastEl.classList.remove("show");
+    void toastEl.offsetWidth;                          // restart the entrance animation
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 1900);
+  }
+
+  /* ---- keyboard shortcuts ---- */
+  var KEYS = [
+    ["/", "Ctrl K", "Search, or open quick actions"],
+    ["j", "k", "Next / previous question"],
+    ["o", "Enter", "Open or close the question"],
+    ["s", "", "Save the question for later"],
+    ["r", "", "Mark the question as revised"],
+    ["c", "", "Copy a link to the question"],
+    ["n", "", "Surprise me: a random question"],
+    ["t", "", "Switch light / dark theme"],
+    ["?", "", "Show this panel"],
+    ["Esc", "", "Close panels and search"]
+  ];
+  var keysEl = null;
+  function showKeys(open) {
+    if (!keysEl) {
+      keysEl = document.createElement("div");
+      keysEl.className = "modal-scrim";
+      keysEl.hidden = true;
+      keysEl.innerHTML =
+        '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="keysTitle">' +
+          '<div class="modal-head"><h2 id="keysTitle">⌨️ Keyboard shortcuts</h2>' +
+          '<button class="icon-btn modal-x" aria-label="Close">✕</button></div>' +
+          '<ul class="keys">' + KEYS.map(function (k) {
+            return "<li><span>" + "<kbd>" + esc(k[0]) + "</kbd>" + (k[1] ? " <kbd>" + esc(k[1]) + "</kbd>" : "") +
+              "</span><em>" + esc(k[2]) + "</em></li>";
+          }).join("") + "</ul>" +
+          '<p class="modal-foot">In a quiz: <kbd>Space</kbd> reveals, <kbd>1</kbd> I knew it, <kbd>2</kbd> needs work.</p>' +
+        "</div>";
+      document.body.appendChild(keysEl);
+      keysEl.addEventListener("click", function (e) {
+        if (e.target === keysEl || e.target.closest(".modal-x")) showKeys(false);
+      });
+    }
+    keysEl.hidden = !open;
+    if (open) keysEl.querySelector(".modal-x").focus();
+  }
+
+  var kbIndex = -1;
+  function visibleCards() {
+    return Array.prototype.slice.call(view.querySelectorAll(".qcard"));
+  }
+  function currentCard() {
+    var cards = visibleCards();
+    var focused = document.activeElement && document.activeElement.closest && document.activeElement.closest(".qcard");
+    if (focused) return focused;
+    return cards[kbIndex] || null;
+  }
+  function focusCard(delta) {
+    var cards = visibleCards();
+    if (!cards.length) return;
+    var cur = currentCard();
+    var i = cur ? cards.indexOf(cur) : -1;
+    i = Math.max(0, Math.min(cards.length - 1, i + delta));
+    kbIndex = i;
+    cards.forEach(function (c) { c.classList.remove("kfocus"); });
+    cards[i].classList.add("kfocus");
+    cards[i].querySelector(".qhead").focus({ preventScroll: true });
+    cards[i].scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "center" });
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var tag = document.activeElement && document.activeElement.tagName;
+    if (/input|textarea|select/i.test(tag || "")) return;
+    if (keysEl && !keysEl.hidden) { if (e.key === "Escape") showKeys(false); return; }
+    if (e.key === "Escape") { showKeys(false); return; }
+    if (state.view === "quiz") return;                 // the quiz owns its own keys
+    var k = e.key;
+    if (k === "?") { e.preventDefault(); showKeys(true); return; }
+    if (k === "n") { e.preventDefault(); surprise(); return; }
+    if (k === "t") { e.preventDefault(); runAction("theme"); return; }
+    if (k === "j" || k === "k") { e.preventDefault(); focusCard(k === "j" ? 1 : -1); return; }
+    var card = currentCard();
+    if (!card) return;
+    if (k === "o") { e.preventDefault(); card.querySelector(".qhead").click(); }
+    else if (k === "s") { e.preventDefault(); toggleSaved(card.dataset.key); }
+    else if (k === "r") { e.preventDefault(); toggleDone(card.dataset.key); }
+    else if (k === "c") { e.preventDefault(); copyQuestionLink(card.dataset.key); }
+  });
+
+  /* ---- spotlight: cards glow where the pointer is ----
+     One delegated listener, throttled to a frame; it only writes two custom
+     properties, so hovering never triggers layout. */
+  if (window.matchMedia && window.matchMedia("(hover:hover) and (pointer:fine)").matches) {
+    var spotEl = null, spotX = 0, spotY = 0, spotQueued = false;
+    document.addEventListener("pointermove", function (e) {
+      var el = e.target.closest && e.target.closest(".spot");
+      if (!el) return;
+      spotEl = el; spotX = e.clientX; spotY = e.clientY;
+      if (spotQueued) return;
+      spotQueued = true;
+      requestAnimationFrame(function () {
+        spotQueued = false;
+        var r = spotEl.getBoundingClientRect();
+        spotEl.style.setProperty("--mx", (spotX - r.left) + "px");
+        spotEl.style.setProperty("--my", (spotY - r.top) + "px");
+      });
+    }, { passive: true });
+  }
+
+  /* ---- offline + installable: a network-first service worker ---- */
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () { /* offline mode is optional */ });
+    });
+  }
+
   function route() {
     var hash = location.hash || "#/";
     var mCompany = hash.match(/^#\/company\/([\w-]+)/);
-    var mTopic = hash.match(/^#\/topic\/([\w-]+)/);
+    var mTopic = hash.match(/^#\/topic\/([\w-]+)(?:\/q\/(\d+))?/);
     var mSheet = hash.match(/^#\/cheatsheet\/([\w-]+)/);
     var mQuiz = hash.match(/^#\/quiz\/([\w-]+)/);
     var mCodeQ = hash.match(/^#\/code\/([\w-]+)\/([\w-]+)/);
@@ -2011,9 +2441,14 @@
       state.view = "company"; state.topic = null; state.company = mCompany[1]; state.sheet = null;
       renderCompany(mCompany[1]);
     } else if (mTopic) {
-      if (state.topic !== mTopic[1]) { state.level = "all"; state.filter = ""; state.firm = ""; }
+      /* A deep link must be able to show its card, so it clears every filter. */
+      if (state.topic !== mTopic[1] || mTopic[2] != null) { state.level = "all"; state.filter = ""; state.firm = ""; }
+      state.pendingQ = mTopic[2] != null ? +mTopic[2] : null;
       state.view = "topic"; state.topic = mTopic[1]; state.company = null; state.sheet = null;
       renderTopic(mTopic[1]);
+    } else if (hash.indexOf("#/saved") === 0) {
+      state.view = "saved"; state.topic = null; state.company = null; state.sheet = null;
+      renderSaved();
     } else {
       state.view = "home"; state.topic = null; state.company = null; state.sheet = null;
       renderHome();
@@ -2027,7 +2462,23 @@
     window.scrollTo({ top: 0, behavior: "instant" });
     requestAnimationFrame(measure);
   }
-  window.addEventListener("hashchange", route);
+  /* Page changes cross-fade with the View Transitions API where it exists.
+     Only #view is named, so the header and sidebar stay perfectly still. */
+  window.addEventListener("hashchange", function () {
+    kbIndex = -1;
+    if (document.startViewTransition && !reduceMotion.matches && !document.hidden) {
+      var t = document.startViewTransition(route);
+      /* The browser may abort a transition (tab hidden mid-way, a second
+         navigation). route() still runs; only the animation is skipped, so
+         the rejections are expected and silenced. */
+      var quiet = function () {};
+      t.ready.catch(quiet);
+      t.finished.catch(quiet);
+      t.updateCallbackDone.catch(quiet);
+    } else {
+      route();
+    }
+  });
 
   /* Counts change as parts land; coalesce the repaints into one per frame. */
   var countsQueued = false;
