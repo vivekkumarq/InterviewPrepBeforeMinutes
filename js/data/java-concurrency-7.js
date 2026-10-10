@@ -1,5 +1,26 @@
-registerPrimer("java-concurrency", `<h3>The mental model: threads share the heap, and steps interleave</h3>
-<p>Every thread has its own stack, but all threads share the same <strong>heap</strong>, so they see the same objects. That sharing is what makes threads useful and what makes them dangerous. A line like <code>count++</code> looks like one step, but the CPU does it as three: <strong>read</strong> the value, <strong>add</strong> one, <strong>write</strong> it back. When two threads run those three steps at the same time, their steps can interleave and one update is lost.</p>
+registerPrimer("java-concurrency", `<p class="pr-lead">A <b>thread</b> is a single line of work inside a program. Multithreading means running several threads at the same time, so a server can handle many users at once and your phone app stays responsive while it downloads something. The power comes with one big risk: threads can trip over each other when they touch the same data.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Picture several cooks sharing one kitchen. Each cook (a thread) follows their own recipe, but they all share the same fridge and the same counter (the program's memory). If two cooks grab the last egg at the same moment, or both write on the same order slip, things go wrong. Most of concurrency is about agreeing rules for sharing the kitchen.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Thread</dt><dd>One path of execution. Every Java program starts with one, the "main" thread, and can create more.</dd>
+<dt>Shared data</dt><dd>Objects that more than one thread can read or change. Every thread has its own local variables, but objects on the heap are shared.</dd>
+<dt>Race condition</dt><dd>A bug where the result depends on which thread happens to run first. It may work 99 times and fail on the 100th.</dd>
+<dt>Lock / synchronized</dt><dd>A way to say "only one thread at a time may run this part". Others wait their turn.</dd>
+<dt>Atomic</dt><dd>An operation that happens all at once, so no other thread can see it half done.</dd>
+<dt>volatile</dt><dd>A keyword that makes every thread always see the latest value of a field.</dd>
+<dt>Deadlock</dt><dd>Two threads each waiting for something the other holds, so both wait forever.</dd>
+<dt>Thread pool</dt><dd>A fixed team of reusable threads that pick up tasks from a queue, instead of creating a new thread for every task.</dd>
+</dl>
+
+<h3>Step by step: why count++ is not safe</h3>
+<p>Adding one to a number looks like a single step, but the computer actually does three:</p>
+<ol class="pr-steps">
+<li><b>Read</b> the current value from memory (say 5).</li>
+<li><b>Add</b> one to it (6).</li>
+<li><b>Write</b> the new value back to memory.</li>
+</ol>
+<p>Now imagine two threads doing this at the same moment. Thread A reads 5. Before A writes, thread B also reads 5. A writes 6. B writes 6. Two increments happened, but the counter only went up by one. This is called a <b>lost update</b>, and the diagram shows it step by step.</p>
 <figure class="fig">
 <svg viewBox="0 0 620 226" role="img" aria-label="Two threads interleave read, add and write on a shared counter, losing one update">
   <defs><marker id="pr-con" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -23,59 +44,83 @@ registerPrimer("java-concurrency", `<h3>The mental model: threads share the heap
 </svg>
 <figcaption>count++ is read, add, write. Nothing stops B from reading before A has written.</figcaption>
 </figure>
-<h3>Two separate problems, two separate guarantees</h3>
-<table>
-<tr><th>Problem</th><th>What goes wrong</th><th>What fixes it</th></tr>
-<tr><td><strong>Atomicity</strong></td><td>A multi-step change is interrupted halfway, as in the diagram</td><td><code>synchronized</code>, a <code>Lock</code>, or an atomic class such as <code>AtomicInteger</code></td></tr>
-<tr><td><strong>Visibility</strong></td><td>One thread writes a value and another thread keeps seeing the old one, because each core may cache it</td><td><code>volatile</code>, or any lock (entering and leaving a lock also publishes changes)</td></tr>
-</table>
-<p><code>volatile</code> fixes visibility only. A <code>volatile int count</code> still loses updates on <code>count++</code>, because the read, add and write can still interleave. A lock fixes both.</p>
-<h3>Worked example: the same counter, fixed three ways</h3>
-<pre><code>class Counter {
+<p>There is also a second, sneakier problem called <b>visibility</b>. To be fast, each CPU core can keep its own copy of a value. One thread may change a value and another thread may keep seeing the old copy for a long time. <code>volatile</code> fixes visibility, but it does <em>not</em> fix the lost update above. A lock (<code>synchronized</code>) or an atomic class fixes both.</p>
+
+<h3>A worked example: one counter, fixed three ways</h3>
+<pre><code>// BROKEN: two threads calling inc() at once will lose updates
+class Counter {
     private int count;
-    void inc() { count++; }                      // BROKEN under threads
+    void inc() { count++; }
 }
 
-// 1. synchronized: only one thread at a time runs inc() on this object
+// FIX 1: synchronized - only one thread at a time can run inc()
 class SyncCounter {
     private int count;
     synchronized void inc() { count++; }
-    synchronized int get() { return count; }     // the READ needs the lock too,
-}                                                // or it may see a stale value
+    synchronized int get() { return count; }
+}
 
-// 2. AtomicInteger: one CPU instruction (compare-and-swap), no lock
+// FIX 2: AtomicInteger - the read, add and write happen as one step
 class AtomicCounter {
     private final AtomicInteger count = new AtomicInteger();
     void inc() { count.incrementAndGet(); }
     int get() { return count.get(); }
 }
 
-// 3. LongAdder: many threads, mostly writing, rarely reading
+// FIX 3: LongAdder - best when many threads increment very often
 class HotCounter {
-    private final LongAdder count = new LongAdder();   // spreads writes over
-    void inc() { count.increment(); }                  // several cells, so
-    long get() { return count.sum(); }                 // threads do not fight
-}
+    private final LongAdder count = new LongAdder();
+    void inc() { count.increment(); }
+    long get() { return count.sum(); }
+}</code></pre>
+<ol class="pr-steps">
+<li>If two threads each call the broken <code>inc()</code> 100,000 times, you usually get a number well under 200,000, and a different one every run.</li>
+<li><code>synchronized</code> puts a lock around the method, so the three steps of <code>count++</code> can never interleave. The total is always exactly 200,000.</li>
+<li><code>AtomicInteger</code> uses a special CPU instruction that does the read, add and write as one unbreakable step, without a lock.</li>
+<li><code>LongAdder</code> spreads the counting over several internal cells so threads do not fight over one number. It is the fastest when many threads write and you only read the total occasionally.</li>
+</ol>
 
-// Prove the bug: 2 threads x 100,000 increments each
-ExecutorService pool = Executors.newFixedThreadPool(2);
-Counter c = new Counter();
-for (int t = 0; t &lt; 2; t++) pool.submit(() -&gt; { for (int i = 0; i &lt; 100_000; i++) c.inc(); });
-pool.shutdown();
-pool.awaitTermination(10, TimeUnit.SECONDS);
-// Counter:       usually well under 200000, and different every run
-// The fixed ones: exactly 200000 every run</code></pre>
-<h3>The toolbox, and when to open each drawer</h3>
-<table>
-<tr><th>You need to</th><th>Reach for</th></tr>
-<tr><td>Run tasks on a pool of threads</td><td><code>ExecutorService</code>; on Java 21+, virtual threads for blocking I/O work</td></tr>
-<tr><td>Chain async steps without blocking</td><td><code>CompletableFuture</code></td></tr>
-<tr><td>Share a map between threads</td><td><code>ConcurrentHashMap</code>, never a synchronised wrapper around <code>HashMap</code></td></tr>
-<tr><td>Hand work from producers to consumers</td><td><code>BlockingQueue</code></td></tr>
-<tr><td>Wait until N things have finished</td><td><code>CountDownLatch</code></td></tr>
-<tr><td>Allow at most N at once (e.g. DB calls)</td><td><code>Semaphore</code></td></tr>
-<tr><td>Avoid sharing at all</td><td>Immutable objects, or data owned by one thread. The safest lock is the one you never need</td></tr>
-</table>`);
+<h3>Which tool for which job</h3>
+<ul>
+<li><b>Running many tasks:</b> use an <code>ExecutorService</code> (a thread pool) instead of creating threads by hand. On Java 21 and later, virtual threads make it cheap to run a task per request.</li>
+<li><b>Waiting for slow calls without blocking:</b> <code>CompletableFuture</code> lets you chain "when this finishes, do that".</li>
+<li><b>Sharing a map between threads:</b> <code>ConcurrentHashMap</code>.</li>
+<li><b>Passing work from one group of threads to another:</b> a <code>BlockingQueue</code>.</li>
+<li><b>Waiting until several tasks have finished:</b> <code>CountDownLatch</code>.</li>
+<li><b>Allowing only N things at once</b> (say, 10 database calls): <code>Semaphore</code>.</li>
+</ul>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Thinking volatile makes count++ safe</p>
+<p><code>volatile</code> only guarantees that threads see the latest value. The three steps of read, add and write can still interleave, so updates are still lost.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use <code>AtomicInteger</code> or <code>synchronized</code> for anything that reads and then writes.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Calling run() instead of start()</p>
+<p><code>thread.run()</code> just runs the code on the current thread like a normal method call. No new thread is created at all.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> call <code>thread.start()</code>, or better, submit the task to an <code>ExecutorService</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Taking two locks in different orders</p>
+<p>If thread A locks the Order and then waits for the Stock, while thread B locks the Stock and then waits for the Order, they wait for each other forever. That is a deadlock.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> always take locks in the same fixed order everywhere, or use <code>tryLock</code> with a timeout so a thread can give up and retry.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Swallowing InterruptedException</p>
+<p>Interruption is how Java politely asks a thread to stop. Catching <code>InterruptedException</code> and ignoring it means the request is lost and the thread never stops.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> either let the exception travel up, or restore the signal with <code>Thread.currentThread().interrupt()</code>.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Threads share objects; any shared data that changes needs protection.</li>
+<li><code>count++</code> is three steps, so it is not safe across threads.</li>
+<li><code>volatile</code> fixes visibility only; locks and atomic classes fix both visibility and lost updates.</li>
+<li>Use thread pools and concurrent collections instead of building your own.</li>
+<li>The safest shared data is data that never changes (immutable objects).</li>
+</ul>
+<p><b>Next:</b> the questions below cover thread pools, CompletableFuture, deadlocks, the memory model and virtual threads.</p>`);
 
 appendTopic("java-concurrency", [
 {

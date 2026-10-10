@@ -1,5 +1,22 @@
-registerPrimer("java-versions", `<h3>The mental model: a train every six months, a long stop every two years</h3>
-<p>Since Java 10, a new Java version ships every <strong>six months</strong>, in March and September, whether a given feature is ready or not. Features that are not ready ride along as <em>preview</em> features and become final in a later release. Every two years one release is marked <strong>LTS</strong> (long-term support), which vendors patch for years. Almost every company runs an LTS in production and skips the ones in between.</p>
+registerPrimer("java-versions", `<p class="pr-lead">Java keeps improving, with a new version every six months. You do not need to memorise every release. You need to know <b>which versions companies actually use</b>, <b>the handful of big features each one brought</b>, and <b>what it takes to upgrade</b> an older project.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Think of Java releases like phone software updates. Small updates arrive often, but every couple of years there is a "long-term" release that the manufacturer promises to keep fixing for many years. Businesses stick to those long-term releases, because they cannot rebuild everything every six months.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Release</dt><dd>A new numbered version of Java, such as Java 21. A new one arrives every March and September.</dd>
+<dt>LTS</dt><dd>Long-Term Support. A release that keeps getting security fixes for years. The LTS versions that matter are 8, 11, 17, 21 and 25.</dd>
+<dt>Preview feature</dt><dd>A new feature you can try out but which may still change or be removed. Not for production code.</dd>
+<dt>JDK distribution</dt><dd>A packaged build of Java from a vendor, such as Eclipse Temurin, Amazon Corretto or Oracle. They all run your code the same way.</dd>
+</dl>
+
+<h3>Step by step: what each long-term version brought</h3>
+<ol class="pr-steps">
+<li><b>Java 8 (2014):</b> lambdas, streams, Optional and the new date and time library. This changed how Java is written.</li>
+<li><b>Java 11 (2018):</b> <code>var</code> for local variables, a built-in HTTP client, and shortcuts like <code>List.of</code>. The module system arrived on the way, in Java 9.</li>
+<li><b>Java 17 (2021):</b> records (short data classes), sealed classes, text blocks for multi-line strings, and switch expressions.</li>
+<li><b>Java 21 (2023):</b> virtual threads, which make it cheap to handle huge numbers of requests at once, plus pattern matching in switch.</li>
+<li><b>Java 25 (2025):</b> scoped values, stream gatherers, flexible constructors, and a much simpler <code>main</code> method for small programs.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 196" role="img" aria-label="Timeline of Java LTS releases 8, 11, 17, 21 and 25 with their headline features">
   <line class="dg-line" x1="20" y1="70" x2="600" y2="70"/>
@@ -32,31 +49,47 @@ registerPrimer("java-versions", `<h3>The mental model: a train every six months,
 </svg>
 <figcaption>The five LTS releases that matter, and the headline features each one made final (Java 9 features shipped on the way to 11).</figcaption>
 </figure>
-<h3>Worked example: how a feature travels from preview to final</h3>
-<pre><code>// Pattern matching for switch took four releases of preview:
-//   Java 17  preview 1     Java 19  preview 3
-//   Java 18  preview 2     Java 20  preview 4
-//   Java 21  FINAL  -&gt; safe for production code
 
-// Using a preview feature needs a flag at BOTH compile and run time:
+<h3>A worked example: how a feature becomes official</h3>
+<p>New language features are usually tried out as previews for a few releases before becoming final. Pattern matching for switch is a good example:</p>
+<pre><code>// Java 17, 18, 19, 20 : preview (may change, needs a special flag)
+// Java 21             : final   (safe to use in real projects)
+
+// Trying a preview feature needs the flag when compiling AND running:
 javac --release 25 --enable-preview Main.java
-java --enable-preview Main
+java --enable-preview Main</code></pre>
+<ol class="pr-steps">
+<li>While a feature is in preview, Java can still change how it works, so code written for one version may not compile on the next.</li>
+<li>Once it becomes final, it is stable and safe to use at work.</li>
+<li>Your build tool fixes the Java level for the whole project, for example <code>&lt;maven.compiler.release&gt;21&lt;/maven.compiler.release&gt;</code> in Maven.</li>
+</ol>
 
-// And the build tool pins the language level. In Maven:
-&lt;properties&gt;
-    &lt;maven.compiler.release&gt;21&lt;/maven.compiler.release&gt;
-&lt;/properties&gt;
-// 'release' (not source/target) also stops you calling JDK APIs that do
-// not exist in 21, even when you compile on a newer JDK.</code></pre>
-<h3>What to say about versions in an interview</h3>
-<table>
-<tr><th>Question</th><th>Good answer</th></tr>
-<tr><td>Which version for a new project?</td><td>The newest LTS your framework supports: 25 if you can, 21 at least. Spring Boot 3 needs 17 or later</td></tr>
-<tr><td>Why not the latest non-LTS?</td><td>It stops getting free patches after six months, so you must upgrade twice a year</td></tr>
-<tr><td>Is Java 8 still OK?</td><td>It runs, but you miss ten years of performance work, virtual threads and modern language features, and the ecosystem (Spring Boot 3, Hibernate 6) has left it</td></tr>
-<tr><td>Are preview features safe?</td><td>Not for production: they can change or be removed. String templates were previewed in 21 and 22, then withdrawn</td></tr>
-</table>
-<p><strong>The honest summary:</strong> you do not need to memorise every release. Know the four or five features per LTS in the diagram, know that previews are not final, and have one real upgrade story ready.</p>`);
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Choosing the very latest non-LTS version for a real project</p>
+<p>A non-LTS version only gets free fixes for six months, until the next one comes out. After that you must upgrade again or run without security patches.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> pick the newest LTS your frameworks support. Spring Boot 3 needs Java 17 or later.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Shipping code that relies on preview features</p>
+<p>Preview features can change or disappear. String templates, for example, were previewed in Java 21 and 22 and then withdrawn.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> experiment with previews, but only use final features in production.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Thinking an upgrade from Java 8 is just changing a number</p>
+<p>The language features are the easy part. Upgrades break on removed libraries (such as the old Java EE packages), older libraries that do not support the new version, and code that relied on Java's internal classes.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> first run the existing app on the new Java, then update libraries, then start using the new language features, testing at each step.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>A new Java version comes out every six months; companies use the LTS ones.</li>
+<li>The LTS versions are 8, 11, 17, 21 and 25.</li>
+<li>Know two or three headline features for each LTS.</li>
+<li>Preview features are for trying out, not for production.</li>
+<li>Upgrade in stages: run on the new version first, then change the code.</li>
+</ul>
+<p><b>Next:</b> the questions below go through each version's features and how to plan a real upgrade.</p>`);
 
 appendTopic("java-versions", [
 {

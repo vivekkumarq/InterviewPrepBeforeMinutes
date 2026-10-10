@@ -1,6 +1,25 @@
-registerPrimer("java-8", `<h3>The mental model: a lambda is a small object, a stream is an assembly line</h3>
-<p><strong>A lambda</strong> is a short way to write an object that has exactly one method. <code>x -&gt; x * 2</code> is an object implementing a <em>functional interface</em> such as <code>Function&lt;Integer, Integer&gt;</code>. That is all it is. You can store it in a variable, pass it to a method, and return it.</p>
-<p><strong>A stream</strong> is an assembly line over some data. You describe the stations (<code>filter</code>, <code>map</code>, <code>sorted</code>…) and nothing moves until you add the final station, the <strong>terminal operation</strong> (<code>collect</code>, <code>count</code>, <code>forEach</code>…). Then each element travels down the whole line one at a time, and the line stops early as soon as the answer is known.</p>
+registerPrimer("java-8", `<p class="pr-lead">Java 8 changed how everyday Java is written. Its two big ideas are <b>lambdas</b> (a short way to pass a piece of behaviour around, like "how to compare two items") and <b>streams</b> (a way to process a whole list step by step, such as "keep the active users, take their emails, sort them"), written as one readable pipeline instead of loops.</p>
+<div class="pr-analogy"><b>Think of it like this</b>A stream is a factory assembly line. Raw items go in at one end, pass through stations (filter out the bad ones, transform the rest, sort them), and finished results come out at the other end. You describe the stations first, and the line only starts moving when someone at the end asks for the result.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Lambda</dt><dd>A small unnamed function, written like <code>x -&gt; x * 2</code> ("take x, give back x times 2").</dd>
+<dt>Functional interface</dt><dd>An interface with exactly one method to fill in. A lambda is a quick way to provide that one method.</dd>
+<dt>Method reference</dt><dd>An even shorter lambda that points to an existing method, like <code>String::toUpperCase</code>.</dd>
+<dt>Stream</dt><dd>A pipeline that processes items one by one. It does not store data; it flows data through steps.</dd>
+<dt>Intermediate operation</dt><dd>A station on the line, such as <code>filter</code>, <code>map</code> or <code>sorted</code>. It does nothing on its own yet.</dd>
+<dt>Terminal operation</dt><dd>The final step, such as <code>collect</code>, <code>count</code> or <code>forEach</code>. It starts the line moving and produces the result.</dd>
+<dt>Optional</dt><dd>A box that either holds a value or is empty, used instead of returning <code>null</code>.</dd>
+</dl>
+
+<h3>Step by step: how a stream runs</h3>
+<ol class="pr-steps">
+<li><b>Get a stream</b> from your data: <code>names.stream()</code>.</li>
+<li><b>Add stations.</b> <code>filter(n -&gt; n.length() &gt; 3)</code> keeps only long names; <code>map(String::toUpperCase)</code> turns each one to capitals. Nothing has happened yet.</li>
+<li><b>Add a terminal operation</b> such as <code>findFirst()</code> or <code>collect(...)</code>. Now the line starts.</li>
+<li><b>Items flow one at a time</b> through every station. The first name goes through filter and map before the second name even starts.</li>
+<li><b>It stops as early as it can.</b> If you only asked for the first match, the stream stops the moment it finds one.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 200" role="img" aria-label="Stream pipeline: source, lazy intermediate operations, terminal operation; elements flow one at a time and stop early">
   <defs><marker id="pr-j8" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -30,36 +49,62 @@ registerPrimer("java-8", `<h3>The mental model: a lambda is a small object, a st
 </svg>
 <figcaption>Each element goes through every station before the next element starts. Nothing runs until the terminal operation asks.</figcaption>
 </figure>
-<h3>Worked example: prove it with print statements</h3>
+
+<h3>A worked example, line by line</h3>
 <pre><code>List&lt;String&gt; names = List.of("Al", "Asha", "Ravi", "Meenakshi");
 
 Optional&lt;String&gt; first = names.stream()
-    .filter(n -&gt; { System.out.println("filter " + n); return n.length() &gt; 3; })
-    .map(n -&gt;    { System.out.println("map    " + n); return n.toUpperCase(); })
-    .findFirst();
+    .filter(n -&gt; n.length() &gt; 3)       // keep names longer than 3 letters
+    .map(String::toUpperCase)           // turn each one into capitals
+    .findFirst();                       // give me the first one, then stop
 
-// Output:
-// filter Al
-// filter Asha
-// map    Asha
-// ...and that is all. "Ravi" and "Meenakshi" are never touched.
-// Remove findFirst() and NOTHING prints: without a terminal operation
-// the pipeline is only a description.</code></pre>
-<h3>The four functional interfaces behind almost every lambda</h3>
-<table>
-<tr><th>Interface</th><th>Shape</th><th>Where you meet it</th></tr>
-<tr><td><code>Function&lt;T, R&gt;</code></td><td>takes T, returns R</td><td><code>map</code>, <code>Collectors.groupingBy</code>, <code>computeIfAbsent</code></td></tr>
-<tr><td><code>Predicate&lt;T&gt;</code></td><td>takes T, returns boolean</td><td><code>filter</code>, <code>removeIf</code>, <code>anyMatch</code></td></tr>
-<tr><td><code>Consumer&lt;T&gt;</code></td><td>takes T, returns nothing</td><td><code>forEach</code>, <code>ifPresent</code></td></tr>
-<tr><td><code>Supplier&lt;T&gt;</code></td><td>takes nothing, returns T</td><td><code>orElseGet</code>, <code>Collectors.toCollection</code>, lazy defaults</td></tr>
-</table>
-<h3>Rules that keep streams correct</h3>
+System.out.println(first.orElse("none"));   // ASHA</code></pre>
+<ol class="pr-steps">
+<li>"Al" goes to <code>filter</code>. It has only 2 letters, so it is dropped and never reaches <code>map</code>.</li>
+<li>"Asha" goes to <code>filter</code>. It has 4 letters, so it passes to <code>map</code> and becomes "ASHA".</li>
+<li><code>findFirst()</code> now has its answer, so the stream stops. "Ravi" and "Meenakshi" are never even looked at.</li>
+<li><code>findFirst()</code> returns an <code>Optional</code>, because the list might have had no matching name. <code>orElse("none")</code> says what to use if it is empty.</li>
+</ol>
+
+<h3>The four lambda shapes you meet most</h3>
 <ul>
-<li><strong>No side effects inside <code>map</code> or <code>filter</code>.</strong> Do not add to an outside list from inside a lambda; collect instead. It breaks as soon as someone makes the stream parallel.</li>
-<li><strong>A stream is single-use.</strong> Calling a second terminal operation throws <code>IllegalStateException</code>.</li>
-<li><strong>Put cheap filters first.</strong> Every element that is dropped early skips all the work after it.</li>
-<li><strong>A plain loop is fine.</strong> If the stream needs three comments to explain it, a <code>for</code> loop is the better code.</li>
-</ul>`);
+<li><b>Function</b>: takes a value and returns another. Used in <code>map</code>, for example <code>name -&gt; name.length()</code>.</li>
+<li><b>Predicate</b>: takes a value and answers true or false. Used in <code>filter</code>, for example <code>age -&gt; age &gt;= 18</code>.</li>
+<li><b>Consumer</b>: takes a value and does something with it, returning nothing. Used in <code>forEach</code>.</li>
+<li><b>Supplier</b>: takes nothing and produces a value. Used for defaults, such as <code>orElseGet(() -&gt; loadDefault())</code>.</li>
+</ul>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Forgetting the terminal operation</p>
+<p>A stream with only <code>filter</code> and <code>map</code> does nothing at all. The steps are just a description until something asks for the result.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> end every stream with a terminal operation such as <code>collect</code>, <code>toList()</code>, <code>count</code> or <code>forEach</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Changing outside variables from inside a lambda</p>
+<p>Adding to an outside list from inside <code>map</code> or <code>forEach</code> works by luck. It breaks as soon as the stream runs in parallel, and it makes the code hard to follow.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> let the stream build the result for you with <code>collect(...)</code> or <code>toList()</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Using a stream twice</p>
+<p>A stream can only be used once. Calling a second terminal operation on the same stream throws an <code>IllegalStateException</code>.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> create a new stream from the list each time: <code>list.stream()</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Calling get() on an Optional without checking</p>
+<p><code>optional.get()</code> throws an error if the Optional is empty, so it gives you the same problem null did.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use <code>orElse</code>, <code>orElseGet</code>, <code>orElseThrow</code> or <code>ifPresent</code>, which all handle the empty case.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>A lambda is a small piece of behaviour you can pass to a method.</li>
+<li>A stream is a pipeline: create it, add steps, then finish with a terminal operation.</li>
+<li>Nothing runs until the terminal operation, and items flow through one at a time.</li>
+<li>Use <code>Optional</code> for "there may be no result" instead of returning null.</li>
+<li>If a stream gets hard to read, a plain for loop is perfectly fine.</li>
+</ul>
+<p><b>Next:</b> the questions below cover collectors, grouping, Optional, parallel streams and the newer Java features.</p>`);
 
 appendTopic("java-8", [
 {

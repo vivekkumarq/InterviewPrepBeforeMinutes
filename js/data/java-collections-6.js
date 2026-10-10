@@ -1,14 +1,34 @@
-registerPrimer("java-collections", `<h3>The mental model: pick the shape first, then the implementation</h3>
-<p>Every collection question starts with one choice: what <strong>shape</strong> is your data? An ordered sequence with duplicates is a <code>List</code>. A group of unique things is a <code>Set</code>. A lookup from key to value is a <code>Map</code>. Items waiting to be processed go in a <code>Queue</code> or <code>Deque</code>. Only after that do you pick the class, and the class decides the speed and the ordering.</p>
-<table>
-<tr><th>Shape</th><th>Default choice</th><th>Pick instead when you need</th></tr>
-<tr><td>List</td><td><code>ArrayList</code></td><td>Almost never <code>LinkedList</code>; <code>CopyOnWriteArrayList</code> for rarely-written lists read by many threads</td></tr>
-<tr><td>Set</td><td><code>HashSet</code></td><td><code>LinkedHashSet</code> to keep insertion order; <code>TreeSet</code> for sorted order and range queries</td></tr>
-<tr><td>Map</td><td><code>HashMap</code></td><td><code>LinkedHashMap</code> for order or an LRU cache; <code>TreeMap</code> for sorted keys; <code>ConcurrentHashMap</code> across threads</td></tr>
-<tr><td>Queue / stack</td><td><code>ArrayDeque</code></td><td><code>PriorityQueue</code> for "smallest first"; a <code>BlockingQueue</code> between threads</td></tr>
-</table>
-<h3>How a HashMap finds your value in one step</h3>
-<p>A <code>HashMap</code> is an array of <strong>buckets</strong>. To store a key it turns the key's <code>hashCode()</code> into an array index, and puts the entry in that bucket. To look it up later it does the same maths, jumps straight to the bucket, and uses <code>equals()</code> to find the right entry inside it. That is why a get is O(1) on average, and why <code>hashCode</code> and <code>equals</code> must agree.</p>
+registerPrimer("java-collections", `<p class="pr-lead">A <b>collection</b> is an object that holds many other objects: a list of orders, a set of unique email addresses, a map from product id to price. Java gives you ready-made collections, and choosing the right one makes your code both simpler and faster.</p>
+<div class="pr-analogy"><b>Think of it like this</b>A <b>List</b> is a numbered queue of people: order matters and the same person can appear twice. A <b>Set</b> is a guest list: each name appears only once. A <b>Map</b> is a phone book: you look up a name (the key) to find a number (the value).</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>List</dt><dd>An ordered collection that allows duplicates. You can get items by position: the first, the fifth, and so on.</dd>
+<dt>Set</dt><dd>A collection with no duplicates. Adding something that is already there does nothing.</dd>
+<dt>Map</dt><dd>Pairs of key and value. Each key appears once and leads to one value.</dd>
+<dt>Queue / Deque</dt><dd>A line of items waiting to be processed. A deque ("deck") lets you add and remove at both ends, so it also works as a stack.</dd>
+<dt>hashCode()</dt><dd>A number calculated from an object, used by hash-based collections to decide where to store it.</dd>
+<dt>equals()</dt><dd>The method that decides whether two objects count as "the same" item.</dd>
+<dt>Big-O, e.g. O(1), O(n)</dt><dd>A way to describe speed as the collection grows. <b>O(1)</b>: about the same time no matter how big it gets. <b>O(n)</b>: time grows in step with the number of items. <b>O(log n)</b>: grows very slowly.</dd>
+</dl>
+
+<h3>Step 1: choose the shape, then the class</h3>
+<ol class="pr-steps">
+<li><b>Do you need to look things up by a key?</b> Use a Map. The everyday choice is <code>HashMap</code>. Use <code>LinkedHashMap</code> to remember the order items were added, or <code>TreeMap</code> to keep keys sorted.</li>
+<li><b>Must every item be unique?</b> Use a Set. The everyday choice is <code>HashSet</code>. Use <code>LinkedHashSet</code> to keep insertion order, or <code>TreeSet</code> to keep it sorted.</li>
+<li><b>Just a sequence of items?</b> Use a List. The everyday choice is <code>ArrayList</code>. You will almost never need <code>LinkedList</code>.</li>
+<li><b>Items waiting their turn?</b> Use <code>ArrayDeque</code> as a queue or stack, or <code>PriorityQueue</code> when the smallest (or most important) item should come out first.</li>
+<li><b>Shared between threads?</b> Use the concurrent versions such as <code>ConcurrentHashMap</code>.</li>
+</ol>
+
+<h3>Step 2: how a HashMap finds a value so quickly</h3>
+<p>A HashMap is really an array of slots called <b>buckets</b>. When you <code>put(key, value)</code>:</p>
+<ol class="pr-steps">
+<li>Java calls <code>key.hashCode()</code> to get a number.</li>
+<li>It turns that number into a bucket position in the array.</li>
+<li>It stores the key and value in that bucket.</li>
+</ol>
+<p>When you later call <code>get(key)</code>, Java does the same calculation, jumps straight to that one bucket, and uses <code>equals()</code> to find the matching key inside it. It never searches the whole map, which is why a lookup takes about the same time whether the map holds 10 items or 10 million.</p>
 <figure class="fig">
 <svg viewBox="0 0 620 236" role="img" aria-label="HashMap put: hashCode, spread, index into a bucket array, entries chained in a bucket">
   <defs><marker id="pr-col" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -47,32 +67,54 @@ registerPrimer("java-collections", `<h3>The mental model: pick the shape first, 
 </svg>
 <figcaption>hashCode picks the bucket, equals picks the entry. Once the entry count passes 75% of the table size, the table doubles and entries are redistributed.</figcaption>
 </figure>
-<h3>Worked example: why a broken hashCode is slow, not wrong</h3>
-<pre><code>class BadKey {
-    final String id;
-    BadKey(String id) { this.id = id; }
-    @Override public boolean equals(Object o) {
-        return o instanceof BadKey k &amp;&amp; k.id.equals(id);
-    }
-    @Override public int hashCode() { return 42; }   // legal, and terrible
-}
+<p>Sometimes two different keys land in the same bucket. That is called a <b>collision</b>, and it is normal: both are stored in that bucket and <code>equals()</code> tells them apart. When the map gets about 75% full, it doubles its number of buckets and spreads the entries out again, so buckets stay small.</p>
 
-Map&lt;BadKey, Integer&gt; m = new HashMap&lt;&gt;();
-for (int i = 0; i &lt; 100_000; i++) m.put(new BadKey("k" + i), i);
-// Still CORRECT: every get finds the right value, because equals decides.
-// But every key sits in ONE bucket. Without the Java 8 tree bins every get
-// would walk a list of 100,000 entries. With them it is O(log n): better,
-// but still far from the O(1) you expected.</code></pre>
-<p><strong>The rule that falls out of the picture:</strong> equal objects must have equal hash codes (or a lookup looks in the wrong bucket and misses), but unequal objects may share one (they just end up in the same bucket). Breaking the first rule loses data. Breaking the spirit of the second only costs speed.</p>
-<h3>Big-O you should know without thinking</h3>
-<table>
-<tr><th>Operation</th><th>ArrayList</th><th>HashMap / HashSet</th><th>TreeMap / TreeSet</th><th>ArrayDeque</th></tr>
-<tr><td>Get by index / key</td><td>O(1)</td><td>O(1) average</td><td>O(log n)</td><td>—</td></tr>
-<tr><td>Add at end / put</td><td>O(1) amortised</td><td>O(1) average</td><td>O(log n)</td><td>O(1) at either end</td></tr>
-<tr><td>Insert / remove in the middle</td><td>O(n)</td><td>—</td><td>—</td><td>—</td></tr>
-<tr><td>contains(value)</td><td>O(n)</td><td>O(1) average</td><td>O(log n)</td><td>O(n)</td></tr>
-<tr><td>Iterate in sorted order</td><td>Sort first, O(n log n)</td><td>No order</td><td>O(n), already sorted</td><td>Insertion order</td></tr>
-</table>`);
+<h3>A worked example: counting words</h3>
+<pre><code>String[] words = {"apple", "kiwi", "apple", "mango", "apple"};
+
+Map&lt;String, Integer&gt; counts = new HashMap&lt;&gt;();
+for (String w : words) {
+    counts.merge(w, 1, Integer::sum);
+}
+System.out.println(counts);   // {apple=3, kiwi=1, mango=1}  (order may vary)</code></pre>
+<ol class="pr-steps">
+<li>We need to go from a word to its count, so a Map is the right shape.</li>
+<li><code>merge(w, 1, Integer::sum)</code> means: if the word is not in the map yet, store 1; if it is, add 1 to the existing count.</li>
+<li>"apple" appears three times, so its count ends at 3.</li>
+<li>A plain HashMap does not keep any particular order. If you need the words in the order they first appeared, use a <code>LinkedHashMap</code> instead.</li>
+</ol>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Removing items from a list inside a for-each loop</p>
+<p>Changing a list while a for-each loop is walking through it makes Java stop with a <code>ConcurrentModificationException</code>. It is protecting you from skipping or repeating items.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use <code>list.removeIf(x -&gt; condition)</code>, or remove through an Iterator's own <code>remove()</code> method.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Using your own class as a map key without equals() and hashCode()</p>
+<p>By default, two objects with the same data are still treated as different keys, because Java compares their memory addresses. Your lookups then fail even though "the same" key is in the map.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> override both <code>equals()</code> and <code>hashCode()</code> using the same fields, or use a <code>record</code>, which does it for you.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Changing a key after putting it in a map</p>
+<p>The map chose a bucket based on the key's hash code at the moment you added it. If you then change a field that the hash code depends on, the entry is sitting in the wrong bucket and can no longer be found.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> only use keys that cannot change, such as Strings, numbers or records.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Choosing LinkedList because "inserting is faster"</p>
+<p>On paper LinkedList inserts quickly, but in practice ArrayList is faster for almost everything, because its items sit next to each other in memory and the computer reads them very efficiently.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use <code>ArrayList</code> for lists and <code>ArrayDeque</code> for queues and stacks.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>List keeps order and allows duplicates; Set keeps items unique; Map looks values up by key.</li>
+<li>Default choices: <code>ArrayList</code>, <code>HashSet</code>, <code>HashMap</code>, <code>ArrayDeque</code>.</li>
+<li>HashMap uses <code>hashCode()</code> to pick a bucket and <code>equals()</code> to find the item in it.</li>
+<li>Equal objects must have equal hash codes, and map keys should never change.</li>
+<li>Do not change a collection while a for-each loop is walking through it.</li>
+</ul>
+<p><b>Next:</b> the questions below go inside HashMap, compare similar collections, and cover thread-safe versions.</p>`);
 
 appendTopic("java-collections", [
 {

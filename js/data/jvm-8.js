@@ -1,5 +1,25 @@
-registerPrimer("jvm", `<h3>The mental model: a loader, a few memory areas, and an engine</h3>
-<p>The JVM is a program that runs your bytecode. It does three jobs. The <strong>class loader</strong> finds <code>.class</code> files and loads them when first used. The <strong>runtime memory areas</strong> hold class metadata, objects and per-thread stacks. The <strong>execution engine</strong> runs the bytecode: it interprets at first, compiles hot methods to machine code with the JIT, and runs the garbage collector to free objects that nothing points to anymore.</p>
+registerPrimer("jvm", `<p class="pr-lead">The <b>JVM</b> (Java Virtual Machine) is the program that runs your compiled Java code. It loads your classes, gives your program memory, runs the code (and speeds it up as it goes), and cleans up memory you no longer use. Knowing how it does these jobs helps you understand slow programs, memory errors and crashes.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Think of the JVM as a restaurant. The <b>class loader</b> is the person who fetches recipes from the cupboard when they are first needed. The <b>memory areas</b> are the kitchen counters and shelves where ingredients are kept. The <b>execution engine</b> is the chef who cooks, getting faster at dishes they make often. The <b>garbage collector</b> is the cleaner who clears away plates nobody is using any more.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Heap</dt><dd>The big shared memory area where all objects live. This is the part the garbage collector cleans.</dd>
+<dt>Stack</dt><dd>A small memory area for each thread, holding the local variables of the methods it is running.</dd>
+<dt>Metaspace</dt><dd>Memory for information about your classes (their methods and fields), kept outside the heap.</dd>
+<dt>Garbage collection (GC)</dt><dd>The JVM automatically finding objects that nothing uses any more and freeing their memory.</dd>
+<dt>Young and old generation</dt><dd>The heap is split in two. New objects start in the young part; objects that stay in use for a long time move to the old part.</dd>
+<dt>JIT compiler</dt><dd>"Just-in-time" compiler. It turns frequently used code into fast machine code while the program runs.</dd>
+<dt>-Xmx</dt><dd>The setting for the maximum heap size, for example <code>-Xmx2g</code> for 2 GB.</dd>
+</dl>
+
+<h3>Step by step: what happens when your program runs</h3>
+<ol class="pr-steps">
+<li><b>Loading:</b> the first time your code uses a class, the class loader finds its <code>.class</code> file and loads it into memory.</li>
+<li><b>Checking:</b> the JVM verifies the bytecode is safe before running it.</li>
+<li><b>Running:</b> at first the JVM interprets the bytecode instruction by instruction, which starts quickly.</li>
+<li><b>Speeding up:</b> code that runs often ("hot" code) is compiled by the JIT into native machine code, so the program gets faster the longer it runs.</li>
+<li><b>Cleaning up:</b> while the program runs, the garbage collector regularly frees objects that are no longer reachable.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 250" role="img" aria-label="JVM architecture: class loader, metaspace, heap with young and old generations, thread stacks, and the execution engine with interpreter, JIT and GC">
   <defs><marker id="pr-jvm" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -40,35 +60,52 @@ registerPrimer("jvm", `<h3>The mental model: a loader, a few memory areas, and a
 </svg>
 <figcaption>Only the heap is garbage collected. Metaspace, thread stacks and JIT code live in native memory, outside -Xmx.</figcaption>
 </figure>
-<h3>Worked example: the life of one request's objects</h3>
+
+<h3>A worked example: the life of one web request's objects</h3>
 <pre><code>@GetMapping("/orders/{id}")
 OrderDto get(@PathVariable long id) {
-    Order o = repo.findById(id).orElseThrow();   // Order + its fields: allocated
-    return OrderDto.from(o);                      // in EDEN, very cheaply
-}                                                 // (a pointer bump in the
-                                                  // thread's own TLAB)
+    Order o = repo.findById(id).orElseThrow();   // new objects created
+    return OrderDto.from(o);                      // response sent, done
+}</code></pre>
+<ol class="pr-steps">
+<li>Each request creates a few new objects (the Order and the response object). They are placed in the young part of the heap, which is very fast.</li>
+<li>Once the response is sent, nothing points to those objects any more. They are garbage, but nothing happens to them yet.</li>
+<li>After a few thousand requests, the young area fills up and a quick <b>minor GC</b> runs. It copies only the few objects still in use somewhere safe. The garbage is not touched at all; its space is simply reused. That is why short-lived objects are almost free.</li>
+<li>Objects that keep surviving (like entries in a cache) are eventually moved to the old area, which is cleaned much less often.</li>
+</ol>
+<p>This design is based on a simple observation called the <b>generational hypothesis</b>: most objects die young. So creating lots of short-lived objects is fine. What causes trouble is keeping objects alive longer than needed.</p>
 
-// 1. The response is sent. Nothing points at the Order or the DTO anymore.
-// 2. Eden fills up after a few thousand requests -> MINOR GC.
-//    The GC only copies LIVE objects out of Eden. Dead ones cost nothing:
-//    their memory is simply reused. That is why short-lived garbage is cheap.
-// 3. Objects that are still alive (a cache entry, a session) are copied to a
-//    survivor space, and their age goes up by one each GC they survive.
-// 4. After about 15 survivals (the tenuring threshold) they are PROMOTED to
-//    the old generation, which is collected far less often.
+<h3>Common problems and what they mean</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ OutOfMemoryError: Java heap space</p>
+<p>The heap is full. Either the program keeps adding to something that never gets cleared (a memory leak, such as a map used as a cache with no limit), or the heap is simply too small for the work.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> take a heap dump and look at what is filling memory. Fix the leak, or give the JVM a bigger heap if the load really needs it.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ StackOverflowError</p>
+<p>One thread's stack ran out of space, almost always because a method keeps calling itself (recursion) without ever stopping.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> check that the recursion has a stopping condition, or rewrite it as a loop.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ The container is killed even though the heap looks fine</p>
+<p>The heap is only part of a Java program's memory. Thread stacks, Metaspace and other native memory also count. In Docker or Kubernetes, if all of it together goes over the container's limit, the system kills the program without any Java error message.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> leave room outside the heap, for example with <code>-XX:MaxRAMPercentage=70</code> instead of a fixed <code>-Xmx</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Calling System.gc() to "free memory"</p>
+<p>Asking for a full garbage collection by hand usually makes things slower, because it pauses the program, and the JVM already knows when to clean up.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> let the garbage collector do its job, and fix the code that keeps objects alive.</p>
+</div>
 
-// This is the "generational hypothesis": most objects die young. GC is
-// designed around it, so code that makes lots of short-lived objects is
-// fine, and code that keeps objects alive slightly too long is what hurts.</code></pre>
-<h3>Which error comes from which area</h3>
-<table>
-<tr><th>Error</th><th>Area</th><th>Usual cause</th></tr>
-<tr><td><code>OutOfMemoryError: Java heap space</code></td><td>Heap</td><td>A leak (a growing map or cache), or a heap too small for the load</td></tr>
-<tr><td><code>OutOfMemoryError: Metaspace</code></td><td>Metaspace</td><td>Classes generated at runtime and never unloaded; redeploying in the same app server</td></tr>
-<tr><td><code>StackOverflowError</code></td><td>Thread stack</td><td>Recursion with no base case, or very deep recursion</td></tr>
-<tr><td><code>OutOfMemoryError: unable to create native thread</code></td><td>Native memory / OS</td><td>Too many platform threads, or an OS limit on processes</td></tr>
-<tr><td>Container killed with exit code 137</td><td>All of it together</td><td>Heap + everything outside the heap exceeded the container limit</td></tr>
-</table>`);
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>The JVM loads classes, runs code, speeds it up with the JIT, and cleans memory with GC.</li>
+<li>Objects live on the heap; method variables live on each thread's stack.</li>
+<li>Most objects die young, so short-lived objects are cheap.</li>
+<li>A Java "memory leak" means objects stay reachable when they should not.</li>
+<li>In containers, leave memory for things outside the heap.</li>
+</ul>
+<p><b>Next:</b> the questions below cover garbage collectors, memory errors, tuning and diagnosing slow programs.</p>`);
 
 appendTopic("jvm", [
 {
