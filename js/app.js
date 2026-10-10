@@ -181,11 +181,13 @@
     return q.level === "advanced" ? "🎓" : "📘";
   }
 
+  /* Applied as the root font-size. Every text size in styles.css is in rem,
+     so these scale all text; a px font-size there would ignore this control. */
   var SIZES = [
-    { id: "s",  name: "Small",   scale: "93.75%" },
+    { id: "s",  name: "Small",   scale: "90%" },
     { id: "m",  name: "Default", scale: "100%" },
-    { id: "l",  name: "Large",   scale: "106.25%" },
-    { id: "xl", name: "X-Large", scale: "112.5%" }
+    { id: "l",  name: "Large",   scale: "112.5%" },
+    { id: "xl", name: "X-Large", scale: "125%" }
   ];
 
   /* ---------------- palettes ----------------
@@ -391,6 +393,16 @@
   var sheetMode = window.matchMedia
     ? window.matchMedia("(max-width: 640px)")
     : { matches: false };
+
+  /* The full placeholder never fits a phone header (it was cut to "Searc" at
+     X-Large), and Ctrl K means nothing on a phone. Same breakpoint as the CSS
+     that hides the key hint. */
+  var phone = window.matchMedia ? window.matchMedia("(max-width: 560px)") : null;
+  function fitSearchPlaceholder() {
+    searchInput.placeholder = phone && phone.matches ? "Search…" : "Search every question…  (Ctrl K)";
+  }
+  fitSearchPlaceholder();
+  if (phone && phone.addEventListener) phone.addEventListener("change", fitSearchPlaceholder);
 
   function setFontPanel(open) {
     if (open) fontPanel.removeAttribute("hidden");

@@ -153,5 +153,13 @@ pickerIds.forEach(id => {
   ok(bad.length === 0, `palette "${id}" meets contrast` + (bad.length ? ` — ${bad.join(", ")}` : ""));
 });
 
+/* ---- 5. text sizes must follow the Text size control ----
+   The control sets the root font-size, which only rem/em values follow. One px
+   font-size used to be every font-size here, and the control did nothing. */
+const pxFonts = [...clean.matchAll(/([^{}]+)\{[^{}]*font-size:[^;}]*\d(?:px)\b/g)]
+  .map(r => r[1].trim().replace(/\s+/g, " "));
+ok(pxFonts.length === 0, "no font-size in px, so the Text size control reaches all text" +
+   (pxFonts.length ? ` — ${pxFonts.slice(0, 5).join(" | ")}` : ""));
+
 console.log(`\n${fail === 0 ? "ALL CSS CHECKS PASSED" : fail + " CHECK(S) FAILED"}`);
 process.exit(fail ? 1 : 0);
