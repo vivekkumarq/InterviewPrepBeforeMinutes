@@ -1,5 +1,29 @@
-registerPrimer("sql", `<h3>The mental model: SQL runs in a different order than you write it</h3>
-<p>You write <code>SELECT</code> first, but the database runs it almost last. Understanding the real order explains most SQL surprises: why you cannot use a column alias in <code>WHERE</code>, why aggregate filters go in <code>HAVING</code>, and why a <code>LEFT JOIN</code> can quietly turn into an inner join.</p>
+registerPrimer("sql", `<p class="pr-lead"><b>SQL</b> is the language for asking questions of a relational database, where data is stored in tables of rows and columns, much like spreadsheets. You describe <i>what</i> you want ("all paid orders over ₹100, grouped by customer"), and the database works out <i>how</i> to fetch it quickly.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Imagine a library with a card catalogue. A table is a shelf of books, each row is one book, and each column is a detail such as title or author. An <b>index</b> is the card catalogue: instead of walking every shelf to find books by one author, you look them up in the sorted catalogue and go straight to the right place. A <b>join</b> is matching cards from two catalogues, such as books and their borrowers.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Table, row, column</dt><dd>A table stores one kind of thing (customers). Each row is one item (one customer); each column is one detail (name, city).</dd>
+<dt>Primary key</dt><dd>A column whose value uniquely identifies each row, such as <code>id</code>.</dd>
+<dt>Foreign key</dt><dd>A column that points to a row in another table, such as <code>orders.customer_id</code> pointing to <code>customers.id</code>.</dd>
+<dt>JOIN</dt><dd>Combines rows from two tables that match on some column.</dd>
+<dt>GROUP BY</dt><dd>Collects rows into groups (per customer, per city) so you can count or total each group.</dd>
+<dt>Index</dt><dd>A sorted lookup structure that lets the database find rows without reading the whole table.</dd>
+<dt>Transaction</dt><dd>A set of changes that either all happen or none happen, such as moving money between two accounts.</dd>
+<dt>NULL</dt><dd>"Unknown / no value". It is not zero and not an empty string, and it behaves specially in comparisons.</dd>
+</dl>
+
+<h3>Step by step: the order SQL actually runs in</h3>
+<p>You write <code>SELECT</code> first, but the database runs it near the end. Knowing the real order explains most SQL surprises:</p>
+<ol class="pr-steps">
+<li><b>FROM / JOIN:</b> collect the rows from the tables.</li>
+<li><b>WHERE:</b> throw away individual rows that do not match.</li>
+<li><b>GROUP BY:</b> put the remaining rows into groups.</li>
+<li><b>HAVING:</b> throw away whole groups that do not match (for example, totals under 100).</li>
+<li><b>SELECT:</b> pick the columns and calculate values; aliases like <code>AS total</code> are created here.</li>
+<li><b>ORDER BY:</b> sort the result (aliases can be used now).</li>
+<li><b>LIMIT:</b> keep only the first few rows.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 170" role="img" aria-label="Logical order of SQL execution: FROM and JOIN, WHERE, GROUP BY, HAVING, SELECT, ORDER BY, LIMIT">
   <defs><marker id="pr-sql" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -22,44 +46,63 @@ registerPrimer("sql", `<h3>The mental model: SQL runs in a different order than 
 </svg>
 <figcaption>The logical order. The optimiser may physically reorder work, but the result must be as if it ran in this order.</figcaption>
 </figure>
-<h3>Worked example: one query, step by step on real rows</h3>
+
+<h3>A worked example: one query on real rows</h3>
 <pre><code>orders
- id | customer | city   | amount | status
-----+----------+--------+--------+----------
-  1 | asha     | Pune   |   500  | PAID
-  2 | asha     | Pune   |   300  | PAID
-  3 | ravi     | Mumbai |   900  | PAID
-  4 | ravi     | Mumbai |   200  | REFUNDED
-  5 | meera    | Pune   |    80  | PAID
+ id | customer | amount | status
+----+----------+--------+----------
+  1 | asha     |   500  | PAID
+  2 | asha     |   300  | PAID
+  3 | ravi     |   900  | PAID
+  4 | ravi     |   200  | REFUNDED
+  5 | meera    |    80  | PAID
 
 SELECT customer, SUM(amount) AS total
 FROM orders
 WHERE status = 'PAID'
 GROUP BY customer
 HAVING SUM(amount) &gt; 100
-ORDER BY total DESC
-LIMIT 2;
+ORDER BY total DESC;</code></pre>
+<ol class="pr-steps">
+<li><b>FROM</b> takes all 5 rows.</li>
+<li><b>WHERE</b> removes row 4, because it was refunded. Rows 1, 2, 3 and 5 remain.</li>
+<li><b>GROUP BY</b> makes three groups: asha (500, 300), ravi (900), meera (80).</li>
+<li><b>HAVING</b> removes meera, because her total of 80 is not more than 100.</li>
+<li><b>SELECT</b> calculates the totals: asha 800, ravi 900.</li>
+<li><b>ORDER BY</b> sorts highest first. Result: ravi 900, then asha 800.</li>
+</ol>
 
-1 FROM     all 5 rows
-2 WHERE    drops row 4 (REFUNDED)            -&gt; rows 1, 2, 3, 5
-3 GROUP BY asha: {500, 300}   ravi: {900}   meera: {80}
-4 HAVING   meera's 80 is not &gt; 100, dropped  -&gt; asha, ravi
-5 SELECT   asha 800, ravi 900   (the alias 'total' now exists)
-6 ORDER BY ravi 900, asha 800   (can use 'total' here)
-7 LIMIT    both fit
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Using an alias in WHERE</p>
+<p><code>WHERE total &gt; 100</code> fails because WHERE runs before SELECT, so the alias does not exist yet. Filtering on a total belongs in HAVING anyway.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use WHERE for row conditions and HAVING for group conditions such as <code>HAVING SUM(amount) &gt; 100</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ A LEFT JOIN that quietly loses rows</p>
+<p>You want all customers including those with no orders, but you add <code>WHERE o.status = 'PAID'</code>. Customers without orders have NULL there, so they are removed and it behaves like an inner join.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> put the condition in the join itself: <code>LEFT JOIN orders o ON o.customer_id = c.id AND o.status = 'PAID'</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Comparing with NULL using =</p>
+<p><code>WHERE phone = NULL</code> never matches anything, because comparing anything with NULL gives "unknown", not true.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> write <code>WHERE phone IS NULL</code> or <code>IS NOT NULL</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Wrapping an indexed column in a function</p>
+<p><code>WHERE YEAR(created_at) = 2026</code> forces the database to calculate the year for every row, so the index on <code>created_at</code> cannot be used.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> compare the column directly with a range: <code>WHERE created_at &gt;= '2026-01-01' AND created_at &lt; '2027-01-01'</code>.</p>
+</div>
 
-Result:  ravi | 900
-         asha | 800</code></pre>
-<h3>Joins, in one table</h3>
-<table>
-<tr><th>Join</th><th>Keeps</th><th>Typical use</th></tr>
-<tr><td><code>INNER JOIN</code></td><td>Only rows that match on both sides</td><td>Orders with their customer</td></tr>
-<tr><td><code>LEFT JOIN</code></td><td>Every left row; NULLs where the right has no match</td><td>Customers <em>including</em> those with no orders</td></tr>
-<tr><td><code>LEFT JOIN … WHERE right.id IS NULL</code></td><td>Left rows with <em>no</em> match</td><td>Customers who never ordered (an anti-join)</td></tr>
-<tr><td><code>FULL OUTER JOIN</code></td><td>Everything from both, matched where possible</td><td>Reconciling two lists</td></tr>
-<tr><td><code>CROSS JOIN</code></td><td>Every combination</td><td>Generating a calendar × stores grid</td></tr>
-</table>
-<p><strong>The LEFT JOIN trap:</strong> <code>LEFT JOIN orders o ON … WHERE o.status = 'PAID'</code> removes the customers with no orders, because their <code>o.status</code> is NULL and fails the WHERE. Put the condition in the <code>ON</code> clause instead to keep them.</p>`);
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>SQL runs FROM, WHERE, GROUP BY, HAVING, SELECT, ORDER BY, LIMIT, in that order.</li>
+<li>WHERE filters rows; HAVING filters groups.</li>
+<li>INNER JOIN keeps only matches; LEFT JOIN keeps every row from the left table.</li>
+<li>Use IS NULL, never = NULL.</li>
+<li>Indexes make lookups fast, but only when the query can use them.</li>
+</ul>
+<p><b>Next:</b> the questions below cover joins, window functions, indexes, transactions, query tuning and the classic interview queries.</p>`);
 
 appendTopic("sql", [
 {

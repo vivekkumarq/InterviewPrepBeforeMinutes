@@ -1,5 +1,25 @@
-registerPrimer("design-patterns", `<h3>The mental model: named solutions to problems that keep coming back</h3>
-<p>A design pattern is not code you copy. It is a <strong>name for a shape of solution</strong> that experienced developers kept arriving at independently. Knowing the names lets a team say "wrap it in a decorator" instead of describing the structure every time. The patterns fall into three families, grouped by the kind of problem they solve.</p>
+registerPrimer("design-patterns", `<p class="pr-lead">A <b>design pattern</b> is a proven, named solution to a problem that keeps coming up in software. It is not code you copy and paste; it is a shape of solution that experienced developers have used so often that it got a name. Knowing the names lets you say "use a Strategy here" instead of explaining the whole idea every time.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Patterns are like standard building techniques in architecture. "Arch", "staircase" and "load-bearing wall" are not specific buildings; they are known solutions to known problems (span a gap, change floors, hold up the roof). An architect picks the technique that fits the problem. A developer picks the pattern that fits the code problem.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Creational patterns</dt><dd>About how objects are created: Builder, Factory, Singleton, Prototype.</dd>
+<dt>Structural patterns</dt><dd>About how objects fit together: Adapter, Decorator, Proxy, Facade.</dd>
+<dt>Behavioural patterns</dt><dd>About how objects work together and share responsibility: Strategy, Observer, State, Command.</dd>
+<dt>LLD (low-level design)</dt><dd>An interview round where you design the classes for something like a parking lot or vending machine.</dd>
+<dt>Interface</dt><dd>A contract of methods, which most patterns rely on so parts can be swapped.</dd>
+</dl>
+
+<h3>The patterns you will meet most, in one line each</h3>
+<ol class="pr-steps">
+<li><b>Builder:</b> create an object with many optional settings step by step, instead of a constructor with ten parameters.</li>
+<li><b>Factory:</b> let one place decide which class to create, so the rest of the code does not need to know.</li>
+<li><b>Strategy:</b> make an algorithm swappable, such as different discount rules or payment methods behind one interface.</li>
+<li><b>Observer:</b> when something happens, automatically notify everyone who signed up to hear about it.</li>
+<li><b>Decorator:</b> wrap an object to add a behaviour (logging, retries) without changing it.</li>
+<li><b>Adapter:</b> make one interface look like another, typically to fit a third-party library into your code.</li>
+<li><b>State:</b> let an object behave differently depending on its current status, with one class per status.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 214" role="img" aria-label="Three families of design patterns: creational, structural and behavioural, with the question each answers and common examples">
   <rect class="dg-fill" x="10" y="14" width="190" height="186" rx="10"/>
@@ -27,52 +47,62 @@ registerPrimer("design-patterns", `<h3>The mental model: named solutions to prob
 </svg>
 <figcaption>Start from the problem ("I need to add retry without editing this class") and the family narrows the choice fast.</figcaption>
 </figure>
-<h3>Worked example: one problem, solved with a Decorator</h3>
-<p><strong>The problem:</strong> a <code>PaymentGateway</code> client works, but you now need logging, retries, and timing metrics around every call. Editing the client mixes three concerns into it. Subclassing gives you a class for every combination (<code>RetryingLoggingGateway</code>…). A decorator wraps the object, implements the <em>same</em> interface, and adds one behaviour.</p>
+
+<h3>A worked example: adding logging and retries with a Decorator</h3>
+<p><b>The problem:</b> a payment client works, but now you need logging and automatic retries around every call. Editing the client mixes extra jobs into it, and subclassing leads to a class for every combination.</p>
 <pre><code>interface PaymentGateway {
     Receipt charge(String card, long paise);
 }
 
-class RazorpayGateway implements PaymentGateway {          // the real thing
-    public Receipt charge(String card, long paise) { /* HTTP call */ return null; }
+class RazorpayGateway implements PaymentGateway {       // the real thing
+    public Receipt charge(String card, long paise) { /* calls the provider */ return null; }
 }
 
-class LoggingGateway implements PaymentGateway {           // decorator 1
+class LoggingGateway implements PaymentGateway {        // adds logging
     private final PaymentGateway inner;
     LoggingGateway(PaymentGateway inner) { this.inner = inner; }
     public Receipt charge(String card, long paise) {
-        log.info("charging {} paise", paise);
-        Receipt r = inner.charge(card, paise);
-        log.info("charged, receipt {}", r.id());
-        return r;
+        log.info("charging {}", paise);
+        return inner.charge(card, paise);
     }
 }
 
-class RetryingGateway implements PaymentGateway {          // decorator 2
-    private final PaymentGateway inner;
-    RetryingGateway(PaymentGateway inner) { this.inner = inner; }
-    public Receipt charge(String card, long paise) {
-        for (int attempt = 1; ; attempt++) {
-            try { return inner.charge(card, paise); }
-            catch (GatewayTimeoutException e) { if (attempt == 3) throw e; }
-        }
-    }
-}
+// Stack the wrappers you need:
+PaymentGateway gateway = new LoggingGateway(new RetryingGateway(new RazorpayGateway()));</code></pre>
+<ol class="pr-steps">
+<li>Every wrapper implements the same <code>PaymentGateway</code> interface, so callers cannot tell the difference.</li>
+<li>Each wrapper does one extra job, then passes the call on to the object inside it.</li>
+<li>You combine them like layers: logging around retrying around the real gateway.</li>
+<li>The real gateway class is never edited. Adding a new layer (for example timing) is one new small class.</li>
+<li>Java's own file reading works this way: <code>new BufferedReader(new FileReader(file))</code>.</li>
+</ol>
 
-// Compose exactly the stack you need, in the order you need it:
-PaymentGateway gateway = new LoggingGateway(new RetryingGateway(new RazorpayGateway()));
-// Callers only know PaymentGateway. Each class has one job.
-// (In real code, only retry a charge with an idempotency key, or you may
-// charge twice.)</code></pre>
-<p>Java's own I/O is built this way: <code>new BufferedReader(new InputStreamReader(new FileInputStream(f)))</code> is three decorators deep.</p>
-<h3>How to talk about patterns without sounding rehearsed</h3>
-<table>
-<tr><th>Do</th><th>Avoid</th></tr>
-<tr><td>Start from the problem, then name the pattern</td><td>Opening with "I would use the Abstract Factory pattern"</td></tr>
-<tr><td>Point to where you have seen it (Spring, JDK, your own code)</td><td>Textbook definitions with no example</td></tr>
-<tr><td>Say what it costs: more classes, more indirection</td><td>Adding patterns "for flexibility" nobody asked for</td></tr>
-<tr><td>Prefer a lambda when the "pattern" is one method</td><td>A Strategy interface plus three classes for a one-line difference</td></tr>
-</table>`);
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Using patterns where none is needed</p>
+<p>Adding a Factory, a Strategy interface and three classes for something a simple <code>if</code> would handle makes code harder to read, not better.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> start with the problem. Use a pattern only when it clearly removes repetition or makes change easier.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Memorising definitions without examples</p>
+<p>Interviewers quickly spot a textbook definition with no real use behind it.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> learn one real example of each pattern, ideally from Spring or the JDK (for example, Spring's JdbcTemplate is the Template Method pattern).</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Overusing Singleton</p>
+<p>A global single instance is easy to write but hides dependencies and makes testing hard, because every test shares the same object.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> let a framework like Spring manage one shared instance and inject it where needed.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>A pattern is a named solution to a recurring design problem.</li>
+<li>Creational patterns create objects, structural ones combine them, behavioural ones coordinate them.</li>
+<li>Strategy, Builder, Decorator, Observer and Factory cover most everyday needs.</li>
+<li>Describe the problem first, then name the pattern that solves it.</li>
+<li>Simple code beats a pattern that is not needed.</li>
+</ul>
+<p><b>Next:</b> the questions below explain each pattern and walk through classic low-level design rounds (parking lot, elevator, vending machine).</p>`);
 
 appendTopic("design-patterns", [
 {

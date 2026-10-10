@@ -1,5 +1,26 @@
-registerPrimer("system-design", `<h3>The mental model: a handful of building blocks, combined to meet numbers</h3>
-<p>System design interviews look open-ended, but almost every design is built from the same dozen parts. What changes from question to question is <strong>which numbers matter</strong> (reads per second, data size, latency target, consistency needs), and those numbers decide which parts you need and where. Learn what each block is for, then practise choosing them from requirements.</p>
+registerPrimer("system-design", `<p class="pr-lead"><b>System design</b> is planning how a large software system fits together so it can serve many users reliably, for example how WhatsApp delivers billions of messages or how a shop survives a flash sale. In interviews there is no single right answer. You are judged on how you think: asking questions, estimating the scale, choosing sensible building blocks and explaining the trade-offs.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Designing a system is like planning a restaurant that keeps getting busier. With ten customers, one cook does everything. With a hundred, you add more cooks and a host at the door (a load balancer). With a thousand, you prepare popular dishes in advance (a cache), take orders on tickets so cooks are not interrupted (a queue), and open more branches (more servers and regions). Each step fixes the next bottleneck.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Scalability</dt><dd>Being able to handle more users or data by adding resources.</dd>
+<dt>Load balancer</dt><dd>Spreads incoming requests across several servers, and stops sending to any that fail.</dd>
+<dt>Cache</dt><dd>A fast store (often Redis) that keeps frequently read data so the database is not asked every time.</dd>
+<dt>Database replica</dt><dd>A copy of the database used for reading, to spread the load.</dd>
+<dt>Sharding</dt><dd>Splitting data across several databases, for example by user id, when one database is not enough.</dd>
+<dt>Queue</dt><dd>A waiting line for work (such as sending emails), so it can be done in the background.</dd>
+<dt>CDN</dt><dd>Servers around the world that serve images and files from a location close to each user.</dd>
+<dt>Latency / throughput</dt><dd>Latency is how long one request takes. Throughput is how many requests per second the system can handle.</dd>
+</dl>
+
+<h3>Step by step: how to answer a design question</h3>
+<ol class="pr-steps">
+<li><b>Clarify the requirements (about 5 minutes).</b> What must it do? How many users? How fast must it be? What happens if data is a little out of date?</li>
+<li><b>Estimate the scale.</b> Rough numbers: requests per second, how much data per day, how much storage per year. They tell you which problems you will actually face.</li>
+<li><b>Sketch the big picture.</b> Clients, load balancer, app servers, database, cache, queue. Keep it simple first.</li>
+<li><b>Go deep on the hardest part.</b> For a chat app it is delivering messages in real time; for a URL shortener it is generating unique short codes.</li>
+<li><b>Discuss trade-offs and failures.</b> What if a server dies? What if traffic is ten times higher? Where could data be lost?</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 262" role="img" aria-label="Common system design building blocks: clients, CDN, load balancer, stateless app servers, cache, primary and replica databases, queue, workers and object storage">
   <defs><marker id="pr-sd" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -30,43 +51,48 @@ registerPrimer("system-design", `<h3>The mental model: a handful of building blo
 </svg>
 <figcaption>Most designs are this picture with some blocks removed, some duplicated, and one or two specialised stores added.</figcaption>
 </figure>
-<h3>Worked example: growing one app from 100 users to 10 million</h3>
-<pre><code>STAGE 1  ~100 users        One server running the app and the database.
-                           Fine. Do not start with microservices.
 
-STAGE 2  ~10,000 users     Database on its own machine. The app server can
-                           now be restarted or resized without touching data.
+<h3>A worked example: growing one app from 100 to 10 million users</h3>
+<ol class="pr-steps">
+<li><b>100 users:</b> one server runs both the app and the database. That is perfectly fine; do not over-build.</li>
+<li><b>10,000 users:</b> move the database to its own machine, so the app server can be restarted or resized without touching the data.</li>
+<li><b>100,000 users:</b> put a load balancer in front of two or more app servers. Store login sessions outside the servers (in Redis or a token), so any server can handle any request and one server failing does not take the site down.</li>
+<li><b>1 million users:</b> most requests are reads, so add a cache for popular data, read replicas for the database, a CDN for images and files, and a queue with background workers for slow jobs like emails.</li>
+<li><b>10 million users:</b> one database can no longer handle all the writes, so shard it (split by user id). Move the busiest feature into its own service, and add regions closer to users around the world.</li>
+</ol>
+<p>Notice the pattern: each step fixes the bottleneck the previous step created. That is also the best way to talk through a design in an interview: start simple, then scale the part that breaks.</p>
 
-STAGE 3  ~100,000 users    Load balancer + 2 or more STATELESS app servers.
-                           Sessions move out of server memory (into Redis or a
-                           signed token), so any server can take any request.
-                           Also removes the single point of failure.
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Jumping straight to drawing boxes</p>
+<p>Without clear requirements and numbers you might design for the wrong problem, such as building for millions of writes when the system is mostly reads.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> spend the first minutes asking questions and doing rough estimates before drawing anything.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Adding every technology you know</p>
+<p>Kafka, microservices and sharding everywhere make a design look busy, not good. Every extra part is something else that can fail.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> add a component only when you can say which problem it solves for this system.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Forgetting about failure</p>
+<p>A design that only works when every server is healthy is not a real design. Servers crash, networks split and traffic spikes.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> for each component, ask "what if this fails?" and add redundancy, timeouts and retries where it matters.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Ignoring trade-offs</p>
+<p>Every choice costs something. A cache makes reads faster but data can be slightly out of date. Sharding scales writes but makes queries across shards hard.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> say the trade-off out loud for each major decision.</p>
+</div>
 
-STAGE 4  ~1 million users  Reads dominate (often 10:1 or more).
-                           - Cache hot reads in Redis (cache-aside)
-                           - Read replicas for queries that can be a second stale
-                           - CDN for images, JS, CSS
-                           - Queue + workers for slow work (email, thumbnails),
-                             so requests return fast
-
-STAGE 5  ~10 million users The primary cannot take all the WRITES.
-                           - Shard the database by a key (user_id)
-                           - Split the busiest area into its own service
-                           - Multiple regions if users are global
-
-Each stage fixes the bottleneck of the stage before. That is also how to
-narrate an interview answer: start simple, then scale the part that breaks.</code></pre>
-<h3>The block, the problem it solves, and its catch</h3>
-<table>
-<tr><th>Block</th><th>Solves</th><th>Catch</th></tr>
-<tr><td>Load balancer</td><td>Spread traffic; survive a server dying</td><td>App servers must be stateless</td></tr>
-<tr><td>Cache</td><td>Fast repeated reads; less DB load</td><td>Stale data; invalidation</td></tr>
-<tr><td>Read replicas</td><td>Scale reads</td><td>Replication lag: a user may not see their own write</td></tr>
-<tr><td>Sharding</td><td>Scale writes and data size</td><td>Cross-shard queries and transactions get hard</td></tr>
-<tr><td>Queue</td><td>Absorb spikes; do slow work later</td><td>Eventual consistency; duplicate messages</td></tr>
-<tr><td>CDN</td><td>Serve static content near users</td><td>Purging stale content</td></tr>
-<tr><td>Object storage</td><td>Cheap, durable files of any size</td><td>Not a database: no queries, only keys</td></tr>
-</table>`);
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Clarify requirements and estimate scale before designing.</li>
+<li>Most systems are built from the same blocks: load balancer, app servers, database, cache, queue, CDN.</li>
+<li>Start simple and scale the part that becomes the bottleneck.</li>
+<li>Plan for failures: every component can and will fail.</li>
+<li>Explain the trade-off behind each choice; that is what interviewers score.</li>
+</ul>
+<p><b>Next:</b> the questions below walk through classic designs (URL shortener, chat, news feed, payments) and the core concepts behind them.</p>`);
 
 appendTopic("system-design", [
 {

@@ -1,6 +1,27 @@
-registerPrimer("postgresql", `<h3>The mental model: never overwrite, always add a new version</h3>
-<p>PostgreSQL does not change a row in place. An <code>UPDATE</code> writes a <strong>new version</strong> of the row and marks the old one as ended. Each version is stamped with the transaction that created it (<code>xmin</code>) and the one that ended it (<code>xmax</code>). A query sees only the versions that were current when its snapshot was taken. This is <strong>MVCC</strong> (multi-version concurrency control), and it is why readers never block writers and writers never block readers.</p>
-<p>The price is garbage: old versions stay in the table until <strong>VACUUM</strong> removes them once no running transaction can still see them. And for safety, every change is first written to the <strong>WAL</strong> (write-ahead log) and flushed to disk at commit; the table files themselves are updated lazily in memory and written out later.</p>
+registerPrimer("postgresql", `<p class="pr-lead"><b>PostgreSQL</b> (often called Postgres) is a popular, free, open-source relational database. Everything you know from SQL works here. What makes Postgres interview questions special is <i>how</i> it works inside: it never overwrites a row, it writes every change to a log first, and it gives each connection its own process. Understanding these three ideas explains most of its behaviour.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Imagine a shared document where edits are never erased. Each change adds a new version of the paragraph, stamped with who made it and when. Someone who started reading at 10:00 keeps seeing the 10:00 version, undisturbed, even while others edit. Later, a cleaner (<b>VACUUM</b>) comes round and throws away old versions nobody is reading any more. That is exactly how Postgres handles rows.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>MVCC</dt><dd>Multi-version concurrency control: keeping several versions of a row so readers and writers do not block each other.</dd>
+<dt>Snapshot</dt><dd>The view of the data a query or transaction sees: everything committed before it started.</dd>
+<dt>Dead tuple</dt><dd>An old row version that nobody needs any more but still takes up space.</dd>
+<dt>VACUUM / autovacuum</dt><dd>The clean-up process that removes dead tuples. Autovacuum runs it automatically.</dd>
+<dt>WAL</dt><dd>Write-ahead log: every change is written here first, so it can be recovered after a crash and sent to replicas.</dd>
+<dt>Replica / standby</dt><dd>A copy of the database kept up to date from the WAL, used for reading or for taking over if the main one fails.</dd>
+<dt>JSONB</dt><dd>A column type for storing JSON documents that can be indexed and searched.</dd>
+<dt>Connection pooler</dt><dd>A tool such as PgBouncer that lets many app connections share a few database connections.</dd>
+</dl>
+
+<h3>Step by step: what one UPDATE really does</h3>
+<ol class="pr-steps">
+<li>Your transaction runs <code>UPDATE accounts SET balance = 450 WHERE id = 1</code>.</li>
+<li>Postgres does not change the existing row. It marks the old version (balance 500) as "ended by this transaction".</li>
+<li>It writes a brand-new version of the row with balance 450.</li>
+<li>It records the change in the WAL. When you <code>COMMIT</code>, the WAL is saved to disk, which makes the change safe even if the server crashes.</li>
+<li>Meanwhile, a report that started earlier still sees balance 500, without waiting for any lock.</li>
+<li>Later, autovacuum notices nobody can see the old version any more and frees its space.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 238" role="img" aria-label="PostgreSQL MVCC: an update creates a new row version; old snapshots still see the old version; WAL is flushed at commit; vacuum removes dead versions later">
   <defs><marker id="pr-pg" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -31,31 +52,46 @@ registerPrimer("postgresql", `<h3>The mental model: never overwrite, always add 
 </svg>
 <figcaption>Two versions of the same row live side by side. Which one a query sees depends only on its snapshot.</figcaption>
 </figure>
-<h3>Worked example: what one UPDATE really does</h3>
-<pre><code>BEGIN;                                   -- this transaction gets id 205
-UPDATE accounts SET balance = 450 WHERE id = 1;
---  1. find the current version of row id=1 (created by tx 100)
---  2. set its xmax = 205                 (ends it, once 205 commits)
---  3. write a NEW version: balance=450, xmin=205
---  4. update every index on the table to point at the new version too
---     (unless it qualifies for a HOT update: same page, no indexed column changed)
---  5. append all of the above to the WAL buffer
-COMMIT;
---  6. flush the WAL to disk. Only now does COMMIT return. The table page
---     itself may reach disk minutes later, at a checkpoint.
 
--- Meanwhile, a report that started at tx 190 keeps reading balance=500,
--- consistently, without taking any lock. Later, autovacuum sees that no
--- transaction older than 205 is still running and frees the old version.</code></pre>
-<h3>What this model explains</h3>
-<table>
-<tr><th>Observation</th><th>Because of</th></tr>
-<tr><td>A table grows even though the row count is flat (bloat)</td><td>Every UPDATE leaves a dead version until vacuum runs</td></tr>
-<tr><td>A long-running transaction slows everything down</td><td>Vacuum cannot remove versions it might still need to see</td></tr>
-<tr><td>Updating one column of a heavily indexed table is slow</td><td>A new row version needs new index entries (unless HOT applies)</td></tr>
-<tr><td><code>SELECT count(*)</code> is slow on big tables</td><td>Each row's visibility depends on the snapshot, so it must be checked</td></tr>
-<tr><td>Each connection costs a lot of memory</td><td>PostgreSQL runs one OS process per connection, which is why pgBouncer exists</td></tr>
-</table>`);
+<h3>What this explains</h3>
+<ul>
+<li><b>Tables grow even when the row count stays the same:</b> each update leaves an old version behind until vacuum removes it. This is called <b>bloat</b>.</li>
+<li><b>A transaction left open for hours causes trouble:</b> vacuum cannot remove versions that the old transaction might still need.</li>
+<li><b>Too many connections hurt:</b> each connection is a separate operating-system process using several megabytes, so apps use a pooler.</li>
+<li><b>Readers never block writers:</b> they simply read an older version.</li>
+</ul>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Leaving transactions open</p>
+<p>Opening a transaction, then waiting for a slow API call or the user, holds locks and stops vacuum cleaning up. The whole database slowly gets slower.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> keep transactions short and do slow work outside them. Set <code>idle_in_transaction_session_timeout</code> as a safety net.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Opening hundreds of direct connections</p>
+<p>Every app instance opening many connections can exhaust memory and slow everything down.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use a small connection pool in the app (HikariCP) and PgBouncer in front of the database.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Using <code>timestamp</code> instead of <code>timestamptz</code></p>
+<p>Plain <code>timestamp</code> has no time zone, so the same value can mean different moments to different readers.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use <code>timestamptz</code>, which stores an exact moment in time.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Check-then-insert races</p>
+<p>"SELECT to see if it exists, then INSERT" lets two requests both see nothing and both insert.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> add a unique constraint and use <code>INSERT ... ON CONFLICT</code>, which does it safely in one step.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Postgres never overwrites a row; an update writes a new version (MVCC).</li>
+<li>VACUUM cleans up old versions; long transactions stop it from working.</li>
+<li>Every change goes to the WAL first, which gives crash safety and replication.</li>
+<li>Each connection is a process, so use a connection pooler.</li>
+<li>Postgres has rich extras (JSONB, full-text search, partitioning) that often replace a second datastore.</li>
+</ul>
+<p><b>Next:</b> the questions below cover MVCC, vacuum, indexes, replication, partitioning, JSONB and production troubleshooting.</p>`);
 
 appendTopic("postgresql", [
 {
