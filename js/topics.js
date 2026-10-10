@@ -3,8 +3,8 @@ window.GROUPS = [
   {
     id: "java", name: "Java Core", icon: "☕",
     topics: [
-      { id: "java-basics", parts: 6,       name: "Java Fundamentals",  icon: "☕", blurb: "Language basics, memory model of objects, strings, exceptions — the questions every Java round opens with." },
-      { id: "java-oop", parts: 6,          name: "OOP & Design",       icon: "🧩", blurb: "Encapsulation, inheritance, polymorphism, abstraction, SOLID and the classic trick questions around them." },
+      { id: "java-basics", parts: 7,       name: "Java Fundamentals",  icon: "☕", blurb: "Language basics, memory model of objects, strings, exceptions — the questions every Java round opens with." },
+      { id: "java-oop", parts: 7,          name: "OOP & Design",       icon: "🧩", blurb: "Encapsulation, inheritance, polymorphism, abstraction, SOLID and the classic trick questions around them." },
       { id: "java-collections", parts: 6,  name: "Collections Framework", icon: "📦", blurb: "List, Set, Map, internal working of HashMap, ConcurrentHashMap, comparators and complexity." },
       { id: "java-concurrency", parts: 7,  name: "Multithreading & Concurrency", icon: "🧵", blurb: "Threads, executors, locks, volatile, CompletableFuture, deadlocks and the Java Memory Model." },
       { id: "java-8", parts: 7,            name: "Java 8+ & Streams",  icon: "🌊", blurb: "Lambdas, functional interfaces, Streams, Optional, and what landed in Java 9–21." },
@@ -120,6 +120,14 @@ window.appendTopic = function (id, questions) {
 window.PRIMERS = {};
 window.registerPrimer = function (id, html) {
   window.PRIMERS[id] = html;
+};
+
+/* "In simple words": a short plain-English explanation shown at the top of
+   each answer, keyed by the exact question title so it survives reordering. */
+window.SIMPLE = {};
+window.registerSimple = function (id, map) {
+  var into = window.SIMPLE[id] || (window.SIMPLE[id] = {});
+  Object.keys(map).forEach(function (title) { into[title] = map[title]; });
 };
 
 /* Cheatsheet bundles -> the topics each one registers. */

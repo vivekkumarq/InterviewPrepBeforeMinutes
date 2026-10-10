@@ -33,8 +33,10 @@ fs.readdirSync(codeDir).filter(f => f.endsWith(".js")).forEach(f =>
 const topicDir = path.join(root, "js", "data");
 const topicData = {};
 const primers = {};
+const simple = {};
 const topicBox = {
   registerPrimer(id, html) { primers[id] = html; },
+  registerSimple(id, map) { simple[id] = Object.assign(simple[id] || {}, map); },
   registerTopic(id, qs) { topicData[id] = (topicData[id] || []).concat(qs); },
   appendTopic(id, qs) { topicData[id] = (topicData[id] || []).concat(qs); },
   registerSheet() {}, window: {},
@@ -174,6 +176,28 @@ Object.keys(topicData).forEach(id => {
   });
 });
 
+/* ---------- "In simple words" ----------
+   Keyed by question title: a key that matches no title is a typo that would
+   silently hide the box, so it fails the check. */
+let simpleN = 0;
+const uncovered = [];
+Object.keys(simple).forEach(id => {
+  const titles = new Set((topicData[id] || []).map(q => q.q));
+  Object.keys(simple[id]).forEach(title => {
+    const w = `simple ${id}: ${title.slice(0, 50)}`;
+    if (!titles.has(title)) flag(w, "no question with this exact title");
+    checkMarkup(w, simple[id][title]);
+    checkProse(w, simple[id][title]);
+    simpleN++;
+  });
+});
+Object.keys(topicData).forEach(id => {
+  const miss = topicData[id].filter(q => !(simple[id] || {})[q.q]).length;
+  if (miss) uncovered.push(`${id} ${miss}`);
+});
+
+console.log(`\n  simple: ${simpleN} of ${topicQ} questions explained in simple words`);
+if (uncovered.length) console.log(`  still to do: ${uncovered.join(", ")}`);
 console.log(`\n  coding: ${codeQ} questions, ${codeA} approaches`);
 console.log(`  topics: ${topicQ} questions, ${Object.keys(primers).length} primers`);
 console.log(`\n${problems === 0 ? "NO PROSE OR MARKUP PROBLEMS" : problems + " PROBLEM(S) FOUND"}`);

@@ -947,7 +947,7 @@
         '<svg class="qchev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>' +
       "</button>" +
       '<div class="qbody"><div class="qbody-inner">' +
-        '<div class="answer">' + q.a + firmRow + "</div>" +
+        '<div class="answer">' + simpleBox(tid, q) + q.a + firmRow + "</div>" +
         '<div class="qfoot">' + chips +
           '<span class="qactions">' +
             '<button class="qact save-btn' + (saved ? " on" : "") + '" data-key="' + key + '" aria-pressed="' + saved + '" title="Save for later (s)">' +
@@ -958,6 +958,14 @@
           "</span>" +
         "</div>" +
       "</div></div></article>";
+  }
+
+  /* The plain-English explanation that opens an answer, when one exists. */
+  function simpleBox(tid, q) {
+    var text = (window.SIMPLE[tid] || {})[q.q];
+    if (!text) return "";
+    return '<aside class="simple"><span class="simple-k">💡 In simple words</span>' +
+      "<p>" + text + "</p></aside>";
   }
 
   /* Adds a copy button to every code block under `root`. Uses the async
@@ -2077,7 +2085,7 @@
           "</div>" +
           "<h1>" + esc(q.q) + "</h1>" +
           (quiz.shown
-            ? '<div class="answer quiz-answer">' + q.a + "</div>"
+            ? '<div class="answer quiz-answer">' + simpleBox(quiz.topic, q) + q.a + "</div>"
             : '<p class="quiz-prompt">Answer it out loud first — then reveal and compare. ' +
               "Recalling it is what makes it stick.</p>") +
         "</article>" +

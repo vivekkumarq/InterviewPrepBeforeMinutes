@@ -1,6 +1,26 @@
-registerPrimer("java-basics", `<h3>The mental model: two steps, two memories</h3>
-<p>Java code runs in two steps. <strong>javac</strong> compiles your <code>.java</code> file into <strong>bytecode</strong> (a <code>.class</code> file), which is the same on every OS. Then the <strong>JVM</strong> loads that bytecode and runs it: first by interpreting it, then by compiling the hot parts to native machine code (the JIT). That split is the whole of "write once, run anywhere". The bytecode is portable, and each platform gets its own JVM.</p>
-<p>While the program runs, data lives in two places. Every method call gets a <strong>stack frame</strong> holding its local variables. Every object made with <code>new</code> lives on the <strong>heap</strong>. A local variable of an object type does not hold the object. It holds a <em>reference</em>, which is basically an arrow to where the object sits on the heap.</p>
+registerPrimer("java-basics", `<p class="pr-lead">Java Fundamentals is about two things: <b>how your code becomes a running program</b>, and <b>where your data is kept while it runs</b>. Once those two ideas are clear, most of the "tricky" basic questions in interviews stop being tricky.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Writing Java is like writing a recipe in one universal language. A translator (the compiler) turns your recipe into a standard format that every kitchen can read. Every computer has its own chef (the JVM) who reads that standard format and cooks it on that machine. You write the recipe once, and any kitchen that has a chef can cook it.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Source code</dt><dd>The <code>.java</code> file you write.</dd>
+<dt>Compiler (javac)</dt><dd>The tool that checks your code for mistakes and turns it into bytecode.</dd>
+<dt>Bytecode</dt><dd>What is inside a <code>.class</code> file. It is not tied to Windows, Mac or Linux. It is a standard set of instructions that every JVM understands.</dd>
+<dt>JVM</dt><dd>Java Virtual Machine. The program that actually runs your bytecode on a real computer.</dd>
+<dt>Primitive</dt><dd>A simple value like a number or true/false. Java has eight: <code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, <code>float</code>, <code>double</code>, <code>char</code>, <code>boolean</code>.</dd>
+<dt>Object</dt><dd>Anything created with <code>new</code>: a String, a list, or an instance of your own class.</dd>
+<dt>Reference</dt><dd>The address of an object. A variable of an object type stores this address, not the object itself.</dd>
+<dt>Stack and heap</dt><dd>Two areas of memory. The <b>stack</b> holds each running method's local variables. The <b>heap</b> holds all the objects.</dd>
+</dl>
+
+<h3>Step 1: from your code to a running program</h3>
+<ol class="pr-steps">
+<li>You write a file called <code>Hello.java</code>.</li>
+<li>You run <code>javac Hello.java</code>. The compiler checks your code (missing semicolons, wrong types, and so on). If it is fine, it produces <code>Hello.class</code>, which contains bytecode.</li>
+<li>You run <code>java Hello</code>. The JVM loads the bytecode, checks that it is safe to run, and starts running it.</li>
+<li>At first the JVM reads the bytecode one instruction at a time. Code that runs very often ("hot" code) gets translated into real machine code by the <b>JIT compiler</b>, so it runs much faster the longer the program runs.</li>
+</ol>
+<p>This is why Java is called <b>"write once, run anywhere"</b>. The same <code>.class</code> file runs on Windows, Mac and Linux, because each of them has its own JVM that knows how to run it.</p>
 <figure class="fig">
 <svg viewBox="0 0 620 250" role="img" aria-label="Java source compiled to bytecode, run by the JVM, with stack frames pointing into the heap">
   <defs><marker id="pr-jb" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -38,38 +58,77 @@ registerPrimer("java-basics", `<h3>The mental model: two steps, two memories</h3
 </svg>
 <figcaption>Compile once to bytecode, run on any JVM. Primitives sit in the frame; objects sit on the heap behind references.</figcaption>
 </figure>
-<h3>Worked example: what the picture explains</h3>
+
+<h3>Step 2: where your data lives</h3>
+<p>Every time a method starts, Java gives it a small private workspace on the <b>stack</b>, called a <em>frame</em>. The method's local variables live in that frame. When the method finishes, its frame is thrown away.</p>
+<p>Objects are different. Every object created with <code>new</code> goes on the <b>heap</b>, a big shared area of memory. The variable in the frame only holds a reference to it. Picture the reference as a note with the object's address written on it. Two variables can hold notes with the same address, and then both of them lead to the same object.</p>
+
+<h3>A worked example, line by line</h3>
 <pre><code>class Person { String name; Person(String n) { name = n; } }
 
 public class Hello {
-    static void rename(Person p) { p.name = "Asha"; }      // follows the arrow
-    static void replace(Person p) { p = new Person("Ravi"); } // moves ONLY the copy
-    static void birthday(int age) { age++; }                 // changes a copy
+    static void birthday(int age)   { age++; }
+    static void rename(Person p)    { p.name = "Asha"; }
+    static void replace(Person p)   { p = new Person("Ravi"); }
 
     public static void main(String[] args) {
         int age = 30;
         Person p = new Person("Vivek");
 
-        birthday(age);   // age is still 30. The method got a copy of the number.
-        rename(p);       // p.name is now "Asha". The method got a copy of the
-                         // ARROW, and both arrows point at the same object.
-        replace(p);      // p.name is STILL "Asha". The method pointed its own
-                         // copy of the arrow at a new object; main's arrow
-                         // never moved.
-        System.out.println(age + " " + p.name);   // 30 Asha
+        birthday(age);
+        rename(p);
+        replace(p);
+
+        System.out.println(age + " " + p.name);   // prints: 30 Asha
     }
 }</code></pre>
-<p>That one example answers three classic questions at once. <strong>Java is always pass-by-value.</strong> For objects the value that gets copied is the reference, which is why a method can change an object's fields but can never make the caller's variable point somewhere else.</p>
-<h3>The basics interviewers check, in one table</h3>
-<table>
-<tr><th>Idea</th><th>One-line answer</th><th>The trap</th></tr>
-<tr><td>Primitive vs reference</td><td>8 primitives hold values; everything else holds a reference</td><td><code>Integer</code> can be <code>null</code> and unboxing it throws an NPE</td></tr>
-<tr><td><code>==</code> vs <code>equals</code></td><td><code>==</code> compares arrows; <code>equals</code> compares contents</td><td><code>Integer</code> 127 == 127 is true, 128 == 128 is false (the cache)</td></tr>
-<tr><td>String</td><td>Immutable; literals are shared from the string pool</td><td>Concatenating in a loop builds a new String each time. Use <code>StringBuilder</code></td></tr>
-<tr><td><code>static</code></td><td>Belongs to the class, one copy total</td><td>A static mutable field is shared state across every thread</td></tr>
-<tr><td>Exceptions</td><td>Checked must be declared or caught; unchecked need not be</td><td>Catching <code>Exception</code> and doing nothing hides real bugs</td></tr>
-</table>
-<p><strong>How to use this page:</strong> read the primer once, then open the questions. Most of them are a closer look at one row of the table above.</p>`);
+<ol class="pr-steps">
+<li><code>int age = 30;</code> puts the number 30 directly into main's frame. It is a primitive, so the variable holds the value itself.</li>
+<li><code>Person p = new Person("Vivek");</code> creates a Person object on the heap. The variable <code>p</code> holds only its address.</li>
+<li><code>birthday(age)</code> gives the method a <b>copy</b> of the number 30. The method adds 1 to its own copy. Main's <code>age</code> is still 30.</li>
+<li><code>rename(p)</code> gives the method a copy of the <b>address</b>. Both copies lead to the same object, so when the method changes the name, main sees it too. The name is now "Asha".</li>
+<li><code>replace(p)</code> also gets a copy of the address, but then points its own copy at a brand-new object. Main's variable is untouched and still points to the original object, so the name stays "Asha".</li>
+<li>The program prints <code>30 Asha</code>.</li>
+</ol>
+<p>This one example answers a famous interview question: <b>Java is always "pass by value"</b>. Whenever you pass something to a method, Java passes a copy. For a primitive it copies the value. For an object it copies the address. That is why a method can change what is <em>inside</em> an object, but can never make the caller's variable point to a different object.</p>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Comparing objects with ==</p>
+<p><code>==</code> checks whether two variables hold the <b>same address</b>. It does not check whether two objects contain the same thing. Two separate String objects that both contain "hello" are not <code>==</code> to each other.</p>
+<p>There is one confusing case. Java keeps a small set of ready-made Integer objects for the numbers -128 to 127 (this is called the <b>Integer cache</b>). So for <code>Integer a = 127, b = 127;</code> both variables point to the same cached object and <code>a == b</code> is true. With 128, Java creates two separate objects and <code>a == b</code> is false, even though both hold 128.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> compare the contents of objects with <code>a.equals(b)</code>, or <code>Objects.equals(a, b)</code>, which also copes with null.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Forgetting that an Integer can be null</p>
+<p>A primitive <code>int</code> always has a value. Its object version, <code>Integer</code>, can be <code>null</code> (meaning "no value"). Java converts an Integer back into an int automatically when you do maths with it (this is called <b>unboxing</b>). If the Integer is null at that moment, the program crashes with a <code>NullPointerException</code>.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> check for null before using the value, or use the primitive <code>int</code> when "no value" should never happen.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Building a long String with + inside a loop</p>
+<p>A String can never be changed after it is created (it is <b>immutable</b>). So every <code>s = s + "x"</code> creates a brand-new String and copies all the old characters into it. In a loop that runs thousands of times, this gets very slow.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use a <code>StringBuilder</code>, which grows in place, and call <code>toString()</code> once at the end.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Keeping changing data in static fields</p>
+<p>A <code>static</code> field belongs to the class itself, so there is exactly one copy for the whole program, shared by every thread. If two users' requests change it at the same time, they overwrite each other's data.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> keep changing data in normal fields or local variables. Use <code>static</code> for constants and shared helpers.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Catching an exception and doing nothing</p>
+<p>Writing <code>catch (Exception e) { }</code> hides the error completely. The program carries on in a broken state and nobody knows why.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> handle the error properly, log it, or let it travel up to code that can deal with it.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Java is compiled once into bytecode, and the JVM on each computer runs it.</li>
+<li>Primitives hold values. Object variables hold an address (a reference) to an object on the heap.</li>
+<li>Java always passes a copy: a copy of the value, or a copy of the address.</li>
+<li>Compare objects with <code>equals()</code>. Use <code>==</code> for primitives.</li>
+<li>Strings never change. Use <code>StringBuilder</code> to build text in a loop.</li>
+</ul>
+<p><b>Next:</b> open the questions below. Each one zooms in on one of these ideas.</p>`);
 
 appendTopic("java-basics", [
 {

@@ -1494,6 +1494,64 @@ pre:hover .copy-btn,.copy-btn:focus-visible{opacity:1;transform:none}
   .primer,.primer[open] .primer-body{animation:none}
 }
 
+/* ---------- beginner-friendly explanation blocks ----------
+   Used by the primers and by the "In simple words" box on every answer. */
+.simple{
+  margin:4px 0 18px;padding:14px 16px 15px;border-radius:13px;
+  border:1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-left:4px solid var(--accent);
+  background:color-mix(in srgb, var(--accent) 8%, var(--panel));
+}
+.simple-k{
+  display:block;margin-bottom:6px;font-size:11px;font-weight:800;
+  letter-spacing:.9px;text-transform:uppercase;color:var(--accent);
+}
+.answer .simple p{margin:0;font-size:14.8px;line-height:1.72;color:var(--text)}
+
+.pr-lead{font-size:15.6px;line-height:1.75;color:var(--text)}
+.pr-analogy{
+  margin:0 0 16px;padding:13px 16px;border-radius:12px;
+  background:color-mix(in srgb, var(--accent-2) 10%, var(--panel));
+  border:1px solid color-mix(in srgb, var(--accent-2) 30%, var(--border));
+  color:var(--text-dim);line-height:1.7;
+}
+.pr-analogy b:first-child{display:block;margin-bottom:4px;color:var(--text)}
+.answer .pr-terms{
+  display:grid;grid-template-columns:minmax(120px,auto) 1fr;gap:0;margin:0 0 16px;
+  border:1px solid var(--border);border-radius:12px;overflow:hidden;
+}
+.pr-terms dt,.pr-terms dd{margin:0;padding:10px 14px;border-bottom:1px solid var(--border)}
+.pr-terms dt{font-weight:700;color:var(--text);background:var(--bg-soft)}
+.pr-terms dd{color:var(--text-dim);line-height:1.65}
+.pr-terms dt:last-of-type,.pr-terms dd:last-of-type{border-bottom:none}
+.answer ol.pr-steps{counter-reset:step;list-style:none;padding-left:0}
+.answer ol.pr-steps > li{
+  counter-increment:step;position:relative;margin-bottom:12px;padding-left:40px;line-height:1.7;
+}
+.answer ol.pr-steps > li::before{
+  content:counter(step);position:absolute;left:0;top:1px;
+  width:27px;height:27px;border-radius:50%;display:grid;place-items:center;
+  background:var(--accent);color:#fff;font-size:12.5px;font-weight:800;
+}
+.pr-mistake{
+  margin:0 0 12px;padding:12px 15px;border-radius:12px;
+  border:1px solid var(--border);background:var(--bg-soft);
+}
+.answer .pr-mistake p{margin:0 0 6px}
+.answer .pr-mistake p:last-child{margin-bottom:0}
+.pm-what{color:var(--text);font-weight:650}
+.pm-fix{color:var(--text-dim)}
+.answer .pm-fix strong{color:var(--good)}
+.answer ul.pr-remember{list-style:none;padding-left:0}
+.answer ul.pr-remember li{position:relative;padding-left:28px;margin-bottom:9px}
+.answer ul.pr-remember li::before{content:"✓";position:absolute;left:0;top:0;color:var(--good);font-weight:800}
+@media (max-width:560px){
+  .answer .pr-terms{grid-template-columns:1fr}
+  .pr-terms dt{border-bottom:none;padding-bottom:4px}
+  .pr-terms dd{padding-top:2px}
+  .simple{padding:12px 13px}
+}
+
 /* ============================================================
    Design layer: ambient backdrop, glass chrome, home dashboard,
    question actions, command palette, toasts, shortcuts, mobile nav.

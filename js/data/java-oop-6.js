@@ -1,13 +1,25 @@
-registerPrimer("java-oop", `<h3>The mental model: code talks to a promise, not a class</h3>
-<p>Object-oriented design is mostly one idea. The calling code depends on a small <strong>promise</strong> (an interface such as <code>Payment</code>), and each concrete class keeps that promise in its own way. The caller never asks "which kind are you?". It just calls <code>pay()</code>, and at runtime the JVM runs the version that belongs to the actual object. That runtime choice is called <strong>dynamic dispatch</strong>, and it is what polymorphism means in practice.</p>
-<p>The four pillars are four views of that one idea:</p>
-<table>
-<tr><th>Pillar</th><th>In one sentence</th><th>In the example below</th></tr>
-<tr><td><strong>Encapsulation</strong></td><td>An object guards its own data and rules</td><td><code>UpiPayment</code> validates its own UPI id; nobody else can set it to junk</td></tr>
-<tr><td><strong>Abstraction</strong></td><td>Callers see what it does, not how</td><td>Checkout only knows <code>pay(amount)</code></td></tr>
-<tr><td><strong>Inheritance</strong></td><td>A type is declared to be a kind of another</td><td><code>CardPayment implements Payment</code></td></tr>
-<tr><td><strong>Polymorphism</strong></td><td>One call, the right behaviour per object</td><td><code>payment.pay(500)</code> runs card or UPI code</td></tr>
-</table>
+registerPrimer("java-oop", `<p class="pr-lead">Object-oriented programming (OOP) is a way of organising code around <b>objects</b>: small units that hold some data and the actions that work on that data. A "Customer" object holds a name and an address and knows how to update them. The goal is code that is easy to understand, easy to change, and hard to break.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Think of a TV remote. You press "volume up" without knowing anything about the circuits inside. Any brand of TV understands that button in its own way. OOP works the same way: code uses an object through a simple set of buttons (its methods), and each kind of object decides for itself how to do the work.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Class</dt><dd>A blueprint. <code>class Car</code> describes what every car has and can do.</dd>
+<dt>Object</dt><dd>One real thing built from a class. Your car and my car are two objects of the class Car.</dd>
+<dt>Method</dt><dd>An action an object can perform, like <code>car.start()</code>.</dd>
+<dt>Interface</dt><dd>A list of methods a class promises to provide, without saying how. It is a contract.</dd>
+<dt>Encapsulation</dt><dd>Keeping an object's data private and only allowing changes through its own methods, so its rules cannot be broken from outside.</dd>
+<dt>Abstraction</dt><dd>Showing only what something does and hiding how it does it.</dd>
+<dt>Inheritance</dt><dd>One class reusing and extending another, like <code>Dog extends Animal</code>.</dd>
+<dt>Polymorphism</dt><dd>One call, different behaviour: <code>payment.pay()</code> runs card code for a card and UPI code for UPI.</dd>
+</dl>
+
+<h3>The four pillars, in plain words</h3>
+<ol class="pr-steps">
+<li><b>Encapsulation: protect the data.</b> A bank account keeps its balance private. The only way to change it is <code>deposit()</code> or <code>withdraw()</code>, and those methods check the rules (no negative amounts, no overdraft). Nobody can just set the balance to any number they like.</li>
+<li><b>Abstraction: hide the details.</b> The checkout page only needs to know "this thing can take a payment". It does not care whether that involves a card network, a UPI app or a wallet.</li>
+<li><b>Inheritance: reuse what exists.</b> A <code>SavingsAccount</code> can build on a general <code>Account</code> and only add what is different, such as interest.</li>
+<li><b>Polymorphism: same call, right behaviour.</b> You write <code>payment.pay(500)</code> once. When the program runs, Java looks at the real object and runs its version of <code>pay</code>. This choice at run time is called <b>dynamic dispatch</b>.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 220" role="img" aria-label="Checkout depends on the Payment interface; card, UPI and wallet classes implement it and the JVM dispatches at runtime">
   <defs><marker id="pr-oop" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -35,42 +47,70 @@ registerPrimer("java-oop", `<h3>The mental model: code talks to a promise, not a
 </svg>
 <figcaption>The caller depends on the interface. Which pay() runs is decided at runtime by the real object.</figcaption>
 </figure>
-<h3>Worked example: from a type switch to polymorphism</h3>
-<pre><code>// BEFORE: the caller knows every kind of payment. Adding "wallet" means
-// editing this method, and every other method with the same switch.
-double fee(String type, double amount) {
-    switch (type) {
-        case "CARD": return amount * 0.02;
-        case "UPI":  return 0;
-        default: throw new IllegalArgumentException(type);
-    }
-}
 
-// AFTER: each class owns its own rule.
-interface Payment {
+<h3>A worked example: replacing a long if/else with objects</h3>
+<p>Imagine a shop that charges different fees for different payment types. The first version usually looks like this:</p>
+<pre><code>double fee(String type, double amount) {
+    if (type.equals("CARD")) return amount * 0.02;
+    if (type.equals("UPI"))  return 0;
+    throw new IllegalArgumentException(type);
+}</code></pre>
+<p>It works, but every new payment type means editing this method, and every other method that has the same if/else. Here is the object-oriented version:</p>
+<pre><code>interface Payment {                       // the promise: every payment has a fee
     double fee(double amount);
 }
-final class CardPayment implements Payment {
+class CardPayment implements Payment {
     public double fee(double amount) { return amount * 0.02; }
 }
-final class UpiPayment implements Payment {
+class UpiPayment implements Payment {
     public double fee(double amount) { return 0; }
 }
-final class WalletPayment implements Payment {          // NEW: nothing else changes
+class WalletPayment implements Payment {  // new type: nothing else changes
     public double fee(double amount) { return Math.min(amount * 0.01, 10); }
 }
 
-// The caller: no switch, no instanceof, no knowledge of the kinds
 double total(Payment p, double amount) {
-    return amount + p.fee(amount);                     // dynamic dispatch
+    return amount + p.fee(amount);        // Java picks the right fee() at run time
 }</code></pre>
-<p><strong>Why interviewers like this example:</strong> it shows the Open/Closed principle (open to new payment types, closed to edits in <code>total</code>), programming to an interface, and polymorphism, all in about twenty lines.</p>
-<h3>When NOT to reach for a class hierarchy</h3>
-<ul>
-<li><strong>Only data, no behaviour?</strong> A <code>record</code> is enough. Do not invent an interface for it.</li>
-<li><strong>A fixed, closed set of kinds?</strong> A <code>sealed interface</code> plus a <code>switch</code> with pattern matching is often clearer, and the compiler tells you when a case is missing.</li>
-<li><strong>Want to reuse code?</strong> Prefer composition (hold a helper object) over <code>extends</code>. Inheritance ties the child to every detail of the parent.</li>
-</ul>`);
+<ol class="pr-steps">
+<li><code>Payment</code> is an interface. It only says "anything that is a Payment can calculate a fee".</li>
+<li>Each class keeps that promise in its own way. The card class knows the card rule, the UPI class knows the UPI rule.</li>
+<li><code>total()</code> does not know or care which kind of payment it received. It just calls <code>fee()</code>.</li>
+<li>To add a wallet, you write one new class. <code>total()</code> and the other classes are not touched, so they cannot break.</li>
+</ol>
+<p>That last point has a name you will hear in interviews: the <b>Open/Closed principle</b>. Code should be open to new features (add a class) but closed to modification (no editing of working code).</p>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Thinking private fields with getters and setters is encapsulation</p>
+<p>If every field has a public setter, anyone can still set the balance to -5000. The data is technically private, but nothing protects the rules.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> offer meaningful actions such as <code>withdraw(amount)</code> that check the rules, instead of a raw <code>setBalance()</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Using inheritance just to reuse code</p>
+<p>Inheritance ties a child class to every detail of its parent. Change the parent, and children can break in surprising ways. A Square is a Rectangle in maths, but in code a Square that forces width and height to stay equal breaks code that expected a normal Rectangle.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> prefer <b>composition</b>: give the class a helper object to use (it "has a" helper) rather than making it "be a" parent. Use inheritance only for a true "is a kind of" relationship that behaves the same way.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Checking the type with instanceof everywhere</p>
+<p>Code full of <code>if (x instanceof Card) ... else if (x instanceof Upi)</code> has to be edited every time a new type appears.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> put the behaviour inside each class and call one method, as in the example above.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Overriding equals() without hashCode()</p>
+<p>If two objects are "equal", Java's hash-based collections (HashMap, HashSet) also expect them to have the same hash code. If they do not, the map looks in the wrong place and cannot find your object.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> always override both together, using the same fields in each. A <code>record</code> does this for you automatically.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>An object bundles data with the actions that are allowed on that data.</li>
+<li>Code should depend on interfaces (promises), not on specific classes.</li>
+<li>Polymorphism lets one method call do the right thing for each type of object.</li>
+<li>Prefer composition (has-a) over inheritance (is-a) for reusing code.</li>
+<li>Good design means adding a feature by adding code, not by editing working code.</li>
+</ul>
+<p><b>Next:</b> the questions below cover SOLID, the main design principles, and the classic OOP interview puzzles.</p>`);
 
 appendTopic("java-oop", [
 {
