@@ -23,6 +23,9 @@ registerSimple("hr", {
 "Why are you leaving your current company?":
 `Talk about what you are moving towards, not what you are running away from: a bigger technical challenge, a product you care about, or skills you want to grow. Never criticise your current employer, manager or colleagues, even if you have good reason.`,
 
+"How do you handle a production incident, and can you walk me through one?":
+`They want to see calm judgement under pressure, not heroics. Walk through a real incident in phases: how it was detected (ideally an alert, not a customer), how you kept people informed, how you restored service first (often a rollback), how you then found the root cause, and what you changed afterwards so it would not happen again.`,
+
 "Where do you see yourself in five years, and what are your career goals?":
 `Show direction that fits the role. For example: becoming a strong senior engineer who owns larger parts of the system and helps others grow, in an area related to this job. Avoid "in your position" or "running my own company", and do not sound like you will leave in a year.`,
 

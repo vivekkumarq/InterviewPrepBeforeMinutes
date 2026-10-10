@@ -1,5 +1,23 @@
-registerPrimer("coding-linked-list", `<h3>The mental model: you only ever hold a few arrows</h3>
-<p>A linked list has no indexes. Each node holds a value and one arrow (<code>next</code>) to the following node, and all you start with is the arrow to the first node. Every linked list problem is about <strong>re-pointing arrows in the right order without losing the rest of the list</strong>. Before you change a node's <code>next</code>, save whatever it pointed to, or that part of the list is gone.</p>
+registerPrimer("coding-linked-list", `<p class="pr-lead">A <b>linked list</b> is a chain of small boxes called <b>nodes</b>. Each node holds a value and an arrow (a reference called <code>next</code>) pointing to the following node. Unlike an array, there are no position numbers: to reach the fifth node, you must follow the arrows from the first one. Linked list problems test whether you can rewire those arrows carefully without losing part of the chain.</p>
+<div class="pr-analogy"><b>Think of it like this</b>A linked list is like a treasure hunt. Each clue tells you only where the next clue is hidden. You cannot jump to clue number 5; you must follow clues 1, 2, 3 and 4. And if you lose a clue before reading it, every clue after it is lost too. That is why, before changing any arrow, you always save where it was pointing.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Node</dt><dd>One box in the chain, holding a value and a <code>next</code> reference.</dd>
+<dt>Head / tail</dt><dd>The first node and the last node. The tail's <code>next</code> is <code>null</code>.</dd>
+<dt>Singly / doubly linked</dt><dd>Singly: each node points only forward. Doubly: each node points both forward and back.</dd>
+<dt>Dummy node</dt><dd>A fake node placed before the head, so changes at the start of the list need no special case.</dd>
+<dt>Fast and slow pointers</dt><dd>Two references moving through the list at different speeds, usually two steps and one step.</dd>
+<dt>Cycle</dt><dd>A list where some node points back to an earlier node, so following arrows never ends.</dd>
+</dl>
+
+<h3>Step by step: the four tools that solve most list problems</h3>
+<ol class="pr-steps">
+<li><b>Dummy head node:</b> put a fake node in front of the list. Then inserting or deleting at the head works exactly like anywhere else.</li>
+<li><b>Fast and slow pointers:</b> one moves two steps, one moves one. When fast reaches the end, slow is in the middle; if there is a cycle, they eventually meet.</li>
+<li><b>A gap of k:</b> move one pointer k steps ahead, then move both together. When the first reaches the end, the second is k nodes from the end.</li>
+<li><b>In-place reversal:</b> walk the list turning each arrow to point backwards (shown below).</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 232" role="img" aria-label="Reversing a linked list: prev, curr and next pointers, showing the arrow of the current node flipped to point backwards">
   <defs><marker id="pr-ll" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -24,35 +42,55 @@ registerPrimer("coding-linked-list", `<h3>The mental model: you only ever hold a
 </svg>
 <figcaption>The reversal loop in one picture. Most list problems are this move, plus fast and slow pointers.</figcaption>
 </figure>
-<h3>Worked example: reverse a list, one step at a time</h3>
+
+<h3>A worked example: reverse a linked list</h3>
 <pre><code>class ListNode { int val; ListNode next; ListNode(int v) { val = v; } }
 
 static ListNode reverse(ListNode head) {
     ListNode prev = null, curr = head;
     while (curr != null) {
-        ListNode next = curr.next;   // 1. SAVE the rest of the list
-        curr.next = prev;            // 2. FLIP this node's arrow backwards
-        prev = curr;                 // 3. MOVE prev forward
-        curr = next;                 // 4. MOVE curr forward
+        ListNode next = curr.next;   // 1. save the rest of the list
+        curr.next = prev;            // 2. turn this node's arrow backwards
+        prev = curr;                 // 3. move prev forward
+        curr = next;                 // 4. move curr forward
     }
-    return prev;                     // prev is the old tail, now the head
-}
+    return prev;                     // the old last node is the new head
+}</code></pre>
+<p>Tracing it on <code>1 → 2 → 3</code>:</p>
+<ol class="pr-steps">
+<li><b>Start:</b> prev = null, curr = 1.</li>
+<li><b>Step 1:</b> save 2, point 1 back to null. Now prev = 1, curr = 2. We have <code>null ← 1</code> and <code>2 → 3</code>.</li>
+<li><b>Step 2:</b> save 3, point 2 back to 1. Now prev = 2, curr = 3. We have <code>null ← 1 ← 2</code>.</li>
+<li><b>Step 3:</b> save null, point 3 back to 2. Now prev = 3, curr = null, so the loop stops.</li>
+<li>Return prev, which is 3: the list is now <code>3 → 2 → 1</code>. O(n) time and no extra memory.</li>
+</ol>
 
-// Trace for 1 -&gt; 2 -&gt; 3:
-// start   prev=null  curr=1
-// step 1  1.next=null           prev=1  curr=2      null &lt;- 1    2 -&gt; 3
-// step 2  2.next=1              prev=2  curr=3      null &lt;- 1 &lt;- 2    3
-// step 3  3.next=2              prev=3  curr=null   null &lt;- 1 &lt;- 2 &lt;- 3
-// return prev = 3</code></pre>
-<h3>The four tools that solve most list problems</h3>
-<table>
-<tr><th>Tool</th><th>What it does</th><th>Used in</th></tr>
-<tr><td><strong>Dummy head node</strong></td><td>A fake node before the head, so "insert or delete at the head" is not a special case</td><td>Merging lists, removing nodes, partitioning</td></tr>
-<tr><td><strong>Fast and slow pointers</strong></td><td>One moves 2 steps, one moves 1</td><td>Middle of the list, cycle detection, palindrome check</td></tr>
-<tr><td><strong>Gap of k</strong></td><td>Move one pointer k ahead, then move both</td><td>kth node from the end, remove nth from end</td></tr>
-<tr><td><strong>In-place reversal</strong></td><td>The loop above, on the whole list or a section</td><td>Reverse in groups, palindrome check, reorder list</td></tr>
-</table>
-<p><strong>Always test with:</strong> an empty list (<code>head == null</code>), one node, two nodes, and an even and an odd length. Most linked list bugs are a null pointer on one of those.</p>`);
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Losing the rest of the list</p>
+<p>Changing <code>curr.next</code> before saving it cuts off every node after it, and they can never be reached again.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> always store <code>curr.next</code> in a variable before changing it.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ NullPointerException at the edges</p>
+<p>Code like <code>fast.next.next</code> crashes when <code>fast</code> or <code>fast.next</code> is null, near the end of the list.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> check both in the loop condition: <code>while (fast != null &amp;&amp; fast.next != null)</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Special-casing the head everywhere</p>
+<p>Deleting or inserting at the first node often needs separate code, which is where bugs creep in.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> start with a dummy node pointing to the head and return <code>dummy.next</code> at the end.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Save <code>next</code> before you change it.</li>
+<li>Use a dummy node to avoid special cases at the head.</li>
+<li>Fast and slow pointers find the middle and detect cycles.</li>
+<li>A gap of k finds the kth node from the end in one pass.</li>
+<li>Always test with an empty list, one node, two nodes, and odd and even lengths.</li>
+</ul>
+<p><b>Next:</b> the questions below solve the classic linked list problems: reversal, cycles, merging, LRU cache and more.</p>`);
 
 appendTopic("coding-linked-list", [
 {

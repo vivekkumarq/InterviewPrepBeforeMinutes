@@ -1,5 +1,25 @@
-registerPrimer("coding-basics", `<h3>The mental model: a fixed routine beats inspiration</h3>
-<p>First-round coding questions are rarely hard. What interviewers score is <strong>how you get there</strong>: do you clarify the problem, try examples, start with something that works, improve it, and test it? Following the same six steps every time keeps you calm and shows exactly the habits they are looking for.</p>
+registerPrimer("coding-basics", `<p class="pr-lead">First-round <b>coding questions</b> are usually simple problems: reverse a string, check for a palindrome, find primes, count characters. They are not testing clever tricks. They test whether you can turn a problem into correct, clean code, think about unusual inputs, and explain what you are doing as you go.</p>
+<div class="pr-analogy"><b>Think of it like this</b>A good coding answer is like a pilot's pre-flight checklist. Pilots do not rely on memory or inspiration; they follow the same steps every time, which keeps them calm and catches mistakes early. Follow the same six steps for every coding problem, from the easiest to the hardest, and you will show the interviewer exactly the habits they are scoring.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Algorithm</dt><dd>A clear, step-by-step method for solving a problem.</dd>
+<dt>Edge case</dt><dd>An unusual input that often breaks code: empty string, one element, negative numbers, very large values, null.</dd>
+<dt>Brute force</dt><dd>The simplest solution that works, even if it is slow. A fine starting point.</dd>
+<dt>Time complexity (Big O)</dt><dd>How the running time grows as input grows. <code>O(n)</code> means time grows in step with the input size; <code>O(n²)</code> means doubling the input makes it four times slower.</dd>
+<dt>Space complexity</dt><dd>How much extra memory the solution needs as input grows.</dd>
+<dt>In place</dt><dd>Changing the input directly instead of making a copy, so little extra memory is used.</dd>
+</dl>
+
+<h3>Step by step: the six-step routine</h3>
+<ol class="pr-steps">
+<li><b>Understand:</b> repeat the problem in your own words and ask questions. Upper and lower case? Spaces? Can the input be empty?</li>
+<li><b>Examples:</b> write two or three small inputs with their expected outputs, including one edge case.</li>
+<li><b>Brute force:</b> describe the simplest solution that works and its complexity.</li>
+<li><b>Improve:</b> ask "what work am I repeating?" and find a faster approach.</li>
+<li><b>Code:</b> write it cleanly with meaningful names, talking through what you are doing.</li>
+<li><b>Test:</b> walk through your examples by hand, line by line, including the edge cases.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 176" role="img" aria-label="Six-step routine for a coding question: understand, examples, brute force, optimise, code, test">
   <defs><marker id="pr-cb" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -20,46 +40,64 @@ registerPrimer("coding-basics", `<h3>The mental model: a fixed routine beats ins
 </svg>
 <figcaption>The same routine for every problem, from "reverse a string" to graph questions.</figcaption>
 </figure>
-<h3>Worked example: "Are these two strings anagrams?"</h3>
-<pre><code>1 UNDERSTAND   "listen" and "silent" -&gt; true. Case-sensitive? Spaces count?
-               Unicode? (Ask. Assume lowercase a-z unless told otherwise.)
 
-2 EXAMPLES     ("listen","silent") true   ("rat","car") false
-               ("","") true               ("a","aa") false  &lt;- different lengths
+<h3>A worked example: "Are these two strings anagrams?"</h3>
+<p>Two words are anagrams if they use exactly the same letters, such as "listen" and "silent".</p>
+<pre><code>// Steps 1-2: lowercase a-z only (ask!). Examples:
+//   ("listen","silent") -&gt; true   ("rat","car") -&gt; false   ("a","aa") -&gt; false
+// Step 3, brute force: sort both strings and compare. O(n log n).
+// Step 4, improve: we only need the COUNT of each letter, not the order. O(n).
 
-3 BRUTE FORCE  Sort both strings and compare.  O(n log n) time.
-               Works, and it is fine to say "I'd start with this".
-
-4 OPTIMISE     Sorting does more than we need: we only need COUNTS.
-               Count each letter in one string, subtract for the other.
-               O(n) time, O(1) space (26 counters).</code></pre>
-<pre><code>// 5 CODE
 static boolean isAnagram(String a, String b) {
-    if (a.length() != b.length()) return false;      // cheap early exit
-    int[] count = new int[26];
+    if (a.length() != b.length()) return false;   // different lengths: cannot match
+    int[] count = new int[26];                    // one counter per letter a..z
     for (int i = 0; i &lt; a.length(); i++) {
-        count[a.charAt(i) - 'a']++;
-        count[b.charAt(i) - 'a']--;
+        count[a.charAt(i) - 'a']++;               // add for letters in a
+        count[b.charAt(i) - 'a']--;               // subtract for letters in b
     }
-    for (int c : count) if (c != 0) return false;
+    for (int c : count) if (c != 0) return false; // any leftover means a mismatch
     return true;
-}
+}</code></pre>
+<ol class="pr-steps">
+<li>If the lengths differ, the answer is immediately false, so we exit early.</li>
+<li><code>c - 'a'</code> turns a letter into a number from 0 to 25, so <code>'a'</code> uses slot 0 and <code>'z'</code> uses slot 25.</li>
+<li>Each letter in the first word adds 1 to its slot; each letter in the second word subtracts 1.</li>
+<li>If both words use the same letters, every slot ends at 0.</li>
+<li><b>Test by hand:</b> "rat" and "car" leave +1 for t and -1 for c, so the answer is false.</li>
+<li><b>Complexity:</b> one pass through the strings, so O(n) time, and only 26 counters, so O(1) extra space.</li>
+</ol>
 
-// 6 TEST, out loud: "listen"/"silent"
-//   after the loop every counter is 0 -&gt; true
-//   "rat"/"car": t +1, c -1 remain -&gt; false
-//   "a"/"aa": lengths differ -&gt; false before the loop
-//   Any character outside a-z would index out of bounds: mention it, and
-//   switch to a HashMap&lt;Character, Integer&gt; if the input can contain them.</code></pre>
-<h3>The small Java details interviewers notice</h3>
-<table>
-<tr><th>Detail</th><th>Why it matters</th></tr>
-<tr><td><code>c - 'a'</code> turns a letter into 0..25</td><td>The standard trick for counting letters in an array</td></tr>
-<tr><td><code>StringBuilder</code> in loops, not <code>+=</code></td><td>String concatenation in a loop is O(n²)</td></tr>
-<tr><td><code>equals()</code> for strings, never <code>==</code></td><td><code>==</code> compares references</td></tr>
-<tr><td>Check for overflow when multiplying or reversing numbers</td><td><code>int</code> silently wraps around</td></tr>
-<tr><td>State the complexity before you are asked</td><td>It shows you know why the optimised version is better</td></tr>
-</table>`);
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Coding before understanding</p>
+<p>Jumping straight into code often means solving the wrong problem, or forgetting cases such as empty input.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> spend the first couple of minutes on questions and examples. Interviewers expect it.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Comparing strings with <code>==</code></p>
+<p>In Java, <code>==</code> checks whether two variables point to the same object, not whether the text is the same.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use <code>a.equals(b)</code> to compare the contents of strings.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Building strings with <code>+=</code> in a loop</p>
+<p>Strings cannot be changed, so each <code>+=</code> copies the whole string again, which becomes very slow for long inputs.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use a <code>StringBuilder</code> and call <code>append()</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Ignoring integer overflow</p>
+<p>An <code>int</code> holds at most about 2.1 billion. Going past that silently wraps round to a negative number, for example when reversing a big number or computing factorials.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use <code>long</code> or check before the value would overflow, and mention it to the interviewer.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Follow the same six steps: understand, examples, brute force, improve, code, test.</li>
+<li>Always think about edge cases: empty, one item, duplicates, negatives, very large values.</li>
+<li>State the time and space complexity of your solution.</li>
+<li>Use <code>equals()</code> for strings and <code>StringBuilder</code> in loops.</li>
+<li>Talk while you work; the interviewer is scoring your thinking.</li>
+</ul>
+<p><b>Next:</b> the questions below solve the classic first-round problems step by step: strings, numbers, patterns and simple arrays.</p>`);
 
 appendTopic("coding-basics", [
 {

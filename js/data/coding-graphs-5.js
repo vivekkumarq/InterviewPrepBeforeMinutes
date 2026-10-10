@@ -1,5 +1,26 @@
-registerPrimer("coding-graphs", `<h3>The mental model: nodes, edges, and a visited set</h3>
-<p>A graph is a set of <strong>nodes</strong> joined by <strong>edges</strong>: cities and roads, users and friendships, courses and prerequisites, cells in a grid and their neighbours. Almost every graph algorithm is a way of <strong>exploring from a starting node without visiting anything twice</strong>. The two basic ways differ only in the order they explore, and that order comes from the data structure holding "places still to visit".</p>
+registerPrimer("coding-graphs", `<p class="pr-lead">A <b>graph</b> is a set of things (called <b>nodes</b>) connected by links (called <b>edges</b>). Cities joined by roads, people connected as friends, courses linked by prerequisites, and squares on a map next to each other are all graphs. Most graph problems come down to exploring from a starting point without visiting anything twice.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Imagine a rumour spreading. On day 1 you tell your friends; on day 2 they tell their friends; and so on, ring by ring. That is <b>breadth-first search (BFS)</b>: explore everyone one step away, then two steps, then three, which naturally finds the fewest steps to anyone. Now imagine exploring a maze by always taking the next unexplored corridor as far as it goes, then backing up. That is <b>depth-first search (DFS)</b>.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Node (vertex) / edge</dt><dd>A thing, and a connection between two things.</dd>
+<dt>Directed / undirected</dt><dd>Directed edges go one way (A follows B); undirected edges go both ways (A and B are friends).</dd>
+<dt>Weighted</dt><dd>Each edge has a cost, such as a distance or a price.</dd>
+<dt>Adjacency list</dt><dd>The usual way to store a graph: for each node, a list of its neighbours.</dd>
+<dt>Visited set</dt><dd>A record of nodes already explored, so you never process one twice or loop forever.</dd>
+<dt>BFS / DFS</dt><dd>Breadth-first (ring by ring, using a queue) and depth-first (one path as deep as possible, using recursion or a stack).</dd>
+<dt>Cycle</dt><dd>A path that leads back to where it started.</dd>
+</dl>
+
+<h3>Step by step: breadth-first search</h3>
+<ol class="pr-steps">
+<li>Put the starting node in a <b>queue</b> and mark it as visited.</li>
+<li>Take the node at the front of the queue.</li>
+<li>For each of its neighbours that has not been visited, mark it visited and add it to the back of the queue.</li>
+<li>Repeat until the queue is empty or you find what you are looking for.</li>
+<li>Because nodes are explored in rings, the first time you reach a node is by the fewest possible steps.</li>
+</ol>
+<p>DFS is the same idea with a stack (or recursion) instead of a queue, which goes deep first instead of wide.</p>
 <figure class="fig">
 <svg viewBox="0 0 620 230" role="img" aria-label="BFS explores a graph level by level using a queue; DFS goes deep along one path first using a stack or recursion">
   <line class="dg-line" x1="80" y1="40" x2="40" y2="100"/>
@@ -27,46 +48,70 @@ registerPrimer("coding-graphs", `<h3>The mental model: nodes, edges, and a visit
 </svg>
 <figcaption>Same graph, same visited set; only the container differs. Queue gives breadth, stack gives depth.</figcaption>
 </figure>
-<h3>Worked example: shortest number of steps with BFS</h3>
-<pre><code>// Graph as an adjacency list: node -&gt; its neighbours
-Map&lt;String, List&lt;String&gt;&gt; g = Map.of(
-    "A", List.of("B", "C"), "B", List.of("A", "D"),
-    "C", List.of("A", "E", "F"), "D", List.of("B"),
-    "E", List.of("C"), "F", List.of("C"));
 
-static int steps(Map&lt;String, List&lt;String&gt;&gt; g, String from, String to) {
-    Deque&lt;String&gt; queue = new ArrayDeque&lt;&gt;(List.of(from));
-    Map&lt;String, Integer&gt; dist = new HashMap&lt;&gt;(Map.of(from, 0));   // doubles as "visited"
-    while (!queue.isEmpty()) {
-        String node = queue.poll();
-        if (node.equals(to)) return dist.get(node);
-        for (String next : g.getOrDefault(node, List.of())) {
-            if (!dist.containsKey(next)) {           // mark when ADDING to the queue,
-                dist.put(next, dist.get(node) + 1);  // not when removing, or a node
-                queue.offer(next);                   // can be queued many times
+<h3>A worked example: number of islands</h3>
+<p>A grid of <code>'1'</code> (land) and <code>'0'</code> (water). Count the islands: groups of land squares connected up, down, left or right.</p>
+<pre><code>static int numIslands(char[][] grid) {
+    int count = 0;
+    for (int r = 0; r &lt; grid.length; r++)
+        for (int c = 0; c &lt; grid[0].length; c++)
+            if (grid[r][c] == '1') {        // found unexplored land
+                count++;                    // it starts a new island
+                sink(grid, r, c);           // mark the whole island as explored
             }
-        }
-    }
-    return -1;                                       // unreachable
+    return count;
 }
 
-// steps(g, "A", "F"):
-// queue [A]        dist {A:0}
-// poll A -&gt; add B, C            dist {A:0, B:1, C:1}
-// poll B -&gt; add D               dist {..., D:2}
-// poll C -&gt; add E, F            dist {..., E:2, F:2}
-// poll D, poll E, poll F -&gt; found: 2</code></pre>
-<h3>Picking the algorithm</h3>
-<table>
-<tr><th>Question asks for</th><th>Use</th><th>Complexity</th></tr>
-<tr><td>Fewest steps, all edges equal</td><td>BFS</td><td>O(V + E)</td></tr>
-<tr><td>Cheapest path, non-negative weights</td><td>Dijkstra (priority queue)</td><td>O((V + E) log V)</td></tr>
-<tr><td>Cheapest path with negative weights</td><td>Bellman-Ford</td><td>O(V · E)</td></tr>
-<tr><td>Order tasks with prerequisites</td><td>Topological sort (Kahn's BFS or DFS)</td><td>O(V + E)</td></tr>
-<tr><td>Are these connected? Merging groups</td><td>Union-Find</td><td>Almost O(1) per operation</td></tr>
-<tr><td>Connect everything at minimum total cost</td><td>Minimum spanning tree (Kruskal, Prim)</td><td>O(E log E)</td></tr>
-<tr><td>Explore all possibilities</td><td>DFS with backtracking</td><td>Often exponential</td></tr>
-</table>`);
+static void sink(char[][] g, int r, int c) {
+    if (r &lt; 0 || c &lt; 0 || r &gt;= g.length || c &gt;= g[0].length || g[r][c] != '1') return;
+    g[r][c] = '0';                          // mark visited by turning it to water
+    sink(g, r + 1, c); sink(g, r - 1, c);   // explore down and up
+    sink(g, r, c + 1); sink(g, r, c - 1);   // explore right and left
+}</code></pre>
+<ol class="pr-steps">
+<li>The grid is a graph: each land square is a node, and its neighbours are the squares above, below, left and right.</li>
+<li>Scanning the grid, the first land square we meet that is unexplored must belong to a new island, so we add 1.</li>
+<li><code>sink</code> runs a DFS from there, turning every connected land square into water, so the same island is never counted twice.</li>
+<li>The first line of <code>sink</code> stops at the grid's edges, at water, and at squares already explored.</li>
+<li>Every square is visited a constant number of times, so it runs in O(rows × columns).</li>
+</ol>
+
+<h3>Choosing the right algorithm</h3>
+<ul>
+<li><b>Fewest steps, all edges equal:</b> BFS.</li>
+<li><b>Cheapest path with weights (no negative costs):</b> Dijkstra's algorithm, using a priority queue.</li>
+<li><b>Order tasks that depend on each other:</b> topological sort.</li>
+<li><b>"Are these two connected?" while links keep being added:</b> Union-Find.</li>
+<li><b>Connect everything at the lowest total cost:</b> minimum spanning tree (Kruskal or Prim).</li>
+<li><b>Try every possibility:</b> DFS with backtracking.</li>
+</ul>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Forgetting to mark nodes as visited</p>
+<p>Without a visited set, a cycle sends the search round and round forever.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> keep a visited set and check it before exploring any node.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Marking visited when removing from the queue</p>
+<p>If you only mark a node when you take it out, it can be added to the queue many times by different neighbours first.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> mark a node as visited at the moment you add it to the queue.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Using BFS for weighted shortest paths</p>
+<p>BFS finds the fewest edges, not the lowest total cost, so it gives wrong answers when edges have different weights.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use Dijkstra's algorithm for weighted graphs with non-negative costs.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>A graph is nodes plus edges; store it as an adjacency list.</li>
+<li>BFS uses a queue and finds the fewest steps; DFS goes deep using recursion or a stack.</li>
+<li>Always keep a visited set.</li>
+<li>Grids are graphs whose neighbours are up, down, left and right.</li>
+<li>Most graph traversals run in O(V + E): every node and edge once.</li>
+</ul>
+<p><b>Next:</b> the questions below cover islands, course schedules, Dijkstra, Union-Find, spanning trees and backtracking.</p>`);
 
 appendTopic("coding-graphs", [
 {

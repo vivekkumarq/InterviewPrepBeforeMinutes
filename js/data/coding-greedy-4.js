@@ -1,5 +1,24 @@
-registerPrimer("coding-greedy", `<h3>The mental model: make the best move now and never look back</h3>
-<p>A greedy algorithm builds the answer one step at a time, always taking the choice that looks best <strong>right now</strong>, and never undoing it. When it works it is usually the simplest and fastest solution: often just a sort and one pass. The catch is that it only works for problems where a locally best choice can never block a better overall answer, so the real skill is knowing when greedy is safe.</p>
+registerPrimer("coding-greedy", `<p class="pr-lead">A <b>greedy algorithm</b> solves a problem step by step, always picking the option that looks best <b>right now</b>, and never going back to change it. When greedy works, it is usually the simplest and fastest solution: often just sorting the data and making one pass. The skill is knowing when that "best right now" choice is actually safe. This topic also covers <b>heaps</b>, which make "always take the best next item" fast.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Paying ₹80 in cash, you naturally hand over the largest note that fits first: a ₹50, then a ₹20, then a ₹10. Each step takes the biggest note possible, and you never reconsider. For Indian currency this always uses the fewest notes. But with unusual coins, say 1, 3 and 4, paying 6 greedily gives 4 + 1 + 1 (three coins), while 3 + 3 uses only two. Greedy is fast, but it is only correct for some problems.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Greedy choice</dt><dd>The option that looks best at the current step, taken without looking ahead.</dd>
+<dt>Counterexample</dt><dd>A small input where greedy gives the wrong answer, proving it cannot be used.</dd>
+<dt>Exchange argument</dt><dd>A way to show greedy is correct: swapping any best solution's choice for the greedy one never makes it worse.</dd>
+<dt>Interval</dt><dd>A start and end, such as a meeting from 10:00 to 11:00.</dd>
+<dt>Heap / priority queue</dt><dd>A structure that always gives you the smallest (or largest) item quickly. Java's <code>PriorityQueue</code>.</dd>
+<dt>Top-k</dt><dd>Finding the k largest, smallest or most frequent items.</dd>
+</dl>
+
+<h3>Step by step: deciding whether greedy is safe</h3>
+<ol class="pr-steps">
+<li><b>Name the greedy rule:</b> for example "pick the meeting that ends earliest".</li>
+<li><b>Try to break it:</b> spend a minute looking for a small input where the rule fails, like the coin example. If you find one, use dynamic programming instead.</li>
+<li><b>Explain why it is safe:</b> show that the greedy choice never leaves you worse off than any other choice.</li>
+<li><b>Choose the sort key:</b> most greedy solutions are "sort by the right thing, then one pass". The key (end time, ratio, deadline) is the real decision.</li>
+<li><b>Say the reason out loud</b> to the interviewer, not just the code.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 214" role="img" aria-label="Activity selection on a timeline: choosing the meeting that ends earliest leaves the most room for the rest">
   <line class="dg-line" x1="20" y1="190" x2="600" y2="190"/>
@@ -16,37 +35,55 @@ registerPrimer("coding-greedy", `<h3>The mental model: make the best move now an
 </svg>
 <figcaption>"Earliest end first" is safe: finishing sooner can never leave you with less room than any other choice.</figcaption>
 </figure>
-<h3>Worked example: when greedy works, and when it fails</h3>
-<pre><code>// WORKS: maximum number of non-overlapping meetings
-static int maxMeetings(int[][] m) {                 // m[i] = {start, end}
-    Arrays.sort(m, Comparator.comparingInt(x -&gt; x[1]));   // earliest END first
+
+<h3>A worked example: the most meetings in one room</h3>
+<pre><code>static int maxMeetings(int[][] meetings) {           // each is {start, end}
+    Arrays.sort(meetings, Comparator.comparingInt(m -&gt; m[1]));   // earliest END first
     int count = 0, lastEnd = Integer.MIN_VALUE;
-    for (int[] x : m) {
-        if (x[0] &gt;= lastEnd) {                      // fits after the last one
+    for (int[] m : meetings) {
+        if (m[0] &gt;= lastEnd) {                        // starts after the last one ends
             count++;
-            lastEnd = x[1];
+            lastEnd = m[1];
         }
     }
     return count;
 }
-// O(n log n). Why is it safe? Swap argument: take ANY best schedule. Its first
-// meeting ends no earlier than ours, so replacing it with ours keeps the
-// schedule valid and the same size. Repeat for every step.
+// Meetings: [1,4] [3,5] [0,6] [5,7] [8,9]
+// Sorted by end: [1,4] [3,5] [0,6] [5,7] [8,9]</code></pre>
+<ol class="pr-steps">
+<li>Sort by end time: the meeting that finishes first leaves the most time free for the rest.</li>
+<li>Take [1,4], the earliest to finish. lastEnd = 4.</li>
+<li>[3,5] starts at 3, before 4, so it overlaps: skip it. [0,6] also overlaps: skip.</li>
+<li>[5,7] starts at 5, after 4: take it. lastEnd = 7. Then [8,9] fits: take it.</li>
+<li>Answer: 3 meetings. <b>Why it is safe:</b> finishing earlier can never leave less room than any other choice. Sorting takes O(n log n); the pass takes O(n).</li>
+</ol>
 
-// FAILS: fewest coins for an amount, with coins {1, 3, 4}, amount 6
-// Greedy (largest coin first):  4 + 1 + 1   = 3 coins
-// Best:                          3 + 3       = 2 coins
-// Taking the 4 looked best but blocked the better answer. This needs DP.
-// (Greedy IS correct for the Indian rupee and US coin systems, because they
-// were designed that way. It is not correct for every coin system.)</code></pre>
-<h3>How to decide whether greedy is safe</h3>
-<table>
-<tr><th>Test</th><th>What to do</th></tr>
-<tr><td>Try to break it</td><td>Spend one minute looking for a small counterexample, like the coin case above. If you find one, switch to DP</td></tr>
-<tr><td>Exchange argument</td><td>Show that swapping any optimal solution's first choice for the greedy choice never makes it worse</td></tr>
-<tr><td>Sort key</td><td>Most greedy solutions are "sort by the right key, then one pass". Choosing the key (end time, ratio, deadline) is the real decision</td></tr>
-<tr><td>Say it out loud</td><td>"I'll go greedy on earliest end time, because finishing earlier never removes options." Interviewers want the reason, not only the code</td></tr>
-</table>`);
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Assuming greedy works without checking</p>
+<p>Greedy looks right on the example you were given but fails on others, as with the 1, 3, 4 coins.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> always try to find a counterexample first. If you find one, use DP.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Sorting by the wrong key</p>
+<p>For the meetings problem, sorting by start time or by length gives wrong answers; only end time works.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> test your sort key on a small tricky example before coding.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Sorting everything for top-k</p>
+<p>Sorting a million items to find the top 10 does far more work than needed.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> keep a heap of size k: O(n log k) instead of O(n log n), and it works on a stream of data.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Greedy takes the best choice now and never goes back.</li>
+<li>It is fast and simple, but only correct for some problems.</li>
+<li>Look for a counterexample; if one exists, use DP.</li>
+<li>Most greedy solutions are "sort by the right key, then one pass".</li>
+<li>Use a heap when you repeatedly need the smallest or largest item.</li>
+</ul>
+<p><b>Next:</b> the questions below cover interval problems, scheduling, heaps and top-k, jump game, Huffman coding and more.</p>`);
 
 appendTopic("coding-greedy", [
 {

@@ -1,5 +1,25 @@
-registerPrimer("coding-dp", `<h3>The mental model: recursion that remembers its answers</h3>
-<p>Dynamic programming is not a special algorithm. It is what you get when a recursive solution <strong>asks the same smaller question many times</strong>, and you store each answer the first time so every later ask is instant. If you can write the brute-force recursion, you are three small steps from the DP solution.</p>
+registerPrimer("coding-dp", `<p class="pr-lead"><b>Dynamic programming (DP)</b> sounds scary, but the idea is simple: when solving a problem means answering the <b>same smaller question again and again</b>, save each answer the first time and reuse it afterwards. That turns many solutions that would take years into ones that finish instantly.</p>
+<div class="pr-analogy"><b>Think of it like this</b>If someone asks you "what is 1+1+1+1+1?", you count and say 5. If they then add another "+1", you do not count from the start again; you remember 5 and say 6. DP is exactly that: remembering answers you have already worked out instead of recalculating them.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Subproblem</dt><dd>A smaller version of the same problem, such as "the best answer for the first 3 houses".</dd>
+<dt>Overlapping subproblems</dt><dd>The same subproblem is needed many times. This is the signal that DP will help.</dd>
+<dt>State</dt><dd>The information that identifies one subproblem, often just an index <code>i</code>, or a pair <code>(i, j)</code>.</dd>
+<dt>Recurrence (transition)</dt><dd>The rule that builds an answer from smaller answers, such as <code>dp[i] = dp[i-1] + dp[i-2]</code>.</dd>
+<dt>Memoisation (top-down)</dt><dd>Recursion plus a cache: compute each subproblem once, store it, reuse it.</dd>
+<dt>Tabulation (bottom-up)</dt><dd>Filling a table with loops from the smallest subproblems up, with no recursion.</dd>
+</dl>
+
+<h3>Step by step: designing any DP</h3>
+<ol class="pr-steps">
+<li><b>Write the brute-force recursion first.</b> Describe the choice at each step in words.</li>
+<li><b>Define the state:</b> what does one subproblem need to know? Usually a position, sometimes two.</li>
+<li><b>Write the recurrence:</b> how is this answer built from smaller ones?</li>
+<li><b>Set the base case:</b> the smallest case you can answer directly.</li>
+<li><b>Add a cache (memoisation)</b> or fill a table in the right order (tabulation).</li>
+<li><b>Reduce memory</b> if each answer only needs the last one or two.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 232" role="img" aria-label="Recursion tree for fib(5) with repeated subproblems highlighted; memoisation computes each once">
   <line class="dg-line" x1="300" y1="30" x2="180" y2="70"/><line class="dg-line" x1="300" y1="30" x2="420" y2="70"/>
@@ -25,54 +45,67 @@ registerPrimer("coding-dp", `<h3>The mental model: recursion that remembers its 
 </svg>
 <figcaption>Overlapping subproblems (the repeats) plus optimal substructure (answers built from smaller answers) is the signal for DP.</figcaption>
 </figure>
-<h3>Worked example: from brute force to DP in four steps</h3>
-<p><strong>Problem:</strong> houses in a row hold money <code>[2, 7, 9, 3, 1]</code>. You cannot rob two adjacent houses. What is the most you can take? (Answer: 2 + 9 + 1 = 12.)</p>
-<pre><code>// STEP 1: recursion. "At house i, either skip it or take it and skip the next."
+
+<h3>A worked example: the house robber</h3>
+<p>Houses in a row hold money <code>[2, 7, 9, 3, 1]</code>. You cannot rob two houses next to each other. What is the most you can take? (Answer: 2 + 9 + 1 = 12.)</p>
+<pre><code>// Step 1: brute force. At house i: skip it, or take it and skip the next one.
 static int rob(int[] a, int i) {
-    if (i &gt;= a.length) return 0;
-    return Math.max(rob(a, i + 1),              // skip house i
-                    a[i] + rob(a, i + 2));      // take house i
+    if (i &gt;= a.length) return 0;                       // no houses left
+    return Math.max(rob(a, i + 1),                     // skip house i
+                    a[i] + rob(a, i + 2));             // take house i
 }
-// Correct, but O(2^n): rob(a, 3) is recomputed from many different paths.
+// Correct but O(2^n): the same rob(a, 3) is recalculated many times.
 
-// STEP 2: memoisation (top-down). Same code, plus a cache.
-static int rob(int[] a, int i, Integer[] memo) {
-    if (i &gt;= a.length) return 0;
-    if (memo[i] != null) return memo[i];
-    return memo[i] = Math.max(rob(a, i + 1, memo), a[i] + rob(a, i + 2, memo));
-}
-// O(n) time, O(n) space.
-
-// STEP 3: tabulation (bottom-up). Fill the answers from the end backwards,
-// so every value a cell needs is already computed. No recursion.
+// Step 2: bottom-up table. dp[i] = the best total from house i to the end.
 static int robTable(int[] a) {
     int n = a.length;
-    int[] dp = new int[n + 2];                  // dp[i] = best from house i onward
+    int[] dp = new int[n + 2];                         // dp[n] and dp[n+1] are 0
     for (int i = n - 1; i &gt;= 0; i--)
         dp[i] = Math.max(dp[i + 1], a[i] + dp[i + 2]);
     return dp[0];
-}
+}</code></pre>
+<ol class="pr-steps">
+<li><b>State:</b> <code>dp[i]</code> means "the most money I can take starting from house i".</li>
+<li><b>Choice:</b> skip house i (take <code>dp[i+1]</code>), or take it and jump two (take <code>a[i] + dp[i+2]</code>).</li>
+<li><b>Base case:</b> past the last house, there is nothing to take, so 0.</li>
+<li>Filling from the end: dp[4] = 1, dp[3] = max(1, 3) = 3, dp[2] = max(3, 9 + 1) = 10, dp[1] = max(10, 7 + 3) = 10, dp[0] = max(10, 2 + 10) = <b>12</b>.</li>
+<li>Each house is computed once, so it runs in O(n). Since each step only needs the next two values, two variables are enough, giving O(1) memory.</li>
+</ol>
 
-// STEP 4: space optimisation. dp[i] only reads the next two cells.
-static int robO1(int[] a) {
-    int next1 = 0, next2 = 0;                   // dp[i+1], dp[i+2]
-    for (int i = a.length - 1; i &gt;= 0; i--) {
-        int cur = Math.max(next1, a[i] + next2);
-        next2 = next1;
-        next1 = cur;
-    }
-    return next1;
-}
-// O(n) time, O(1) space.</code></pre>
-<h3>The questions that design any DP</h3>
-<table>
-<tr><th>Question</th><th>For house robber</th></tr>
-<tr><td><strong>State:</strong> what does one subproblem need to know?</td><td>The index <code>i</code> I am deciding about</td></tr>
-<tr><td><strong>Choice:</strong> what can I do at this state?</td><td>Take house i, or skip it</td></tr>
-<tr><td><strong>Transition:</strong> how is the answer built from smaller ones?</td><td><code>dp[i] = max(dp[i+1], a[i] + dp[i+2])</code></td></tr>
-<tr><td><strong>Base case:</strong> where does it stop?</td><td>Past the last house: 0</td></tr>
-<tr><td><strong>Order:</strong> which way to fill the table?</td><td>From the end, because dp[i] needs larger indices</td></tr>
-</table>`);
+<h3>How to spot a DP problem</h3>
+<ul>
+<li>"How many <b>ways</b> can you…?"</li>
+<li>"What is the <b>minimum or maximum</b> cost or value…?"</li>
+<li>"Is it <b>possible</b> to…?"</li>
+<li>Each step involves a <b>choice</b> (take or skip, go left or right), and later choices depend on earlier ones.</li>
+</ul>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Trying to guess the table directly</p>
+<p>Jumping straight to <code>dp[i][j] = …</code> without understanding the problem usually leads to a wrong formula.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> write the simple recursion first, then add the cache. The table follows naturally.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Not defining what <code>dp[i]</code> means</p>
+<p>If you cannot say in one sentence what a cell holds, the recurrence and base cases will not fit together.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> write the meaning as a comment, for example "dp[i] = best total from house i onwards".</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Filling the table in the wrong order</p>
+<p>If <code>dp[i]</code> needs <code>dp[i+1]</code> but you fill from the start, you read values that have not been computed yet.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> fill in the direction where every value you read is already done.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>DP is recursion that remembers its answers.</li>
+<li>Define the state, the choice, the recurrence and the base case.</li>
+<li>Memoisation adds a cache to recursion; tabulation fills a table with loops.</li>
+<li>If each answer needs only the last few, keep only those values.</li>
+<li>"Number of ways", "minimum or maximum" and "is it possible" are strong DP signals.</li>
+</ul>
+<p><b>Next:</b> the questions below work through the classic DP families: stairs and robbers, knapsack, subsequences, grids and more.</p>`);
 
 appendTopic("coding-dp", [
 {

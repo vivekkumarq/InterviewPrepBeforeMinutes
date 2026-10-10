@@ -1,5 +1,23 @@
-registerPrimer("coding-stack-queue", `<h3>The mental model: a stack remembers what is still open, a queue remembers what is next</h3>
-<p>A <strong>stack</strong> is last-in, first-out, like a pile of plates. Use it whenever the <em>most recent</em> unfinished thing must be dealt with first: an open bracket waiting for its match, a function call waiting for its result, a nested structure you have entered but not left. A <strong>queue</strong> is first-in, first-out, like a line at a counter. Use it when things must be handled in the order they arrived: breadth-first search, scheduling, buffering.</p>
+registerPrimer("coding-stack-queue", `<p class="pr-lead">A <b>stack</b> and a <b>queue</b> are two simple ways of holding items in order. A stack gives back the <b>most recently added</b> item first. A queue gives back the <b>oldest</b> item first. Choosing the right one turns many tricky problems (matching brackets, undo, processing in order) into a few lines of code.</p>
+<div class="pr-analogy"><b>Think of it like this</b>A <b>stack</b> is a pile of plates: you add to the top and take from the top, so the last plate you put down is the first you pick up (Last In, First Out). A <b>queue</b> is a line at a ticket counter: people join at the back and are served from the front, so whoever came first is served first (First In, First Out).</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>LIFO / FIFO</dt><dd>Last In, First Out (stack) and First In, First Out (queue).</dd>
+<dt>push / pop / peek</dt><dd>Stack operations: add to the top, remove from the top, look at the top without removing it.</dd>
+<dt>offer / poll</dt><dd>Queue operations: add to the back, remove from the front.</dd>
+<dt>Deque</dt><dd>A double-ended queue: add or remove at either end. Java's <code>ArrayDeque</code> works as both a stack and a queue.</dd>
+<dt>Priority queue (heap)</dt><dd>A queue that always gives back the smallest (or largest) item first, whatever order items were added.</dd>
+<dt>Monotonic stack</dt><dd>A stack kept in sorted order by popping items that would break it. Used for "next greater element" problems.</dd>
+</dl>
+
+<h3>Step by step: which one to use</h3>
+<ol class="pr-steps">
+<li>Must the <b>most recent unfinished thing</b> be handled first? Matching brackets, undo, nested structures, expression evaluation: use a <b>stack</b>.</li>
+<li>Must things be handled <b>in the order they arrived</b>? Tasks, level-by-level tree traversal, breadth-first search: use a <b>queue</b>.</li>
+<li>Must you always take the <b>smallest or largest</b> next? Top-k items, scheduling by priority, shortest paths: use a <b>priority queue</b>.</li>
+<li>Do you need "the next bigger or smaller item" for every element? Use a <b>monotonic stack</b>.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 214" role="img" aria-label="Checking brackets with a stack: opening brackets are pushed, closing brackets pop and must match; a queue shown for contrast">
   <text class="dg-t" x="10" y="20">Stack: checking "{ [ ( ) ] }"</text>
@@ -28,32 +46,59 @@ registerPrimer("coding-stack-queue", `<h3>The mental model: a stack remembers wh
 </svg>
 <figcaption>Anything nested (brackets, expressions, tags, "undo") is a stack problem. Anything level-by-level or in arrival order is a queue problem.</figcaption>
 </figure>
-<h3>Worked example: balanced brackets</h3>
+
+<h3>A worked example: balanced brackets</h3>
+<p>Check whether every bracket in a string such as <code>"{[()]}"</code> is closed in the right order.</p>
 <pre><code>static boolean isBalanced(String s) {
-    Deque&lt;Character&gt; stack = new ArrayDeque&lt;&gt;();     // not java.util.Stack:
-    for (char c : s.toCharArray()) {                  // that class is synchronised
-        switch (c) {                                  // and legacy
-            case '(', '[', '{' -&gt; stack.push(c);
-            case ')' -&gt; { if (stack.isEmpty() || stack.pop() != '(') return false; }
-            case ']' -&gt; { if (stack.isEmpty() || stack.pop() != '[') return false; }
-            case '}' -&gt; { if (stack.isEmpty() || stack.pop() != '{') return false; }
-            default  -&gt; { }                           // ignore other characters
+    Deque&lt;Character&gt; stack = new ArrayDeque&lt;&gt;();
+    for (char c : s.toCharArray()) {
+        if (c == '(' || c == '[' || c == '{') {
+            stack.push(c);                              // remember the open bracket
+        } else if (c == ')' || c == ']' || c == '}') {
+            if (stack.isEmpty()) return false;          // closing with nothing open
+            char open = stack.pop();                    // the most recent open bracket
+            if ((c == ')' &amp;&amp; open != '(') ||
+                (c == ']' &amp;&amp; open != '[') ||
+                (c == '}' &amp;&amp; open != '{')) return false; // wrong type
         }
     }
-    return stack.isEmpty();                           // leftovers = unclosed brackets
-}
-// "{[()]}"  true        "([)]"  false: ")" pops "[", mismatch
-// "(("      false: stack not empty       "())"  false: pop on empty stack</code></pre>
-<h3>Which structure, and which Java class</h3>
-<table>
-<tr><th>Need</th><th>Structure</th><th>Java</th></tr>
-<tr><td>Last in, first out</td><td>Stack</td><td><code>ArrayDeque</code>: <code>push</code>, <code>pop</code>, <code>peek</code></td></tr>
-<tr><td>First in, first out</td><td>Queue</td><td><code>ArrayDeque</code>: <code>offer</code>, <code>poll</code>, <code>peek</code></td></tr>
-<tr><td>Both ends</td><td>Deque</td><td><code>ArrayDeque</code>: <code>offerFirst</code>, <code>pollLast</code>…</td></tr>
-<tr><td>Smallest (or largest) first</td><td>Priority queue (heap)</td><td><code>PriorityQueue</code>, with a comparator for max-first</td></tr>
-<tr><td>Max or min of a sliding window</td><td>Monotonic deque</td><td><code>ArrayDeque</code> of indices, kept sorted</td></tr>
-<tr><td>Next greater or smaller element</td><td>Monotonic stack</td><td><code>ArrayDeque</code> of indices</td></tr>
-</table>`);
+    return stack.isEmpty();                             // anything left was never closed
+}</code></pre>
+<ol class="pr-steps">
+<li>Each opening bracket is pushed onto the stack, waiting for its partner.</li>
+<li>A closing bracket must match the <b>most recent</b> opening bracket, which is exactly what a stack gives back.</li>
+<li><code>"([)]"</code> fails: the <code>)</code> pops <code>[</code>, which is the wrong type.</li>
+<li><code>"(("</code> fails: the stack still holds open brackets at the end.</li>
+<li><code>"())"</code> fails: the last <code>)</code> finds the stack empty.</li>
+<li>Each character is pushed and popped at most once, so it runs in O(n).</li>
+</ol>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Using Java's old <code>Stack</code> class</p>
+<p><code>java.util.Stack</code> is an old, synchronised class that is slower and has confusing behaviour.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use <code>ArrayDeque</code> with <code>push</code>, <code>pop</code> and <code>peek</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Popping an empty stack</p>
+<p>Calling <code>pop()</code> on an empty stack throws an exception, for example when the input starts with a closing bracket.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> check <code>isEmpty()</code> before popping.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Forgetting the final check</p>
+<p>Returning true as soon as the loop ends misses brackets that were opened but never closed.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> end with <code>return stack.isEmpty()</code>.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Stack: last in, first out. Queue: first in, first out.</li>
+<li>Nested things (brackets, undo, expressions) are stack problems.</li>
+<li>Arrival order and level-by-level work are queue problems.</li>
+<li>Use a priority queue for "smallest or largest next".</li>
+<li>In Java, use <code>ArrayDeque</code> for both stacks and queues.</li>
+</ul>
+<p><b>Next:</b> the questions below cover classic stack and queue problems, monotonic stacks, sliding window maximum and designing your own.</p>`);
 
 appendTopic("coding-stack-queue", [
 {

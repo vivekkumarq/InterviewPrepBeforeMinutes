@@ -1,5 +1,27 @@
-registerPrimer("dsa", `<h3>The mental model: pick the structure by the operation you need to be fast</h3>
-<p>Every data structure makes some operations cheap by making others expensive. An array gives instant access by position but slow insertion in the middle. A hash map gives instant lookup by key but no order. A heap gives the smallest item instantly but cannot search. So the question is never "which structure is best", but <strong>"which operation does this problem do most often?"</strong>. Name that operation, and the structure follows.</p>
+registerPrimer("dsa", `<p class="pr-lead"><b>Data structures</b> are ways of organising data in memory: arrays, lists, hash maps, trees, heaps and graphs. <b>Algorithms</b> are the step-by-step methods that work on them. Picking the right structure is often most of the solution, because each structure makes some operations very fast and others slow.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Think of organising things at home. A numbered shelf (an <b>array</b>) lets you grab item number 5 instantly. A labelled drawer system (a <b>hash map</b>) lets you find "passport" immediately by its label. A queue of tasks on a spike (a <b>stack</b>) gives you the newest one first. A family tree (a <b>tree</b>) shows who belongs under whom. None is best for everything; you choose based on what you need to do most often.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Array / ArrayList</dt><dd>Items in numbered positions. Instant access by position; slow to insert in the middle.</dd>
+<dt>Linked list</dt><dd>A chain of nodes, each pointing to the next. Easy to insert; slow to reach a position.</dd>
+<dt>Hash map / hash set</dt><dd>Stores items by key for almost instant lookup, with no particular order.</dd>
+<dt>Stack / queue</dt><dd>Last in, first out, and first in, first out.</dd>
+<dt>Tree / BST</dt><dd>A hierarchy of nodes. A binary search tree keeps values sorted for fast searching.</dd>
+<dt>Heap</dt><dd>Always gives you the smallest (or largest) item quickly.</dd>
+<dt>Graph</dt><dd>Things connected by links, such as cities and roads.</dd>
+<dt>Big O</dt><dd>How the work grows as the data grows: O(1) constant, O(log n), O(n), O(n²).</dd>
+</dl>
+
+<h3>Step by step: picking the right structure</h3>
+<ol class="pr-steps">
+<li>Ask: <b>which operation will this problem do most often?</b> Look up by key, find the smallest, keep things sorted, or access by position?</li>
+<li><b>Look up by key or "have I seen this?":</b> hash map or hash set, O(1).</li>
+<li><b>Always need the smallest or largest:</b> heap (<code>PriorityQueue</code>), O(log n) per operation.</li>
+<li><b>Need sorted order or ranges</b> ("all keys between 10 and 20"): <code>TreeMap</code>, O(log n).</li>
+<li><b>Access by position:</b> array or <code>ArrayList</code>, O(1).</li>
+<li><b>If no single structure makes every operation fast, combine two</b>, such as a hash map with a linked list.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 244" role="img" aria-label="Choosing a data structure from the operation a problem needs most: lookup, order, min or max, prefix, recency, connectivity">
   <defs><marker id="pr-dsa" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -19,36 +41,51 @@ registerPrimer("dsa", `<h3>The mental model: pick the structure by the operation
 </svg>
 <figcaption>When one structure cannot make every needed operation fast, combine two (a map plus a list, a map plus a heap).</figcaption>
 </figure>
-<h3>Worked example: combining structures for an LRU cache</h3>
-<p><strong>Requirement:</strong> <code>get(key)</code> and <code>put(key, value)</code> in O(1), evicting the least recently used entry when full. No single structure does both "find by key fast" and "know the oldest item and move items to the front fast".</p>
-<pre><code>HashMap    : key -&gt; node          O(1) find
-Doubly linked list of nodes      O(1) move to front, O(1) remove from back
-Together   : every operation O(1)
 
-// Java already ships the combination:
-class LruCache&lt;K, V&gt; extends LinkedHashMap&lt;K, V&gt; {
-    private final int capacity;
-    LruCache(int capacity) {
-        super(16, 0.75f, true);          // true = order by ACCESS, not insertion
-        this.capacity = capacity;
-    }
-    @Override protected boolean removeEldestEntry(Map.Entry&lt;K, V&gt; eldest) {
-        return size() &gt; capacity;        // evict the least recently used
-    }
-}
-// In an interview, mention this, then build it by hand with the map and
-// the doubly linked list, because that is what is being tested.</code></pre>
-<h3>Operation costs to know without thinking</h3>
-<table>
-<tr><th>Structure</th><th>Access</th><th>Search</th><th>Insert / delete</th><th>Note</th></tr>
-<tr><td>Array / ArrayList</td><td>O(1)</td><td>O(n)</td><td>O(n) middle, O(1) end</td><td>Cache-friendly, the default</td></tr>
-<tr><td>Linked list</td><td>O(n)</td><td>O(n)</td><td>O(1) with a reference to the node</td><td>Rarely the right choice alone</td></tr>
-<tr><td>HashMap</td><td>—</td><td>O(1) average</td><td>O(1) average</td><td>No ordering</td></tr>
-<tr><td>TreeMap (red-black)</td><td>—</td><td>O(log n)</td><td>O(log n)</td><td>Sorted; floor, ceiling, ranges</td></tr>
-<tr><td>Heap</td><td>O(1) min only</td><td>O(n)</td><td>O(log n)</td><td>Top-k, scheduling, Dijkstra</td></tr>
-<tr><td>Trie</td><td>—</td><td>O(word length)</td><td>O(word length)</td><td>Autocomplete, prefix counts</td></tr>
-<tr><td>Union-Find</td><td>—</td><td>~O(1)</td><td>~O(1) union</td><td>Connectivity, grouping</td></tr>
-</table>`);
+<h3>A worked example: an LRU cache from two structures</h3>
+<p><b>The task:</b> a cache that holds a fixed number of items, where <code>get</code> and <code>put</code> are instant, and when it is full, the least recently used item is removed.</p>
+<pre><code>HashMap: key -&gt; node        finds any item instantly
+Doubly linked list           keeps items in order of use:
+                             most recent at the front, oldest at the back
+
+get(key):  find the node in the map, move it to the front, return its value
+put(key):  add or update the node and move it to the front;
+           if the cache is too big, remove the node at the back
+           and delete its key from the map</code></pre>
+<ol class="pr-steps">
+<li>A hash map alone finds items instantly, but does not know which item is the oldest.</li>
+<li>A linked list alone keeps the order of use, but finding a key means walking the whole list.</li>
+<li>Together, the map finds the node instantly and the list moves or removes it instantly, so every operation is O(1).</li>
+<li>The list must be <b>doubly</b> linked, because removing a node from the middle needs access to the node before it.</li>
+<li>Java's <code>LinkedHashMap</code> already combines the two; mention it, then build it by hand, because that is what the interviewer is testing.</li>
+</ol>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Using a list for "have I seen this?"</p>
+<p><code>list.contains(x)</code> checks every element, so inside a loop it makes the whole solution O(n²).</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use a <code>HashSet</code>, whose <code>contains</code> is O(1).</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Sorting when you only need the top few</p>
+<p>Sorting everything is O(n log n) even when you only need the 5 largest items.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> keep a heap of size k, which is O(n log k).</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Memorising solutions instead of patterns</p>
+<p>A slightly changed problem then looks completely new and you get stuck.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> learn the patterns (two pointers, sliding window, BFS, DP) and practise recognising which one a problem needs.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Choose a structure by the operation you need to be fast.</li>
+<li>Hash map for lookups, heap for smallest or largest, TreeMap for sorted order.</li>
+<li>Combine structures when one cannot do everything quickly.</li>
+<li>Know the Big O of everyday operations, such as <code>list.contains</code> being O(n).</li>
+<li>Learn patterns, not individual answers.</li>
+</ul>
+<p><b>Next:</b> the questions below cover the core structures, the main problem-solving patterns and how to approach a new problem in an interview.</p>`);
 
 appendTopic("dsa", [
 {

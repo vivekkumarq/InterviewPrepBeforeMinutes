@@ -1,5 +1,25 @@
-registerPrimer("algorithms", `<h3>The mental model: the input size tells you which algorithm to look for</h3>
-<p>Big-O describes how the work grows as the input grows. The practical use in an interview is backwards: <strong>read the constraints first</strong>, and they tell you roughly which complexity the intended solution has. A typical judge or service does on the order of 10<sup>8</sup> simple operations per second, so an input of 10<sup>5</sup> rules out O(n²) (10<sup>10</sup> steps) before you write a line.</p>
+registerPrimer("algorithms", `<p class="pr-lead">An <b>algorithm</b> is a step-by-step method for solving a problem. For the same problem there are often several algorithms, and some are enormously faster than others on large inputs. <b>Big O notation</b> is the common language for comparing them: it describes how the amount of work grows as the input gets bigger.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Looking for a name in a phone book with a million names: reading every page from the start could take a million checks (<b>O(n)</b>). Opening the book in the middle, deciding which half the name is in, and repeating takes only about 20 checks (<b>O(log n)</b>). Comparing every name with every other name would take a trillion steps (<b>O(n²)</b>). Same book, very different amounts of work.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Big O</dt><dd>How the running time (or memory) grows as the input size <code>n</code> grows, ignoring small details.</dd>
+<dt>O(1), O(log n), O(n)</dt><dd>Constant (same work whatever the size), logarithmic (grows very slowly), linear (grows in step with the input).</dd>
+<dt>O(n log n), O(n²)</dt><dd>Typical of good sorting, and of checking every pair, which is too slow for large inputs.</dd>
+<dt>Space complexity</dt><dd>How much extra memory an algorithm needs as the input grows.</dd>
+<dt>Divide and conquer</dt><dd>Split the problem into halves, solve each, then combine, as in merge sort.</dd>
+<dt>Backtracking</dt><dd>Build a solution step by step, and undo a step as soon as it cannot lead to an answer.</dd>
+</dl>
+
+<h3>Step by step: how fast does it need to be?</h3>
+<p>A computer does very roughly 100 million simple steps per second. So the input size in the question tells you what speed the intended solution has:</p>
+<ol class="pr-steps">
+<li><b>n up to about 20:</b> trying every subset (O(2ⁿ)) is fine, so backtracking is likely expected.</li>
+<li><b>n up to about 500:</b> three nested loops (O(n³)) are fine.</li>
+<li><b>n up to about 5,000:</b> two nested loops (O(n²)) are fine.</li>
+<li><b>n around 100,000 to 1,000,000:</b> you need O(n log n): sorting, heaps, binary search or divide and conquer.</li>
+<li><b>Larger than that:</b> you need O(n) or better: one pass, hashing or two pointers.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 230" role="img" aria-label="Growth of common complexities: constant, log n, n, n log n, n squared and 2 to the n, plotted against input size">
   <line class="dg-line" x1="50" y1="200" x2="600" y2="200"/>
@@ -15,36 +35,64 @@ registerPrimer("algorithms", `<h3>The mental model: the input size tells you whi
 </svg>
 <figcaption>For small n everything is fast. The shape of the curve only matters once n is large, which is exactly what the constraints tell you.</figcaption>
 </figure>
-<h3>Worked example: reading the constraints</h3>
-<pre><code>"Given an array of up to 100,000 integers, count the pairs (i, j) with
- i &lt; j and a[i] &gt; a[j]."
 
-n = 10^5
-  O(n²)      = 10^10 steps  -&gt; roughly 100 seconds. Too slow.
-  O(n log n) ≈ 1.7 × 10^6   -&gt; a few milliseconds.  This is the target.
+<h3>A worked example: binary search</h3>
+<pre><code>// Find target in a SORTED array; return its index, or -1.
+static int binarySearch(int[] a, int target) {
+    int lo = 0, hi = a.length - 1;
+    while (lo &lt;= hi) {
+        int mid = lo + (hi - lo) / 2;      // middle, written this way to avoid overflow
+        if (a[mid] == target) return mid;  // found it
+        if (a[mid] &lt; target) lo = mid + 1; // target must be in the right half
+        else hi = mid - 1;                 // target must be in the left half
+    }
+    return -1;                             // not present
+}
+// a = [2, 5, 8, 12, 16, 23, 38], target = 23</code></pre>
+<ol class="pr-steps">
+<li>lo = 0, hi = 6, so mid = 3. a[3] = 12, which is less than 23, so the target must be to the right: lo = 4.</li>
+<li>lo = 4, hi = 6, so mid = 5. a[5] = 23: found at index 5.</li>
+<li>Each step throws away half of what is left, so a million items need only about 20 steps: O(log n).</li>
+<li><code>lo + (hi - lo) / 2</code> gives the same middle as <code>(lo + hi) / 2</code>, but cannot overflow when lo and hi are very large.</li>
+<li>It only works on <b>sorted</b> data, because that is what lets one comparison rule out half the array.</li>
+</ol>
 
-So the question is really: "which O(n log n) technique counts pairs?"
-Sorting-based ones are the natural suspects -&gt; merge sort can count
-these "inversions" while it merges (see the question below).</code></pre>
-<table>
-<tr><th>n up to about</th><th>Intended complexity</th><th>Typical technique</th></tr>
-<tr><td>10 to 12</td><td>O(n!)</td><td>All permutations</td></tr>
-<tr><td>20 to 25</td><td>O(2ⁿ)</td><td>Subsets, bitmask DP, backtracking</td></tr>
-<tr><td>100 to 500</td><td>O(n³)</td><td>Triple loops, interval DP, Floyd-Warshall</td></tr>
-<tr><td>1,000 to 5,000</td><td>O(n²)</td><td>2D DP, all pairs</td></tr>
-<tr><td>10<sup>5</sup> to 10<sup>6</sup></td><td>O(n log n)</td><td>Sorting, heaps, binary search, divide and conquer</td></tr>
-<tr><td>10<sup>7</sup> and beyond</td><td>O(n) or O(log n)</td><td>One pass, hashing, two pointers, math</td></tr>
-</table>
-<h3>The algorithm families, in one line each</h3>
-<table>
-<tr><th>Family</th><th>Idea</th></tr>
-<tr><td>Divide and conquer</td><td>Split, solve halves, combine (merge sort, quicksort)</td></tr>
-<tr><td>Binary search</td><td>Discard half of the remaining candidates each step</td></tr>
-<tr><td>Greedy</td><td>Take the best local choice, never undo it</td></tr>
-<tr><td>Dynamic programming</td><td>Store answers to overlapping subproblems</td></tr>
-<tr><td>Backtracking</td><td>Build a solution step by step, undo when a branch cannot work</td></tr>
-<tr><td>Graph search</td><td>BFS, DFS, Dijkstra: explore without revisiting</td></tr>
-</table>`);
+<h3>The main families of algorithms</h3>
+<ul>
+<li><b>Divide and conquer:</b> split, solve the halves, combine (merge sort, quicksort).</li>
+<li><b>Binary search:</b> discard half of the remaining possibilities at each step.</li>
+<li><b>Greedy:</b> take the best choice now and never undo it.</li>
+<li><b>Dynamic programming:</b> store answers to repeated subproblems.</li>
+<li><b>Backtracking:</b> try choices step by step, undoing dead ends.</li>
+<li><b>Graph search:</b> BFS, DFS and Dijkstra explore connected data without revisiting.</li>
+</ul>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Ignoring the input size</p>
+<p>Writing a neat O(n²) solution for an input of a million items: it would take hours.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> read the constraints first and aim for the complexity they allow.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Off-by-one errors in binary search</p>
+<p>Mixing up <code>&lt;</code> and <code>&lt;=</code>, or <code>mid</code> and <code>mid + 1</code>, causes infinite loops or missed answers.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> stick to one template and test it on arrays of size 0, 1 and 2.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Forgetting space complexity</p>
+<p>A fast solution that copies the input many times, or recurses very deeply, can run out of memory.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> state both time and space complexity, including recursion depth.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Big O describes how work grows with input size.</li>
+<li>Read the constraints: they tell you which complexity is expected.</li>
+<li>Binary search halves the problem each step, but needs sorted data.</li>
+<li>Know the main families: divide and conquer, greedy, DP, backtracking, graph search.</li>
+<li>Always state both time and space complexity.</li>
+</ul>
+<p><b>Next:</b> the questions below cover complexity analysis, sorting, binary search, string matching, bit tricks and more.</p>`);
 
 appendTopic("algorithms", [
 {

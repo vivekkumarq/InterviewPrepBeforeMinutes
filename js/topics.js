@@ -69,21 +69,21 @@ window.GROUPS = [
   {
     id: "coding", name: "Coding & Algorithms", icon: "💻",
     topics: [
-      { id: "coding-basics", parts: 4,      name: "Coding Round Basics",   icon: "✍️", blurb: "The warm-up problems every service-company round opens with — reverse, palindrome, prime, Fibonacci, duplicates, patterns — solved without shortcuts." },
-      { id: "coding-arrays", parts: 4,      name: "Arrays & Strings",      icon: "🔢", blurb: "Two pointers, sliding window, prefix sums, Kadane, Dutch national flag and the array problems asked most often." },
-      { id: "coding-linked-list", parts: 4, name: "Linked Lists",          icon: "⛓️", blurb: "Reversal, cycle detection, merge, middle node, LRU cache — the pointer manipulation interviewers love." },
-      { id: "coding-stack-queue", parts: 4, name: "Stacks & Queues",       icon: "🥞", blurb: "Balanced brackets, min stack, next greater element, monotonic stacks, sliding-window maximum and expression evaluation." },
-      { id: "coding-trees", parts: 5,       name: "Trees & BST",           icon: "🌳", blurb: "Traversals, height and diameter, lowest common ancestor, BST validation, serialisation and level-order patterns." },
-      { id: "coding-graphs", parts: 5,      name: "Graphs & Grids",        icon: "🕸️", blurb: "BFS, DFS, topological sort, union-find, shortest paths, islands and the grid problems built on them." },
-      { id: "coding-dp", parts: 5,          name: "Dynamic Programming",   icon: "🧮", blurb: "Knapsack, LIS, LCS, edit distance, coin change, stocks and matrix DP — with the state and recurrence spelled out." },
-      { id: "coding-greedy", parts: 4,      name: "Greedy, Intervals & Heaps", icon: "🎯", blurb: "Activity selection, meeting rooms, merge intervals, job scheduling, top-K and when greedy is provably correct." },
-      { id: "algorithms", parts: 5,         name: "Must-Know Algorithms",  icon: "🧭", blurb: "Sorting, binary search variants, Dijkstra, Kruskal, KMP, Floyd cycle, quickselect, bit tricks and their complexities." }
+      { id: "coding-basics", parts: 5,      name: "Coding Round Basics",   icon: "✍️", blurb: "The warm-up problems every service-company round opens with — reverse, palindrome, prime, Fibonacci, duplicates, patterns — solved without shortcuts." },
+      { id: "coding-arrays", parts: 5,      name: "Arrays & Strings",      icon: "🔢", blurb: "Two pointers, sliding window, prefix sums, Kadane, Dutch national flag and the array problems asked most often." },
+      { id: "coding-linked-list", parts: 5, name: "Linked Lists",          icon: "⛓️", blurb: "Reversal, cycle detection, merge, middle node, LRU cache — the pointer manipulation interviewers love." },
+      { id: "coding-stack-queue", parts: 5, name: "Stacks & Queues",       icon: "🥞", blurb: "Balanced brackets, min stack, next greater element, monotonic stacks, sliding-window maximum and expression evaluation." },
+      { id: "coding-trees", parts: 6,       name: "Trees & BST",           icon: "🌳", blurb: "Traversals, height and diameter, lowest common ancestor, BST validation, serialisation and level-order patterns." },
+      { id: "coding-graphs", parts: 6,      name: "Graphs & Grids",        icon: "🕸️", blurb: "BFS, DFS, topological sort, union-find, shortest paths, islands and the grid problems built on them." },
+      { id: "coding-dp", parts: 6,          name: "Dynamic Programming",   icon: "🧮", blurb: "Knapsack, LIS, LCS, edit distance, coin change, stocks and matrix DP — with the state and recurrence spelled out." },
+      { id: "coding-greedy", parts: 5,      name: "Greedy, Intervals & Heaps", icon: "🎯", blurb: "Activity selection, meeting rooms, merge intervals, job scheduling, top-K and when greedy is provably correct." },
+      { id: "algorithms", parts: 6,         name: "Must-Know Algorithms",  icon: "🧭", blurb: "Sorting, binary search variants, Dijkstra, Kruskal, KMP, Floyd cycle, quickselect, bit tricks and their complexities." }
     ]
   },
   {
     id: "cs", name: "CS Fundamentals", icon: "🧠",
     topics: [
-      { id: "dsa", parts: 8, name: "DSA & Problem Solving", icon: "🧠", blurb: "Complexity, arrays, strings, hashing, trees, graphs, DP patterns and the most-asked coding problems." },
+      { id: "dsa", parts: 9, name: "DSA & Problem Solving", icon: "🧠", blurb: "Complexity, arrays, strings, hashing, trees, graphs, DP patterns and the most-asked coding problems." },
       { id: "hr", parts: 7,  name: "HR & Behavioural",      icon: "💬", blurb: "Tell me about yourself, STAR stories, salary talk and the closing questions you should ask back." }
     ]
   }

@@ -1,5 +1,25 @@
-registerPrimer("coding-trees", `<h3>The mental model: solve it for one node, and trust the recursion for the rest</h3>
-<p>A binary tree is a node with a left subtree and a right subtree, each of which is itself a tree. That self-similar shape means most tree problems have the same three-line answer: <strong>handle the empty tree, ask the children for their answers, combine them</strong>. The hard part is not the code; it is deciding what each call should <em>return</em> to its parent.</p>
+registerPrimer("coding-trees", `<p class="pr-lead">A <b>binary tree</b> is a structure where each item (a <b>node</b>) holds a value and can have up to two children: a left child and a right child. It looks like an upside-down family tree, with the <b>root</b> at the top. Trees store data with a natural hierarchy, such as folders, organisation charts, or sorted data that must be searched quickly.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Imagine a company asking "how many people work here?". The CEO does not count everyone personally. They ask each of their two direct managers "how many people are in your team?", add the two answers, and add 1 for themselves. Each manager does exactly the same with their own reports, down to people with no reports, who simply answer "just me". That is how almost every tree problem is solved: ask the children, combine their answers.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Root</dt><dd>The top node of the tree, which has no parent.</dd>
+<dt>Leaf</dt><dd>A node with no children.</dd>
+<dt>Subtree</dt><dd>A node together with everything below it. Every subtree is itself a tree.</dd>
+<dt>Height / depth</dt><dd>Height: the number of levels from a node down to its deepest leaf. Depth: how far a node is from the root.</dd>
+<dt>Binary search tree (BST)</dt><dd>A tree where every value on the left of a node is smaller and every value on the right is larger, so searching is fast.</dd>
+<dt>Traversal</dt><dd>Visiting every node in a particular order.</dd>
+<dt>Recursion</dt><dd>A function that calls itself on smaller parts of the problem, here on the left and right subtrees.</dd>
+</dl>
+
+<h3>Step by step: the three-line template</h3>
+<p>Most tree problems follow the same pattern:</p>
+<ol class="pr-steps">
+<li><b>Handle the empty tree:</b> if the node is <code>null</code>, return the simplest answer (often 0, true or null).</li>
+<li><b>Ask the children:</b> call the same function on the left subtree and on the right subtree.</li>
+<li><b>Combine:</b> use the two answers and the current node's value to produce this node's answer.</li>
+</ol>
+<p>The real thinking is deciding <b>what each call should return to its parent</b>.</p>
 <figure class="fig">
 <svg viewBox="0 0 620 226" role="img" aria-label="Computing tree height recursively: leaves return 1, each node returns one plus the larger child height, values flowing up to the root">
   <defs><marker id="pr-tr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -25,42 +45,64 @@ registerPrimer("coding-trees", `<h3>The mental model: solve it for one node, and
 </svg>
 <figcaption>Post-order thinking: children first, then the node. Null children return 0, which is the base case.</figcaption>
 </figure>
-<h3>Worked example: three questions, one template</h3>
+
+<h3>A worked example: the height of a tree</h3>
 <pre><code>class TreeNode { int val; TreeNode left, right; TreeNode(int v) { val = v; } }
 
-// Height: "how tall is the tallest path below me?"
-static int height(TreeNode n) {
-    if (n == null) return 0;                              // 1. empty tree
-    return 1 + Math.max(height(n.left), height(n.right)); // 2+3. ask, combine
+static int height(TreeNode node) {
+    if (node == null) return 0;                    // 1. an empty tree has height 0
+    int left = height(node.left);                  // 2. ask the left child
+    int right = height(node.right);                // 2. ask the right child
+    return 1 + Math.max(left, right);              // 3. my height = 1 + the taller side
 }
 
-// Count nodes: "how many nodes are in my subtree?"
-static int count(TreeNode n) {
-    if (n == null) return 0;
-    return 1 + count(n.left) + count(n.right);
-}
+//        1
+//       / \
+//      2   3
+//     /
+//    4</code></pre>
+<ol class="pr-steps">
+<li>Node 4 is a leaf: both its children are null, so they return 0, and node 4 returns 1 + 0 = 1.</li>
+<li>Node 2 gets 1 from its left child (node 4) and 0 from its missing right child, so it returns 1 + 1 = 2.</li>
+<li>Node 3 is a leaf, so it returns 1.</li>
+<li>The root gets 2 from the left and 1 from the right, so it returns 1 + 2 = <b>3</b>.</li>
+<li>Each node is visited once, so this runs in O(n). Counting nodes, summing values and checking whether two trees are the same all use this exact template.</li>
+</ol>
 
-// Same tree? "are these two subtrees identical?"
-static boolean same(TreeNode a, TreeNode b) {
-    if (a == null || b == null) return a == b;           // both empty = same
-    return a.val == b.val &amp;&amp; same(a.left, b.left) &amp;&amp; same(a.right, b.right);
-}</code></pre>
-<p><strong>When the answer the parent needs differs from what the caller wants</strong>, return one thing and track the other in a field. Diameter is the classic: each node returns its height to its parent, but the diameter through that node is <code>left height + right height</code>, recorded on the side.</p>
-<pre><code>static int diameter;
-static int depth(TreeNode n) {
-    if (n == null) return 0;
-    int l = depth(n.left), r = depth(n.right);
-    diameter = Math.max(diameter, l + r);   // the answer the CALLER wants
-    return 1 + Math.max(l, r);              // what the PARENT needs
-}</code></pre>
 <h3>Which traversal for which job</h3>
-<table>
-<tr><th>Traversal</th><th>Order</th><th>Use it when</th></tr>
-<tr><td>Pre-order</td><td>node, left, right</td><td>Copying or serialising a tree; passing information DOWN (depth, path so far)</td></tr>
-<tr><td>In-order</td><td>left, node, right</td><td>A BST in sorted order; kth smallest; validating a BST</td></tr>
-<tr><td>Post-order</td><td>left, right, node</td><td>Answers that need both children first: height, diameter, deleting a tree</td></tr>
-<tr><td>Level-order (BFS)</td><td>level by level, with a queue</td><td>Anything "per level": right side view, minimum depth, zigzag</td></tr>
-</table>`);
+<ul>
+<li><b>Pre-order</b> (node, left, right): copying or saving a tree, or passing information down, such as the path so far.</li>
+<li><b>In-order</b> (left, node, right): on a BST this visits values in sorted order, so it is used to validate a BST or find the kth smallest.</li>
+<li><b>Post-order</b> (left, right, node): when a node needs its children's answers first, such as height or diameter.</li>
+<li><b>Level-order</b> (level by level, using a queue): anything "per level", such as the right side view.</li>
+</ul>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Forgetting the null case</p>
+<p>Without <code>if (node == null)</code> at the start, the recursion crashes as soon as it reaches below a leaf.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> always write the empty-tree case first.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Checking a BST only against the parent</p>
+<p>A node can be bigger than its parent but still smaller than its grandparent, which breaks the BST rule even though each parent-child pair looks fine.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> pass down an allowed range (min, max) to each node, or check that an in-order traversal is strictly increasing.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Assuming recursion depth is small</p>
+<p>A very unbalanced tree is effectively a long list, so recursion can go thousands of levels deep and overflow the stack.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> mention that space is O(height), and use an explicit stack or queue for very deep trees.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Handle null, ask the children, combine their answers.</li>
+<li>Decide carefully what each call returns to its parent.</li>
+<li>In-order traversal of a BST gives sorted values.</li>
+<li>Use level-order (a queue) for per-level questions.</li>
+<li>Most tree solutions are O(n) time and O(height) space.</li>
+</ul>
+<p><b>Next:</b> the questions below cover traversals, BST validation, lowest common ancestor, path sums, tries and more.</p>`);
 
 appendTopic("coding-trees", [
 {
