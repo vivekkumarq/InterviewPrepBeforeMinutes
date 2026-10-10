@@ -1,5 +1,26 @@
-registerPrimer("jpa-hibernate", `<h3>The mental model: a notebook of objects that Hibernate syncs to the database</h3>
-<p>JPA is the standard, Hibernate is the implementation, and Spring Data JPA writes the repositories for you. Underneath all three is one idea: the <strong>persistence context</strong>. Think of it as a notebook that lives for one transaction. Every entity you load or save is written in the notebook and becomes <strong>managed</strong>. When the transaction commits, Hibernate compares each managed entity with how it looked when loaded, and writes SQL for whatever changed. This is <strong>dirty checking</strong>, and it is why you often never call <code>save()</code> to update anything.</p>
+registerPrimer("jpa-hibernate", `<p class="pr-lead"><b>JPA</b> and <b>Hibernate</b> let you work with database rows as normal Java objects. Instead of writing SQL for every insert and update, you write a <code>Customer</code> class, and Hibernate turns your changes to Customer objects into the right SQL. It saves a lot of code, but you need to understand how it decides <em>when</em> to talk to the database.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Imagine a secretary with a notebook. When you ask for a customer's file, the secretary fetches it from the archive (the database) and writes a copy in the notebook. You make changes on that copy. At the end of the day (the end of the transaction), the secretary compares the notebook with the original files and sends the archive only the changes. You never have to say "please save this"; anything changed in the notebook gets saved.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>JPA</dt><dd>The Java standard that defines how objects map to database tables. It is a set of rules and annotations.</dd>
+<dt>Hibernate</dt><dd>The most popular library that actually implements JPA and generates the SQL.</dd>
+<dt>Spring Data JPA</dt><dd>A layer on top that writes your repository classes for you: <code>findByEmail(...)</code> works just from its name.</dd>
+<dt>Entity</dt><dd>A Java class mapped to a table, marked <code>@Entity</code>. Each object is one row.</dd>
+<dt>Persistence context</dt><dd>The "notebook": the set of entities Hibernate is tracking during one transaction.</dd>
+<dt>Managed / detached</dt><dd>A managed entity is in the notebook, and its changes are saved automatically. A detached one is not tracked, so changes to it are ignored.</dd>
+<dt>Lazy loading</dt><dd>Related data (such as a customer's orders) is only loaded from the database when you first use it.</dd>
+<dt>N+1 problem</dt><dd>One query to load a list, then one more query for every item in the list: 1 + N queries instead of 1 or 2.</dd>
+</dl>
+
+<h3>Step by step: what happens inside a transaction</h3>
+<ol class="pr-steps">
+<li>A method marked <code>@Transactional</code> starts. Hibernate opens an empty notebook (persistence context).</li>
+<li>You load a customer: <code>findById(7)</code>. Hibernate runs a SELECT and keeps the object in the notebook. It is now <b>managed</b>.</li>
+<li>You load the same customer again. No SQL runs; you get the same object straight from the notebook.</li>
+<li>You change a field: <code>customer.setName("Asha")</code>. Still no SQL.</li>
+<li>The method ends and the transaction commits. Hibernate compares each managed object with how it looked when loaded (<b>dirty checking</b>), sees the name changed, and runs one UPDATE.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 214" role="img" aria-label="JPA entity lifecycle: transient, managed, detached and removed, with the operations that move between them">
   <defs><marker id="pr-jpa" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -31,33 +52,52 @@ registerPrimer("jpa-hibernate", `<h3>The mental model: a notebook of objects tha
 </svg>
 <figcaption>Only managed entities are tracked. Most JPA surprises come from an entity that is detached when you thought it was managed, or the other way round.</figcaption>
 </figure>
-<h3>Worked example: watch the SQL that one method produces</h3>
+
+<h3>A worked example, line by line</h3>
 <pre><code>@Transactional
 public void rename(long customerId, String newName) {
     Customer c = customers.findById(customerId).orElseThrow();
-    // SQL: select ... from customer where id=?        (c is now MANAGED)
-
-    Customer again = customers.findById(customerId).orElseThrow();
-    // no SQL: the same id is already in the notebook (first-level cache),
-    // and again == c is true: one object per id per transaction
-
     c.setName(newName);
-    // no SQL yet, and no save() call needed
+}   // the UPDATE happens here, when the transaction commits</code></pre>
+<ol class="pr-steps">
+<li><code>findById</code> runs <code>select ... from customer where id = ?</code> and puts the customer in the notebook.</li>
+<li><code>setName</code> only changes the Java object in memory.</li>
+<li>There is no <code>save()</code> call, and none is needed: the customer is managed.</li>
+<li>When the method returns, the transaction commits and Hibernate sends <code>update customer set name = ? where id = ?</code>.</li>
+<li>Without <code>@Transactional</code>, the customer would be detached right after loading, and the change would never be saved.</li>
+</ol>
 
-}   // COMMIT -&gt; flush -&gt; dirty check finds 'name' changed
-    // SQL: update customer set name=?, email=?, ... where id=?
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ The N+1 query problem</p>
+<p>You load 100 orders, then loop over them reading <code>order.getCustomer().getName()</code>. Each customer is loaded lazily, so Hibernate runs 1 query for the orders plus 100 more for the customers. Fast with 10 rows in testing, painfully slow with thousands in production.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> load the related data in the same query with <code>JOIN FETCH</code> or an <code>@EntityGraph</code>, or select only the fields you need.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ LazyInitializationException</p>
+<p>You read a lazy relationship after the transaction has ended, for example while turning an entity into JSON in the controller. The notebook is closed, so Hibernate cannot load it any more.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> load what you need inside the transaction (with a fetch join) and return a simple DTO object, not the entity.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Making every relationship EAGER</p>
+<p>EAGER means "always load this too". It seems convenient, but then every query drags in related tables you did not need, often with extra queries.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> make relationships LAZY and fetch related data explicitly in the queries that need it.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Updating one side of a two-way relationship only</p>
+<p>In a two-way relationship, only one side (the owning side) writes the foreign key. Adding an item to <code>order.getItems()</code> without setting <code>item.setOrder(order)</code> saves nothing.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> write a helper like <code>order.addItem(item)</code> that sets both sides.</p>
+</div>
 
-// Turn the SQL on while learning (never in production):
-//   spring.jpa.show-sql=true
-//   logging.level.org.hibernate.orm.jdbc.bind=TRACE   (shows the ? values)</code></pre>
-<h3>The four ideas behind most JPA interview questions</h3>
-<table>
-<tr><th>Idea</th><th>What to know</th></tr>
-<tr><td><strong>Persistence context</strong></td><td>One per transaction. Caches entities by id and tracks changes. Also why a huge batch job slowly runs out of memory: clear it every few hundred rows</td></tr>
-<tr><td><strong>Lazy loading</strong></td><td>Associations are loaded on first access, which needs an open session. Accessing them after the transaction ends gives <code>LazyInitializationException</code></td></tr>
-<tr><td><strong>N+1 queries</strong></td><td>One query for the list, then one more per row for a lazy association. Fix with <code>JOIN FETCH</code>, an entity graph, or a DTO projection</td></tr>
-<tr><td><strong>Flush timing</strong></td><td>SQL is sent at commit, before a query that could see pending changes, or on <code>flush()</code>. So a constraint violation often surfaces at commit, not on the line that caused it</td></tr>
-</table>`);
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Entities are Java objects mapped to tables; Hibernate writes the SQL.</li>
+<li>Inside a transaction, loaded entities are managed and changes save automatically at commit.</li>
+<li>Lazy relationships load on first use and need an open transaction.</li>
+<li>Watch for N+1 queries and fix them with fetch joins or projections.</li>
+<li>Use database migrations (Flyway or Liquibase) to change tables, not Hibernate auto-update.</li>
+</ul>
+<p><b>Next:</b> the questions below cover fetching, caching, locking, transactions and performance tuning.</p>`);
 
 appendTopic("jpa-hibernate", [
 {

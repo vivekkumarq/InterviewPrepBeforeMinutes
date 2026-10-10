@@ -1,6 +1,27 @@
-registerPrimer("spring-security", `<h3>The mental model: a line of guards before your controller</h3>
-<p>Spring Security is a chain of <strong>servlet filters</strong> that every request passes through before it reaches your controller. Each filter does one job. One filter reads a token or a session and works out <strong>who you are</strong> (authentication). A later one decides whether that person <strong>may do this</strong> (authorization). If any guard says no, the request is turned away and your controller never runs.</p>
-<p>The result of authentication is stored in the <code>SecurityContext</code> for the rest of the request, so your code can ask "who is calling?" at any point.</p>
+registerPrimer("spring-security", `<p class="pr-lead"><b>Spring Security</b> protects your application. It answers two questions for every request: <b>who are you?</b> (authentication) and <b>are you allowed to do this?</b> (authorization). If either answer is no, the request is stopped before it ever reaches your code.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Think of an office building. At the entrance a guard checks your ID card: that is <b>authentication</b>, proving who you are. Inside, each door has a lock that only opens for certain people, so a visitor can enter the lobby but not the server room: that is <b>authorization</b>, deciding what you may do. Spring Security is the line of guards and locks every visitor passes through.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Authentication</dt><dd>Proving who you are, with a password, a token or a certificate.</dd>
+<dt>Authorization</dt><dd>Deciding what a known user is allowed to do.</dd>
+<dt>Filter chain</dt><dd>A series of checks every request passes through before reaching your controller. Each filter does one job.</dd>
+<dt>Role / authority</dt><dd>A permission a user has, such as ADMIN or "can write orders".</dd>
+<dt>JWT</dt><dd>JSON Web Token: a signed piece of text that proves who the user is. The server can check the signature without looking anything up.</dd>
+<dt>Session</dt><dd>The server remembers a logged-in user and gives the browser a cookie to send back with each request.</dd>
+<dt>401 vs 403</dt><dd><b>401</b> means "I do not know who you are". <b>403</b> means "I know who you are, but you are not allowed".</dd>
+<dt>Hashing</dt><dd>Turning a password into a scrambled value that cannot be turned back. Passwords are stored hashed, never as plain text.</dd>
+</dl>
+
+<h3>Step by step: what happens to each request</h3>
+<ol class="pr-steps">
+<li>A request arrives, for example <code>DELETE /orders/42</code> with a token in its header.</li>
+<li><b>Early filters</b> handle general rules, such as which websites may call the API (CORS).</li>
+<li><b>The authentication filter</b> reads the token, checks its signature and expiry, and works out who the user is. If the token is missing or invalid, the answer is <b>401</b>.</li>
+<li>The user's details are stored in the <b>SecurityContext</b>, so the rest of the request knows who is calling.</li>
+<li><b>The authorization filter</b> checks your rules: is this user allowed to delete orders? If not, the answer is <b>403</b>.</li>
+<li>Only if every check passes does the request reach your controller.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 232" role="img" aria-label="Spring Security filter chain: CORS, CSRF, authentication filter, exception translation and authorization filter before the controller">
   <defs><marker id="pr-ss" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -39,49 +60,64 @@ registerPrimer("spring-security", `<h3>The mental model: a line of guards before
 </svg>
 <figcaption>A simplified chain. The real one has around fifteen filters, but these are the ones that decide most outcomes.</figcaption>
 </figure>
-<h3>Worked example: a stateless JWT API in one configuration class</h3>
-<pre><code>@Configuration
-@EnableMethodSecurity                                   // enables @PreAuthorize
-class SecurityConfig {
 
+<h3>A worked example: securing an API</h3>
+<pre><code>@Configuration
+@EnableMethodSecurity
+class SecurityConfig {
     @Bean
     SecurityFilterChain api(HttpSecurity http) throws Exception {
         return http
-            .csrf(csrf -&gt; csrf.disable())               // no cookies = no CSRF risk
+            .csrf(csrf -&gt; csrf.disable())
             .sessionManagement(s -&gt; s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -&gt; auth
-                .requestMatchers("/actuator/health", "/public/**").permitAll()
+                .requestMatchers("/public/**").permitAll()
                 .requestMatchers(HttpMethod.DELETE, "/orders/**").hasRole("ADMIN")
-                .anyRequest().authenticated())          // the safe default: deny
+                .anyRequest().authenticated())
             .oauth2ResourceServer(o -&gt; o.jwt(Customizer.withDefaults()))
-            .build();                                   // validates the JWT signature,
-    }                                                   // expiry and issuer for you
-}
+            .build();
+    }
+}</code></pre>
+<ol class="pr-steps">
+<li><code>csrf.disable()</code>: CSRF protection guards against attacks that ride on browser cookies. This API uses tokens, not cookies, so it is not needed here.</li>
+<li><code>STATELESS</code>: the server keeps no login sessions; every request must bring its own token.</li>
+<li><code>/public/**</code> is open to everyone.</li>
+<li>Deleting orders needs the ADMIN role.</li>
+<li><code>anyRequest().authenticated()</code>: everything else needs a logged-in user. Denying by default is the safe choice.</li>
+<li><code>oauth2ResourceServer(...jwt...)</code> tells Spring to read and verify JWT tokens on every request.</li>
+</ol>
 
-# application.yml: where to fetch the signing keys
-spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: https://auth.example.com/realms/shop</code></pre>
-<pre><code>// Using the result in your code
-@GetMapping("/me")
-Profile me(@AuthenticationPrincipal Jwt jwt) {
-    return profiles.find(jwt.getSubject());             // the user id from the token
-}
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Only checking that the user is logged in</p>
+<p>If <code>/orders/42</code> only checks "is someone logged in?", any user can change the number in the URL and read someone else's order. This is one of the most common security bugs.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> also check that the order belongs to the logged-in user, for example by looking it up by both its id and the user's id.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Storing passwords in plain text or with simple encryption</p>
+<p>If the database leaks, every password leaks with it. Encryption can be reversed if the key is stolen.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> store passwords with a slow one-way hash such as BCrypt or Argon2, using Spring's <code>PasswordEncoder</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ hasRole("ADMIN") never matching</p>
+<p><code>hasRole("ADMIN")</code> actually looks for an authority named <code>ROLE_ADMIN</code>. If your token only contains "ADMIN", it never matches and every admin gets a 403.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> check what authorities the user really has, and use <code>hasAuthority(...)</code> with the exact name when there is no ROLE_ prefix.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Putting secrets in code or in the Git repository</p>
+<p>Anything committed to Git stays in its history forever, even after you delete it.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> pass secrets through environment variables or a secret manager, and replace any secret that was ever committed.</p>
+</div>
 
-@PreAuthorize("hasAuthority('SCOPE_orders:write')")   // method-level check
-public void cancel(long orderId) { ... }</code></pre>
-<h3>Words that interviewers expect you to keep apart</h3>
-<table>
-<tr><th>Term</th><th>Meaning</th></tr>
-<tr><td>Authentication</td><td>Proving identity: password, token, certificate</td></tr>
-<tr><td>Authorization</td><td>Deciding access for an identity already known</td></tr>
-<tr><td>Principal</td><td>The authenticated user (or service)</td></tr>
-<tr><td>Authority vs role</td><td>A role is an authority whose name starts with <code>ROLE_</code>. <code>hasRole("ADMIN")</code> checks for <code>ROLE_ADMIN</code></td></tr>
-<tr><td>Hashing vs encryption</td><td>Passwords are hashed (one way, BCrypt/Argon2). Encryption is reversible and is wrong for passwords</td></tr>
-</table>`);
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Authentication is "who are you?"; authorization is "are you allowed?".</li>
+<li>Every request passes through a chain of security filters before your code.</li>
+<li>401 means not logged in; 403 means logged in but not permitted.</li>
+<li>Deny by default, and always check that a user owns the data they ask for.</li>
+<li>Hash passwords with BCrypt or Argon2; never store or log them in plain text.</li>
+</ul>
+<p><b>Next:</b> the questions below cover JWT, OAuth2, sessions versus tokens, CSRF, CORS and common attacks.</p>`);
 
 appendTopic("spring-security", [
 {

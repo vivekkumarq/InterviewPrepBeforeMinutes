@@ -1,6 +1,26 @@
-registerPrimer("spring-core", `<h3>The mental model: you describe the parts, Spring builds the machine</h3>
-<p>Without Spring, every class creates what it needs with <code>new</code>. A controller builds its service, the service builds its repository, the repository builds its connection pool. Each class is glued to the exact classes it creates, and nothing can be swapped out for a test.</p>
-<p>With Spring you turn that around. Each class only <strong>declares</strong> what it needs, usually as constructor parameters. The <strong>IoC container</strong> (the <code>ApplicationContext</code>) reads those declarations, creates every object (a <em>bean</em>) once, and passes each one the beans it asked for. This is <strong>Inversion of Control</strong>: the container, not your code, controls creation. <strong>Dependency Injection</strong> is how it hands the parts over.</p>
+registerPrimer("spring-core", `<p class="pr-lead">The <b>Spring Framework</b> creates the objects your application needs and connects them to each other for you. Instead of every class building its own helpers with <code>new</code>, each class simply says what it needs, and Spring hands it over. This one idea makes Java applications easier to change and much easier to test.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Without Spring, every chef in a restaurant also has to grow their own vegetables and build their own oven before cooking. With Spring, the chef just writes down "I need an oven and tomatoes", and the restaurant manager (Spring) provides them, already set up. The chef only focuses on cooking, and in a test kitchen the manager can hand over a toy oven instead.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Bean</dt><dd>Any object that Spring creates and manages for you, such as a service or a repository.</dd>
+<dt>Dependency</dt><dd>Something a class needs to do its job. An OrderService depends on an OrderRepository.</dd>
+<dt>Dependency Injection (DI)</dt><dd>Spring passing a class the dependencies it asked for, usually through the constructor.</dd>
+<dt>Inversion of Control (IoC)</dt><dd>The idea that Spring, not your code, controls when objects are created and wired together.</dd>
+<dt>ApplicationContext</dt><dd>Spring's "container": the place where all the beans live.</dd>
+<dt>@Component, @Service, @Repository</dt><dd>Labels that tell Spring "please create a bean from this class".</dd>
+<dt>@Bean</dt><dd>A method that creates a bean yourself, used for classes you did not write.</dd>
+<dt>Proxy</dt><dd>A wrapper Spring puts around a bean to add extra behaviour, such as starting a database transaction.</dd>
+</dl>
+
+<h3>Step by step: what Spring does at startup</h3>
+<ol class="pr-steps">
+<li><b>Find the beans.</b> Spring scans your packages for classes marked <code>@Component</code>, <code>@Service</code>, <code>@Repository</code> or <code>@Controller</code>, and reads your <code>@Bean</code> methods.</li>
+<li><b>Work out the order.</b> It looks at what each class needs. If OrderService needs OrderRepository, the repository must be created first.</li>
+<li><b>Create and connect them.</b> It creates each bean once and passes in the beans it asked for.</li>
+<li><b>Add extra behaviour.</b> For beans with annotations like <code>@Transactional</code>, Spring wraps the bean in a proxy that adds that behaviour around your methods.</li>
+<li><b>Ready.</b> Your application starts with every object built and connected, and the same single instance of each bean is shared everywhere.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 232" role="img" aria-label="Spring container: scan and config produce bean definitions, the container creates beans, injects dependencies and wraps some in proxies">
   <defs><marker id="pr-sc" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -40,57 +60,74 @@ registerPrimer("spring-core", `<h3>The mental model: you describe the parts, Spr
 </svg>
 <figcaption>The controller receives the proxy, not the raw service. The proxy is what makes @Transactional, @Cacheable and @Async work.</figcaption>
 </figure>
-<h3>Worked example: one feature, wired by the container</h3>
+
+<h3>A worked example: three classes wired by Spring</h3>
 <pre><code>@Repository
 class OrderRepository {
-    Order save(Order o) { /* JDBC or JPA */ return o; }
+    Order save(Order o) { /* saves to the database */ return o; }
 }
 
 @Service
 class OrderService {
     private final OrderRepository repo;
-    private final Clock clock;
 
-    OrderService(OrderRepository repo, Clock clock) {   // "I need these two"
+    OrderService(OrderRepository repo) {   // "I need a repository"
         this.repo = repo;
-        this.clock = clock;
     }
 
     @Transactional
-    public Order place(Order o) {
-        o.setPlacedAt(clock.instant());
-        return repo.save(o);
-    }
+    public Order place(Order o) { return repo.save(o); }
 }
-
-@Configuration
-class TimeConfig {
-    @Bean Clock clock() { return Clock.systemUTC(); }   // a class you do not own
-}                                                       // becomes a bean via @Bean
 
 @RestController
 class OrderController {
     private final OrderService service;
+
     OrderController(OrderService service) { this.service = service; }
 
     @PostMapping("/orders")
     Order place(@RequestBody Order o) { return service.place(o); }
-}
+}</code></pre>
+<ol class="pr-steps">
+<li>None of these classes uses <code>new</code> to create another one. Each simply lists what it needs in its constructor.</li>
+<li>Spring creates <code>OrderRepository</code> first, because it needs nothing.</li>
+<li>It then creates <code>OrderService</code> and passes the repository into its constructor.</li>
+<li>Because <code>place()</code> is marked <code>@Transactional</code>, Spring wraps the service in a proxy that starts a database transaction before the method and commits it afterwards.</li>
+<li>Finally it creates <code>OrderController</code> and passes it the (wrapped) service.</li>
+<li>In a unit test you can skip Spring completely: <code>new OrderService(fakeRepository)</code>. That is the big payoff.</li>
+</ol>
 
-// At startup Spring works out the order for you:
-//   Clock and OrderRepository (no dependencies)  -&gt;  OrderService
-//   -&gt; wraps OrderService in a transaction proxy  -&gt;  OrderController
-// None of these classes calls 'new' on another. In a test you can pass a
-// fixed Clock and a fake repository straight into the constructor.</code></pre>
-<h3>Five facts that answer most Spring core questions</h3>
-<table>
-<tr><th>Fact</th><th>Consequence</th></tr>
-<tr><td>Beans are <strong>singletons</strong> by default</td><td>One instance shared by every request, so beans must not keep per-request state in fields</td></tr>
-<tr><td>Prefer <strong>constructor injection</strong></td><td>Dependencies are final, required, and visible; tests need no Spring at all</td></tr>
-<tr><td>Features like <code>@Transactional</code> work through a <strong>proxy</strong></td><td>Calling the method from inside the same class skips the proxy, so the annotation does nothing</td></tr>
-<tr><td>Two beans of one type = <strong>ambiguity</strong></td><td>Resolve with <code>@Primary</code>, <code>@Qualifier</code>, or inject all of them as a <code>List</code></td></tr>
-<tr><td>Circular constructor dependencies <strong>fail at startup</strong></td><td>That is a design smell: extract the shared part into a third bean</td></tr>
-</table>`);
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Using @Autowired on fields instead of the constructor</p>
+<p>Field injection hides what a class needs, stops fields being <code>final</code>, and makes the class hard to create in a test without Spring.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> ask for dependencies in the constructor. With a single constructor, Spring does not even need <code>@Autowired</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Storing per-request data in a bean's fields</p>
+<p>Beans are singletons by default: one shared object used by every request at the same time. If you save the current user in a field, two users' requests overwrite each other.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> keep request data in local variables and method parameters, not in bean fields.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Calling a @Transactional method from inside the same class</p>
+<p>The transaction is added by the proxy wrapped around your bean. A call from one method to another inside the same class never goes through the proxy, so no transaction starts.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> put the transactional method in a separate bean and call it through that bean.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Two beans of the same type with no hint which one to use</p>
+<p>If there are both an EmailNotifier and an SmsNotifier and a class asks for "a Notifier", Spring cannot choose and refuses to start.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> mark one with <code>@Primary</code>, name the one you want with <code>@Qualifier</code>, or ask for all of them as a <code>List&lt;Notifier&gt;</code>.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Spring creates your objects (beans) and passes each one what it needs.</li>
+<li>Ask for dependencies in the constructor.</li>
+<li>Beans are shared singletons, so keep them free of per-request data.</li>
+<li>Features like @Transactional work through a proxy, so internal calls skip them.</li>
+<li>Code that receives its dependencies is easy to test with fakes.</li>
+</ul>
+<p><b>Next:</b> the questions below cover bean scopes, the bean lifecycle, AOP, transactions and profiles.</p>`);
 
 appendTopic("spring-core", [
 {

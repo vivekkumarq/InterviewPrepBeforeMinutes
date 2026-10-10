@@ -1,10 +1,24 @@
-registerPrimer("spring-boot", `<h3>The mental model: Spring, plus sensible defaults, plus a server in the jar</h3>
-<p>Plain Spring gives you the container, but you still have to configure everything: the web server, JSON, the database pool, logging. Spring Boot does three things on top.</p>
-<ul>
-<li><strong>Starters</strong> are dependency bundles. Add <code>spring-boot-starter-web</code> and you get Spring MVC, Jackson, validation and an embedded Tomcat, all at versions tested together.</li>
-<li><strong>Auto-configuration</strong> looks at what is on the classpath and in your properties, and creates the beans you would otherwise write by hand. Each one is <em>conditional</em>: it only applies if you have not defined your own.</li>
-<li><strong>An embedded server</strong> means the app is a single runnable jar. <code>java -jar app.jar</code> starts the server; there is no separate Tomcat to install.</li>
-</ul>
+registerPrimer("spring-boot", `<p class="pr-lead"><b>Spring Boot</b> is the fastest way to build a Spring application. Plain Spring makes you set up a lot by hand: the web server, the database connection, JSON handling, logging. Spring Boot looks at what you have added to your project and sets all of that up for you with sensible defaults, so you can start writing features straight away.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Plain Spring is like buying furniture as flat-pack pieces: everything you need is there, but you assemble it yourself. Spring Boot is like buying a furnished flat. Everything is already set up in a sensible way, and you only change the pieces you do not like.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Starter</dt><dd>A single dependency that brings a whole set of libraries that work together. <code>spring-boot-starter-web</code> gives you everything to build a web API.</dd>
+<dt>Auto-configuration</dt><dd>Boot automatically creating the beans you need based on what is in your project, for example a database connection pool when it sees a database driver.</dd>
+<dt>Embedded server</dt><dd>The web server (Tomcat by default) is built into your application, so you run it with just <code>java -jar app.jar</code>.</dd>
+<dt>application.yml</dt><dd>The file where you put settings such as the server port or database address.</dd>
+<dt>Profile</dt><dd>A named group of settings for one environment, such as "dev" or "prod".</dd>
+<dt>Actuator</dt><dd>Ready-made endpoints that report your app's health and metrics.</dd>
+</dl>
+
+<h3>Step by step: what happens when a Spring Boot app starts</h3>
+<ol class="pr-steps">
+<li><b>main() runs.</b> It calls <code>SpringApplication.run(...)</code>.</li>
+<li><b>Settings are loaded</b> from <code>application.yml</code>, environment variables and command-line arguments.</li>
+<li><b>Your own beans are found</b> by scanning your packages for @Service, @RestController and so on.</li>
+<li><b>Auto-configuration fills the gaps.</b> For each feature, Boot checks: is the library present, and have you already created this bean yourself? If the library is there and you have not, Boot creates it.</li>
+<li><b>The web server starts</b> and your app is ready to answer requests.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 226" role="img" aria-label="Spring Boot startup: main, load configuration, evaluate auto-configuration conditions, create beans, start embedded server, ready">
   <defs><marker id="pr-sb" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -38,11 +52,9 @@ registerPrimer("spring-boot", `<h3>The mental model: Spring, plus sensible defau
 </svg>
 <figcaption>Your beans are registered first. Auto-configuration then backs off wherever you already provided one.</figcaption>
 </figure>
-<h3>Worked example: what you write, and what Boot adds</h3>
-<pre><code>// pom.xml: two starters and a driver
-//   spring-boot-starter-web, spring-boot-starter-data-jpa, postgresql
 
-# application.yml
+<h3>A worked example: a working API from very little code</h3>
+<pre><code># application.yml
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/shop
@@ -51,36 +63,59 @@ spring:
 server:
   port: 8081
 
-@SpringBootApplication                     // = @Configuration
-public class ShopApp {                     //   + @EnableAutoConfiguration
-    public static void main(String[] args) {   //   + @ComponentScan (this package down)
+@SpringBootApplication
+public class ShopApp {
+    public static void main(String[] args) {
         SpringApplication.run(ShopApp.class, args);
     }
-}
+}</code></pre>
+<ol class="pr-steps">
+<li>The project includes the web starter, the JPA (database) starter and a PostgreSQL driver.</li>
+<li><code>@SpringBootApplication</code> turns on component scanning, auto-configuration and configuration support in one annotation.</li>
+<li>Because a database driver is present and the URL is set, Boot creates a connection pool, sets up JPA and transactions, and builds your repositories.</li>
+<li>Because the web starter is present, it configures JSON conversion, error handling and an embedded Tomcat on port 8081.</li>
+<li>You wrote almost no setup code. To see every decision Boot made, run the app with <code>--debug</code>.</li>
+</ol>
 
-// From those few lines, auto-configuration created:
-//   a HikariCP DataSource            (from spring.datasource.*)
-//   an EntityManagerFactory + JPA transaction manager
-//   Spring Data repositories for every interface extending JpaRepository
-//   a Jackson ObjectMapper and the JSON message converters
-//   DispatcherServlet, error handling at /error, Tomcat on port 8081</code></pre>
-<pre><code># See every decision it made, and why:
-java -jar app.jar --debug
-#   Positive matches:
-#     DataSourceAutoConfiguration matched:
-#       - @ConditionalOnClass found required classes 'javax.sql.DataSource' ...
-#   Negative matches:
-#     MongoAutoConfiguration:
-#       Did not match: @ConditionalOnClass did not find required class 'com.mongodb.client.MongoClient'</code></pre>
-<h3>How to override anything</h3>
-<table>
-<tr><th>You want</th><th>Do this</th></tr>
-<tr><td>Change a setting</td><td>Set a property: <code>server.port</code>, <code>spring.jackson.*</code>, <code>spring.datasource.hikari.maximum-pool-size</code></td></tr>
-<tr><td>Replace a bean</td><td>Define your own <code>@Bean</code> of that type. The auto-configured one backs off</td></tr>
-<tr><td>Turn one off completely</td><td><code>@SpringBootApplication(exclude = DataSourceAutoConfiguration.class)</code></td></tr>
-<tr><td>Different values per environment</td><td>Profiles: <code>application-prod.yml</code>, activated with <code>SPRING_PROFILES_ACTIVE=prod</code></td></tr>
-<tr><td>Secrets</td><td>Environment variables or a secret store, never committed yml. <code>SPRING_DATASOURCE_PASSWORD</code> maps to <code>spring.datasource.password</code></td></tr>
-</table>`);
+<h3>How to change what Boot set up for you</h3>
+<ul>
+<li><b>Change a setting:</b> add it to <code>application.yml</code>, for example <code>server.port</code>.</li>
+<li><b>Replace a bean:</b> define your own <code>@Bean</code> of that type. Boot sees yours and backs off.</li>
+<li><b>Different settings per environment:</b> put them in <code>application-prod.yml</code> and turn the profile on with <code>SPRING_PROFILES_ACTIVE=prod</code>.</li>
+<li><b>Secrets:</b> pass them as environment variables (like <code>SPRING_DATASOURCE_PASSWORD</code>), never commit them to Git.</li>
+</ul>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Putting the main class in the wrong package</p>
+<p>Spring Boot only scans the package of your main class and the packages below it. A service in a sibling package is never found, and the app fails with "required a bean that could not be found".</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> put the main class in the top-level package, such as <code>com.shop</code>, with everything else below it.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Adding a database starter with no database settings</p>
+<p>The data starter tells Boot to build a database connection. Without a URL it cannot, and startup fails with "Failed to configure a DataSource".</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> set <code>spring.datasource.url</code>, or remove the starter if you do not need a database yet.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Exposing every Actuator endpoint publicly</p>
+<p>Some Actuator endpoints show configuration values or let people download memory contents, which can leak passwords.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> expose only <code>health</code> and <code>info</code> publicly, and protect the rest.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Letting Hibernate change the production database schema</p>
+<p><code>ddl-auto=update</code> lets Hibernate alter tables automatically. It cannot rename or remove safely and nobody reviews what it does.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use a migration tool such as Flyway or Liquibase, with versioned SQL scripts.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Starters bring a working set of libraries in one dependency.</li>
+<li>Auto-configuration sets up beans for you, and backs off when you define your own.</li>
+<li>Settings live in <code>application.yml</code>, with profiles for each environment.</li>
+<li>The app runs as one jar with its own built-in web server.</li>
+<li>Keep the main class at the top of your package structure.</li>
+</ul>
+<p><b>Next:</b> the questions below cover configuration, error handling, validation, testing, Actuator and production readiness.</p>`);
 
 appendTopic("spring-boot", [
 {
