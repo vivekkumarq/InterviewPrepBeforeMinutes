@@ -1,11 +1,19 @@
-registerPrimer("docker", `<h3>The mental model: a container is just a process with blinkers on</h3>
-<p>A virtual machine runs a whole second operating system on emulated hardware. A container does not. It is an <strong>ordinary Linux process</strong> on the host's kernel, with three restrictions applied:</p>
-<ul>
-<li><strong>Namespaces</strong> limit what it can <em>see</em>: its own process list (it thinks it is PID 1), its own network interfaces, its own filesystem root, its own hostname.</li>
-<li><strong>cgroups</strong> limit what it can <em>use</em>: at most 2 CPUs and 1 GB of memory, for example.</li>
-<li><strong>A layered filesystem</strong> gives it its files: a stack of read-only image layers plus one thin writable layer on top.</li>
-</ul>
-<p>That is why containers start in milliseconds and cost almost nothing extra: there is no second OS to boot.</p>
+registerPrimer("docker", `<p class="pr-lead"><b>Docker</b> packages your application together with everything it needs to run (the right Java version, libraries, settings) into one bundle called an <b>image</b>. That image runs the same way on your laptop, a colleague's laptop and the production server. It ends the classic "but it works on my machine" problem.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Before shipping containers, every port loaded cargo differently: sacks, barrels, crates. The standard steel container changed everything: whatever is inside, every ship, crane and truck handles it the same way. A Docker container does the same for software. Whatever language or libraries are inside, every server runs it the same way. The <b>image</b> is the packed container design; a running <b>container</b> is one actual box on a ship.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Image</dt><dd>A read-only package containing your app and everything it needs. Like a class, or a recipe.</dd>
+<dt>Container</dt><dd>A running copy of an image. Like an object created from a class. You can run many containers from one image.</dd>
+<dt>Dockerfile</dt><dd>A text file of step-by-step instructions for building an image.</dd>
+<dt>Layer</dt><dd>Each Dockerfile step creates a layer. Unchanged layers are reused from cache, which makes rebuilds fast.</dd>
+<dt>Registry</dt><dd>A place to store and share images, such as Docker Hub or GitHub Container Registry.</dd>
+<dt>Volume</dt><dd>Storage that lives outside the container, so data survives when the container is removed.</dd>
+<dt>Docker Compose</dt><dd>A file describing several containers (app, database, cache) that start together with one command.</dd>
+</dl>
+
+<h3>Container vs virtual machine</h3>
+<p>A <b>virtual machine</b> runs a whole extra operating system, so it is heavy and slow to start. A <b>container</b> is just a normal process on the host machine, fenced off so it sees only its own files, network and processes, and limited in how much CPU and memory it can use. That is why containers start in about a second and use very little extra memory.</p>
 <figure class="fig">
 <svg viewBox="0 0 620 236" role="img" aria-label="Image layers stacked from base OS to app jar, with a writable container layer on top; containers share the host kernel unlike VMs">
   <text class="dg-t" x="10" y="20">An image is a stack of read-only layers</text>
@@ -28,44 +36,58 @@ registerPrimer("docker", `<h3>The mental model: a container is just a process wi
 </svg>
 <figcaption>Layers are shared between images and cached between builds. Order them from least to most frequently changed.</figcaption>
 </figure>
-<h3>Worked example: a Spring Boot Dockerfile, line by line</h3>
-<pre><code># ---- stage 1: build. Has Maven and the full JDK; none of it ships.
-FROM eclipse-temurin:21-jdk AS build
-WORKDIR /src
-COPY mvnw pom.xml ./
-COPY .mvn .mvn
-RUN ./mvnw -q dependency:go-offline      # cached until pom.xml changes
-COPY src ./src
-RUN ./mvnw -q package -DskipTests
-RUN java -Djarmode=tools -jar target/app.jar extract --layers --launcher --destination /out
 
-# ---- stage 2: run. Only a JRE and the app.
-FROM eclipse-temurin:21-jre
-WORKDIR /app
-RUN useradd --system --uid 10001 app                 # never run as root
-COPY --from=build /out/dependencies/ ./              # big, rarely changes
-COPY --from=build /out/spring-boot-loader/ ./
-COPY --from=build /out/snapshot-dependencies/ ./
-COPY --from=build /out/application/ ./               # small, changes every commit
-USER app
-EXPOSE 8080
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "org.springframework.boot.loader.launch.JarLauncher"]
-# exec form (JSON array): java is PID 1 and receives SIGTERM directly,
-# so Spring can shut down gracefully when the container is stopped.</code></pre>
-<pre><code>docker build -t shop-api:1.4.2 .
-docker run -d --name api -p 8080:8080 -e SPRING_PROFILES_ACTIVE=dev --memory 1g shop-api:1.4.2
-docker logs -f api            # stdout/stderr: containers should log to stdout
-docker exec -it api sh        # a shell inside the running container
-docker stop api               # SIGTERM, then SIGKILL after 10 seconds</code></pre>
-<h3>Words to keep straight</h3>
-<table>
-<tr><th>Term</th><th>Meaning</th></tr>
-<tr><td>Image</td><td>A read-only template: the layers plus metadata (entrypoint, env, ports)</td></tr>
-<tr><td>Container</td><td>A running (or stopped) instance of an image, with its own writable layer</td></tr>
-<tr><td>Registry</td><td>Where images are stored and pulled from: Docker Hub, ECR, GHCR</td></tr>
-<tr><td>Tag vs digest</td><td><code>:1.4.2</code> is a movable label; <code>@sha256:…</code> identifies exact bytes and never changes</td></tr>
-<tr><td>Volume</td><td>Storage that outlives the container. The writable layer is lost when the container is removed</td></tr>
-</table>`);
+<h3>Step by step: from code to a running container</h3>
+<pre><code># Dockerfile for a Spring Boot app
+FROM eclipse-temurin:21-jre           # 1. start from an image that has Java
+WORKDIR /app                          # 2. work inside the /app folder
+COPY target/app.jar app.jar           # 3. copy your built app into the image
+USER 10001                            # 4. do not run as the all-powerful root user
+EXPOSE 8080                           # 5. note which port the app listens on
+ENTRYPOINT ["java", "-jar", "app.jar"]  # 6. the command that starts the app</code></pre>
+<pre><code>docker build -t shop-api:1.0 .              # build an image from the Dockerfile
+docker run -d -p 8080:8080 shop-api:1.0     # start a container in the background
+docker logs -f &lt;container&gt;                  # watch its output
+docker stop &lt;container&gt;                     # stop it politely</code></pre>
+<ol class="pr-steps">
+<li><code>docker build</code> reads the Dockerfile from top to bottom. Each line adds a layer to the image.</li>
+<li>The image is saved with the name <code>shop-api</code> and the tag <code>1.0</code>.</li>
+<li><code>docker run</code> creates a container from that image and starts the <code>ENTRYPOINT</code> command.</li>
+<li><code>-p 8080:8080</code> connects port 8080 on your machine to port 8080 inside the container, so your browser can reach the app.</li>
+<li>Anything the app writes inside the container is lost when the container is deleted, unless it is stored on a volume.</li>
+</ol>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Huge images</p>
+<p>Shipping the full JDK, Maven, source code and build caches can make a 1 GB image that is slow to upload, download and start.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use a <b>multi-stage build</b>: build in one stage with all the tools, then copy only the finished app into a small runtime image.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Slow rebuilds after every code change</p>
+<p>If you copy your source code before downloading dependencies, any code change invalidates the cache and all dependencies download again.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> copy the dependency file (pom.xml) and download dependencies first, then copy the source code.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Storing data inside the container</p>
+<p>A database running in a container without a volume loses all its data when the container is removed.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> mount a volume for any data that must survive, such as <code>-v pgdata:/var/lib/postgresql/data</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Running as root and using the <code>latest</code> tag</p>
+<p>Root inside a container is risky if anything breaks out, and <code>latest</code> can silently change, so builds stop being repeatable.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> add a <code>USER</code> line, and use a specific version tag such as <code>eclipse-temurin:21-jre</code>.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>An image is the package; a container is a running copy of it.</li>
+<li>Containers are lightweight processes, not full virtual machines.</li>
+<li>Order Dockerfile steps from least to most frequently changed, so the cache works.</li>
+<li>Use multi-stage builds, a non-root user and specific version tags.</li>
+<li>Keep data in volumes and logs on standard output.</li>
+</ul>
+<p><b>Next:</b> the questions below cover Dockerfiles, layers, networking, volumes, Compose, security and debugging.</p>`);
 
 appendTopic("docker", [
 {

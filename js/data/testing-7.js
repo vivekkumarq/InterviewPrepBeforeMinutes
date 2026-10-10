@@ -1,5 +1,20 @@
-registerPrimer("testing", `<h3>The mental model: many small fast tests, a few big slow ones</h3>
-<p>Every test trades <strong>speed and precision</strong> against <strong>realism</strong>. A unit test runs in milliseconds and points at the exact broken line, but it cannot tell you whether your SQL works against a real database. An end-to-end test proves the whole system works together, but it takes minutes, breaks for reasons unrelated to your change, and says only "something is wrong somewhere". The <strong>testing pyramid</strong> is the resulting shape: lots of the cheap kind at the bottom, fewer of each more expensive kind above.</p>
+registerPrimer("testing", `<p class="pr-lead"><b>Automated tests</b> are small programs that check your real program works. Instead of clicking through the app by hand after every change, you run hundreds of checks in seconds. Good tests catch bugs before users do, and they give you the confidence to change code without fear of breaking something else.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Think of building a car. You test each part on its own first: does this brake pad grip, does this bulb light up? That is fast and cheap, and when one fails you know exactly which part is broken (<b>unit tests</b>). Then you test parts working together: does the brake pedal actually stop the wheel (<b>integration tests</b>)? Finally, a few test drives of the whole car (<b>end-to-end tests</b>), which are slow and expensive, so you do fewer of them.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Unit test</dt><dd>Tests one small piece (a method or class) on its own. Runs in milliseconds.</dd>
+<dt>Integration test</dt><dd>Tests several pieces together, often with a real database or message broker.</dd>
+<dt>End-to-end (E2E) test</dt><dd>Tests the whole system the way a user would, such as through a browser.</dd>
+<dt>Assertion</dt><dd>The check inside a test: "I expect this value to be 49".</dd>
+<dt>Mock</dt><dd>A fake version of a dependency that you control, so you can test your code without the real thing.</dd>
+<dt>JUnit / Mockito / AssertJ</dt><dd>The standard Java tools for writing tests, creating mocks and writing readable assertions.</dd>
+<dt>Testcontainers</dt><dd>Starts real databases or services in Docker just for your tests.</dd>
+<dt>Code coverage</dt><dd>The share of your code that ran during tests. Useful for finding untested code, but not a measure of test quality.</dd>
+</dl>
+
+<h3>The testing pyramid</h3>
+<p>Every kind of test trades <b>speed</b> against <b>realism</b>. So the healthy shape is a pyramid: many fast unit tests at the bottom, fewer integration tests in the middle, and only a handful of slow end-to-end tests at the top.</p>
 <figure class="fig">
 <svg viewBox="0 0 620 226" role="img" aria-label="Testing pyramid: many unit tests at the base, fewer integration tests, few end-to-end tests at the top, with speed and realism trade-offs">
   <polygon class="dg-fill2" points="310,14 380,74 240,74"/>
@@ -20,46 +35,65 @@ registerPrimer("testing", `<h3>The mental model: many small fast tests, a few bi
 </svg>
 <figcaption>Push each check down to the lowest layer that can catch it. Use the higher layers for what only they can see.</figcaption>
 </figure>
-<h3>Worked example: one good unit test, taken apart</h3>
+
+<h3>Step by step: writing one good unit test</h3>
+<p>The rule being tested: orders of ₹1000 or more ship free; below that, shipping costs ₹49.</p>
 <pre><code>class ShippingCalculatorTest {
 
-    private final ShippingCalculator calc = new ShippingCalculator();
+    ShippingCalculator calc = new ShippingCalculator();
 
     @Test
-    void ordersOverThreshold_shipFree() {                       // NAME: the behaviour,
-        // ARRANGE: build exactly the situation under test       // not the method name
-        Cart cart = cartWithTotal("1000.00");
-
-        // ACT: one call to the thing being tested
-        Money fee = calc.fee(cart);
-
-        // ASSERT: one behaviour, checked precisely
-        assertThat(fee).isEqualTo(Money.ZERO);
+    void ordersOf1000OrMore_shipFree() {
+        Cart cart = cartWithTotal("1000.00");      // 1. Arrange: set up the situation
+        Money fee = calc.fee(cart);               // 2. Act: call the code being tested
+        assertThat(fee).isEqualTo(Money.ZERO);    // 3. Assert: check the result
     }
 
     @Test
-    void ordersJustBelowThreshold_payStandardFee() {
+    void ordersJustBelow1000_payStandardFee() {
         assertThat(calc.fee(cartWithTotal("999.99"))).isEqualTo(Money.of("49.00"));
     }
-}
+}</code></pre>
+<ol class="pr-steps">
+<li><b>Arrange:</b> build exactly the situation you want to test, here a cart worth ₹1000.</li>
+<li><b>Act:</b> make one call to the code under test.</li>
+<li><b>Assert:</b> check the result precisely.</li>
+<li>The test name describes the <b>behaviour</b>, so a failure reads like a broken business rule.</li>
+<li>The two tests check the <b>boundary</b> (₹1000 and ₹999.99), because that is where bugs usually hide, for example <code>&gt;</code> written instead of <code>&gt;=</code>.</li>
+<li>No database and no Spring, so the tests run in about a millisecond and can run in any order.</li>
+</ol>
 
-// What makes these GOOD:
-//  - Fast: no Spring context, no database. Runs in about 1 ms.
-//  - Independent: no shared state, runs in any order.
-//  - Named after behaviour: a failure message reads like a broken rule.
-//  - Tests the BOUNDARY (1000.00 vs 999.99), where bugs actually live.
-//  - Would fail if the rule broke. A test that cannot fail is decoration.</code></pre>
-<h3>Which kind of test for which question</h3>
-<table>
-<tr><th>You want to know</th><th>Test with</th></tr>
-<tr><td>Is this calculation or rule correct?</td><td>Unit test, plain JUnit</td></tr>
-<tr><td>Does my SQL / JPA mapping work?</td><td><code>@DataJpaTest</code> with Testcontainers (a real Postgres)</td></tr>
-<tr><td>Does the endpoint validate input and return the right status?</td><td><code>@WebMvcTest</code> with MockMvc</td></tr>
-<tr><td>Does my client handle the other service's timeouts and errors?</td><td>WireMock</td></tr>
-<tr><td>Do the provider and consumer still agree on the API?</td><td>Contract test (Pact, Spring Cloud Contract)</td></tr>
-<tr><td>Can a user actually check out?</td><td>A few end-to-end tests (Playwright, Selenium)</td></tr>
-</table>
-<p><strong>Warning sign:</strong> if most of your tests need <code>@SpringBootTest</code> and a mock for every dependency, the business logic is tangled with the framework. Pull the rules into plain classes and most of those tests become fast unit tests.</p>`);
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Mocking everything</p>
+<p>When every dependency is a mock, the test often just repeats the code's internal steps. It breaks on every refactor but misses real bugs, such as a wrong SQL query.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> mock only slow or external things (other services, the clock). Use real objects for everything else, and Testcontainers for the database.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Using <code>Thread.sleep</code> to wait</p>
+<p>Sleeping too little makes the test fail randomly; sleeping too much makes the whole suite slow.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> wait for the condition with a tool like Awaitility, or inject a controllable clock.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Chasing 100% coverage</p>
+<p>A test that runs code but checks nothing still counts towards coverage. High coverage can hide useless tests.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> focus on testing important behaviour and edge cases; treat coverage as a hint about what is untested.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Tests that depend on each other</p>
+<p>If one test relies on data left behind by another, tests pass or fail depending on the order they run in.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> every test sets up its own data and cleans up after itself.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Many fast unit tests, fewer integration tests, very few end-to-end tests.</li>
+<li>Structure each test as Arrange, Act, Assert.</li>
+<li>Name tests after the behaviour they check, and always test the boundaries.</li>
+<li>Mock only slow or external dependencies; prefer real databases via Testcontainers.</li>
+<li>A test that can never fail is worthless.</li>
+</ul>
+<p><b>Next:</b> the questions below cover JUnit 5, Mockito, Spring Boot test slices, Testcontainers, contract tests, TDD and testing tricky code.</p>`);
 
 appendTopic("testing", [
 {

@@ -1,5 +1,28 @@
-registerPrimer("kubernetes", `<h3>The mental model: you declare the state you want, controllers keep making it true</h3>
-<p>You do not tell Kubernetes "start three containers". You tell it "there should be three copies of this app running", by writing that <strong>desired state</strong> in a YAML manifest and sending it to the API server. From then on, a set of <strong>controllers</strong> run in loops, each comparing desired state with actual state and acting to close the gap. If a node dies and one copy disappears, the gap reopens, and a controller starts a replacement without anyone being paged. This loop is called <strong>reconciliation</strong>, and it is the whole idea.</p>
+registerPrimer("kubernetes", `<p class="pr-lead"><b>Kubernetes</b> (often written <b>K8s</b>) runs your containers across a group of machines and keeps them running. Docker runs one container on one machine. Kubernetes decides which machine each container should run on, restarts containers that crash, replaces machines that die, spreads traffic between copies, and rolls out new versions without downtime.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Kubernetes works like a thermostat. You do not switch the heater on and off yourself; you set the temperature you want, and the thermostat keeps checking and adjusting until the room matches. In Kubernetes you write "I want 3 copies of my app running", and it keeps checking and fixing things until that is true, including when a machine fails at 3 a.m.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Cluster</dt><dd>The whole group of machines Kubernetes manages.</dd>
+<dt>Node</dt><dd>One machine (physical or virtual) in the cluster that runs containers.</dd>
+<dt>Pod</dt><dd>The smallest unit Kubernetes runs: one container (sometimes a few) sharing an IP address.</dd>
+<dt>Deployment</dt><dd>Keeps a chosen number of identical pods running, and updates them gradually to new versions.</dd>
+<dt>Service</dt><dd>A stable name and address in front of a changing set of pods, spreading traffic between them.</dd>
+<dt>Ingress</dt><dd>Routes web traffic from outside the cluster to the right Service, for example by URL path.</dd>
+<dt>ConfigMap / Secret</dt><dd>Settings and passwords given to pods as environment variables or files.</dd>
+<dt>Probe</dt><dd>A regular health check Kubernetes runs on each pod to decide whether to send it traffic or restart it.</dd>
+</dl>
+
+<h3>Step by step: what happens after <code>kubectl apply</code></h3>
+<p>You send a file saying "run 3 copies of shop-api version 1.4". Then:</p>
+<ol class="pr-steps">
+<li>The <b>API server</b> checks the file and saves it. Nothing is running yet; Kubernetes has only recorded what you want.</li>
+<li>The <b>Deployment controller</b> notices the new Deployment and asks for 3 pods.</li>
+<li>The <b>scheduler</b> picks a node for each pod, based on how much CPU and memory each pod asks for and which nodes have room.</li>
+<li>The <b>kubelet</b> (an agent on each node) downloads the image and starts the container.</li>
+<li>When the pod's <b>readiness probe</b> passes, the Service starts sending it traffic.</li>
+<li>If a node dies later, Kubernetes sees "want 3, have 2" and starts a replacement pod on another node, with nobody needing to step in.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 252" role="img" aria-label="Kubernetes control plane with API server, etcd, scheduler and controllers; worker nodes with kubelet running pods; kubectl apply flows through the API server">
   <defs><marker id="pr-k8s" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -29,34 +52,72 @@ registerPrimer("kubernetes", `<h3>The mental model: you declare the state you wa
 </svg>
 <figcaption>Every component talks only to the API server. Nothing is started by a direct command; it is started because the stored state says it should exist.</figcaption>
 </figure>
-<h3>Worked example: what happens after <code>kubectl apply</code></h3>
-<pre><code>kubectl apply -f deployment.yaml      # replicas: 3, image: shop-api:1.4.2
 
-1. API server   validates the YAML, checks your RBAC permissions, stores the
-                Deployment in etcd. kubectl returns. NOTHING is running yet.
-2. Deployment   controller sees a Deployment with no ReplicaSet -&gt; creates one.
-3. ReplicaSet   controller sees "want 3 pods, have 0" -&gt; creates 3 Pod objects.
-                They exist only as records, with no node assigned (Pending).
-4. Scheduler    sees unscheduled pods, checks each node's free CPU/memory
-                against the pods' REQUESTS, affinity and taints, and assigns a node.
-5. kubelet      on each chosen node sees a pod assigned to it: pulls the image,
-                starts the container, runs the probes.
-6. Readiness    once the readiness probe passes, the pod's IP is added to the
-                Service's endpoints and it starts receiving traffic.
+<h3>A worked example: a minimal Deployment and Service</h3>
+<pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata: { name: shop-api }
+spec:
+  replicas: 3                          # keep 3 copies running
+  selector: { matchLabels: { app: shop-api } }
+  template:
+    metadata: { labels: { app: shop-api } }
+    spec:
+      containers:
+        - name: api
+          image: shop-api:1.4.2
+          ports: [ { containerPort: 8080 } ]
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }   # what it needs
+            limits:   { memory: 768Mi }              # the most it may use
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8080 }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: shop-api }
+spec:
+  selector: { app: shop-api }          # send traffic to pods with this label
+  ports: [ { port: 80, targetPort: 8080 } ]</code></pre>
+<ol class="pr-steps">
+<li><code>replicas: 3</code> means Kubernetes keeps exactly three pods running.</li>
+<li>The pods get the label <code>app: shop-api</code>; the Service finds them through that same label.</li>
+<li><code>requests</code> tells the scheduler how much CPU and memory to reserve; <code>limits</code> caps usage. A pod using more memory than its limit is killed and restarted.</li>
+<li>The readiness probe stops traffic going to a pod until it is actually ready.</li>
+<li>Other services can now call <code>http://shop-api</code>, and Kubernetes spreads the calls over the three pods.</li>
+</ol>
 
-Later: a node dies. Its pods vanish. The ReplicaSet controller sees
-"want 3, have 2" and creates one more. Step 4 onwards repeats.</code></pre>
-<h3>The objects you will be asked about</h3>
-<table>
-<tr><th>Object</th><th>Job</th></tr>
-<tr><td>Pod</td><td>One or more containers sharing an IP and volumes; the unit that gets scheduled</td></tr>
-<tr><td>Deployment</td><td>Keeps N identical stateless pods running; does rolling updates</td></tr>
-<tr><td>StatefulSet</td><td>Pods with stable names and their own disks (databases, Kafka)</td></tr>
-<tr><td>Service</td><td>A stable name and IP in front of a changing set of pods</td></tr>
-<tr><td>Ingress / Gateway</td><td>HTTP routing from outside the cluster to Services</td></tr>
-<tr><td>ConfigMap / Secret</td><td>Configuration and credentials, injected as env vars or files</td></tr>
-<tr><td>HPA</td><td>Changes the replica count based on CPU or custom metrics</td></tr>
-</table>`);
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ No resource requests or limits</p>
+<p>Without requests, the scheduler cannot place pods sensibly, and one hungry pod can starve its neighbours on the same node.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> set requests based on real usage, and a memory limit on every container.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Mixing up liveness and readiness probes</p>
+<p>A liveness probe that checks the database restarts all your pods whenever the database hiccups, turning a small problem into an outage.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> liveness asks only "is the process stuck?". Readiness asks "can I take traffic right now?".</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Thinking Secrets are encrypted</p>
+<p>A Kubernetes Secret is only base64-encoded, which anyone with access can decode in a second.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> restrict who can read Secrets, turn on encryption at rest, or use an external secret manager.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ A Service with no endpoints</p>
+<p>If the Service's selector labels do not exactly match the pod labels, the Service has nothing to send traffic to.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> check with <code>kubectl get endpoints &lt;service&gt;</code> and make the labels match.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>You declare what you want; Kubernetes keeps making it true.</li>
+<li>Pods run your containers; Deployments keep the right number of them running.</li>
+<li>Services give pods a stable name; Ingress brings outside traffic in.</li>
+<li>Always set resource requests, limits and probes.</li>
+<li>Debug with <code>kubectl describe</code>, <code>kubectl logs --previous</code> and <code>kubectl get events</code>.</li>
+</ul>
+<p><b>Next:</b> the questions below cover the architecture, workloads, networking, scaling, deployments and debugging pods.</p>`);
 
 appendTopic("kubernetes", [
 {
