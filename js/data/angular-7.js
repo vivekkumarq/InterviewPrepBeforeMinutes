@@ -1,5 +1,27 @@
-registerPrimer("angular", `<h3>The mental model: a tree of components, fed by injected services</h3>
-<p>An Angular app is a <strong>tree of components</strong>. Each component is a TypeScript class (the data and behaviour) plus a template (the HTML that shows it). Data flows <strong>down</strong> the tree through inputs and events flow <strong>up</strong> through outputs. Anything shared across the tree (fetching data, the logged-in user, a cart) lives in a <strong>service</strong>, which Angular's dependency injection creates once and hands to every component that asks for it.</p>
+registerPrimer("angular", `<p class="pr-lead"><b>Angular</b> is a complete framework from Google for building web applications in TypeScript. Where React gives you the view layer and lets you choose the rest, Angular comes with everything built in: components, routing, forms, an HTTP client, dependency injection and testing tools. That makes large team projects consistent, at the cost of more to learn up front.</p>
+<div class="pr-analogy"><b>Think of it like this</b>An Angular app is like a well-run office building. Each room is a <b>component</b> with its own job (reception, accounts, meeting room). Shared facilities such as the printer and the canteen are <b>services</b>, set up once and used by every room that needs them. The building manager (<b>dependency injection</b>) hands each room the facilities it asks for, so rooms never have to build their own printer.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Component</dt><dd>A piece of the screen: a TypeScript class (data and behaviour) plus an HTML template (what it looks like).</dd>
+<dt>Template</dt><dd>The HTML for a component, with Angular syntax such as <code>{{ name }}</code> to show data and <code>(click)</code> to handle events.</dd>
+<dt>Service</dt><dd>A class holding shared logic or data, such as calling the API or holding the cart.</dd>
+<dt>Dependency injection (DI)</dt><dd>Angular creates services and hands them to the components that ask for them.</dd>
+<dt>Input / Output</dt><dd>An input passes data from a parent component down to a child; an output sends an event from the child up to the parent.</dd>
+<dt>Signal</dt><dd>A value that Angular watches; when it changes, exactly the parts of the screen that use it update.</dd>
+<dt>Observable (RxJS)</dt><dd>A stream of values over time, used for HTTP calls, user typing and live updates.</dd>
+<dt>Change detection</dt><dd>Angular's process of checking what changed and updating the page to match.</dd>
+</dl>
+
+<h3>Step by step: how the pieces work together</h3>
+<ol class="pr-steps">
+<li>The <b>router</b> looks at the URL, such as <code>/products</code>, and shows the matching page component.</li>
+<li>The page component asks for a <code>ProductService</code> using <code>inject()</code>. Angular creates one if it does not exist yet and hands it over.</li>
+<li>The service fetches products from the API with Angular's <code>HttpClient</code>.</li>
+<li>The page passes each product <b>down</b> to a <code>ProductCard</code> child component through an input.</li>
+<li>When the user clicks "Add to cart", the card sends an event <b>up</b> through an output, and the page asks the <code>CartService</code> to add the item.</li>
+<li>The cart's count is a <b>signal</b>, so the header showing "Cart (3)" updates automatically.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 230" role="img" aria-label="Angular component tree with inputs flowing down, outputs flowing up, and a shared service injected into components">
   <defs><marker id="pr-ng" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -20,58 +42,66 @@ registerPrimer("angular", `<h3>The mental model: a tree of components, fed by in
 </svg>
 <figcaption>Inputs down, outputs up, services on the side. Keep components thin and put logic in services.</figcaption>
 </figure>
-<h3>Worked example: a standalone component with a service and signals</h3>
-<pre><code>// cart.service.ts: one instance for the whole app
+
+<h3>A worked example: a shared cart with signals</h3>
+<pre><code>// cart.service.ts: one shared instance for the whole app
 @Injectable({ providedIn: 'root' })
 export class CartService {
-  private items = signal&lt;CartItem[]&gt;([]);                  // writable, private
-  readonly count = computed(() =&gt; this.items().length);    // derived, read-only
-  readonly total = computed(() =&gt;
-    this.items().reduce((sum, i) =&gt; sum + i.price * i.qty, 0));
+  private items = signal&lt;Product[]&gt;([]);              // the cart's contents
+  readonly count = computed(() =&gt; this.items().length); // worked out automatically
 
   add(p: Product) {
-    this.items.update(list =&gt; [...list, { ...p, qty: 1 }]);   // new array: immutable
+    this.items.update(list =&gt; [...list, p]);           // a new array each time
   }
 }
 
-// product-card.component.ts
-@Component({
-  selector: 'app-product-card',
-  standalone: true,
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: \`
-    &lt;h3&gt;{{ product().name }}&lt;/h3&gt;
-    &lt;p&gt;{{ product().price | currency:'INR' }}&lt;/p&gt;
-    &lt;button (click)="added.emit(product())"&gt;Add to cart&lt;/button&gt;
-  \`
-})
-export class ProductCardComponent {
-  product = input.required&lt;Product&gt;();      // data IN from the parent
-  added = output&lt;Product&gt;();                 // events OUT to the parent
-}
-
-// header.component.ts: any component can read the shared state
+// header.component.ts
 @Component({
   selector: 'app-header',
   standalone: true,
-  template: \`&lt;span&gt;Cart ({{ cart.count() }}) · {{ cart.total() | currency:'INR' }}&lt;/span&gt;\`
+  template: '&lt;span&gt;Cart ({{ cart.count() }})&lt;/span&gt;'
 })
 export class HeaderComponent {
-  cart = inject(CartService);
-}
-// Clicking "Add to cart" updates the signal; only the views that READ
-// count() or total() are updated. No manual subscription, nothing to unsubscribe.</code></pre>
-<h3>The building blocks, and what each is for</h3>
-<table>
-<tr><th>Piece</th><th>Job</th></tr>
-<tr><td>Component</td><td>A piece of UI: class plus template</td></tr>
-<tr><td>Service + DI</td><td>Shared logic and state; easy to replace with a fake in tests</td></tr>
-<tr><td>Signals</td><td>Reactive state that updates exactly the views that read it</td></tr>
-<tr><td>RxJS Observables</td><td>Streams over time: HTTP, WebSockets, debounced input</td></tr>
-<tr><td>Router</td><td>Maps URLs to components; lazy-loads feature areas</td></tr>
-<tr><td>Reactive forms</td><td>Typed form state and validation in the class, testable without a DOM</td></tr>
-<tr><td>Change detection</td><td>Keeps the DOM in sync; OnPush and signals make it cheap</td></tr>
-</table>`);
+  cart = inject(CartService);                          // ask Angular for the service
+}</code></pre>
+<ol class="pr-steps">
+<li><code>providedIn: 'root'</code> tells Angular to create one <code>CartService</code> for the whole app, shared by every component.</li>
+<li><code>signal([])</code> holds the cart items. <code>computed</code> derives the count from them and recalculates only when the items change.</li>
+<li><code>add()</code> creates a new array rather than changing the old one, so Angular reliably notices the change.</li>
+<li>The header reads <code>cart.count()</code> in its template. When any component adds an item, the header updates by itself, with no manual subscription to clean up.</li>
+</ol>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Forgetting to unsubscribe</p>
+<p>A subscription to an Observable that never ends keeps running after the component is closed, wasting memory and firing old callbacks.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use the <code>async</code> pipe in templates, <code>takeUntilDestroyed()</code>, or signals, which clean up automatically.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Putting all logic in components</p>
+<p>Components that call APIs, hold shared data and contain business rules become huge and hard to test.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> keep components focused on display, and move logic and shared state into services.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Nested subscribes</p>
+<p>Subscribing inside another subscribe creates hard-to-follow code and race conditions, such as old search results arriving after new ones.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> chain with RxJS operators such as <code>switchMap</code>, which cancels the previous request automatically.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Loading the whole app up front</p>
+<p>Bundling every page into the first download makes the app slow to open.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> lazy-load feature areas through the router, so each part downloads only when the user visits it.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>An Angular app is a tree of components; shared logic lives in services.</li>
+<li>Data goes down through inputs; events come up through outputs.</li>
+<li>Dependency injection creates services and hands them to whoever asks.</li>
+<li>Signals give simple, precise updates; RxJS handles streams such as HTTP and typing.</li>
+<li>Always clean up subscriptions and lazy-load feature areas.</li>
+</ul>
+<p><b>Next:</b> the questions below cover components, change detection, signals, RxJS, forms, routing, performance and testing.</p>`);
 
 appendTopic("angular", [
 {

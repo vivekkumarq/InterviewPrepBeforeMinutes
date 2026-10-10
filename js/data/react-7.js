@@ -1,5 +1,27 @@
-registerPrimer("react", `<h3>The mental model: the screen is a function of state</h3>
-<p>In React you never change the page directly. You describe what the UI should look like <strong>for a given state</strong>, and React makes the page match. When state changes, React calls your component function again, compares the new description with the previous one, and updates only the parts of the real DOM that differ. Your job is to get the state right. React's job is to get the DOM right.</p>
+registerPrimer("react", `<p class="pr-lead"><b>React</b> is a JavaScript library for building user interfaces out of small, reusable pieces called <b>components</b>: a button, a search box, a product card. Instead of changing the web page by hand, you describe what the screen should look like for the current data, and React updates the page for you whenever that data changes.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Think of a scoreboard at a cricket match. The operator does not repaint the whole board after each ball; they just change the score, and the board shows the new number. In React, your <b>state</b> is the score, your component is the board's design, and React is the operator who updates only the digits that changed.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Component</dt><dd>A JavaScript function that returns what a piece of the screen should look like.</dd>
+<dt>JSX</dt><dd>HTML-like syntax inside JavaScript, such as <code>&lt;button&gt;Save&lt;/button&gt;</code>, describing what to show.</dd>
+<dt>Props</dt><dd>Inputs passed from a parent component to a child, like function arguments. The child must not change them.</dd>
+<dt>State</dt><dd>Data that belongs to a component and can change over time, such as what the user typed. Changing it updates the screen.</dd>
+<dt>Hook</dt><dd>A special function starting with <code>use</code> (such as <code>useState</code>, <code>useEffect</code>) that adds React features to a component.</dd>
+<dt>Render</dt><dd>React calling your component to find out what the screen should look like now.</dd>
+<dt>Virtual DOM</dt><dd>React's lightweight copy of the page in memory, compared with the previous copy to find the smallest set of real changes.</dd>
+<dt>Effect</dt><dd>Code that talks to the outside world (fetching data, timers), run after the screen updates.</dd>
+</dl>
+
+<h3>Step by step: what happens when you click a button</h3>
+<ol class="pr-steps">
+<li>The user clicks "+1". Your click handler calls <code>setCount(count + 1)</code>.</li>
+<li>React records the new state and schedules an update.</li>
+<li><b>Render:</b> React calls your component function again. It returns the new description: "the counter shows 6".</li>
+<li><b>Compare:</b> React compares the new description with the previous one and finds that only the number changed.</li>
+<li><b>Commit:</b> React updates just that piece of text on the real page.</li>
+<li>Any effects whose inputs changed run afterwards.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 214" role="img" aria-label="React update cycle: setState triggers render, reconciliation diffs the output, commit updates the DOM, then effects run">
   <defs><marker id="pr-re" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -18,46 +40,60 @@ registerPrimer("react", `<h3>The mental model: the screen is a function of state
 </svg>
 <figcaption>One state change, one pass through the cycle. React batches several setState calls in the same event into one render.</figcaption>
 </figure>
-<h3>Worked example: a search box, traced</h3>
-<pre><code>function UserSearch() {
-  const [query, setQuery] = useState("");          // state: what the user typed
-  const [users, setUsers] = useState([]);          // state: the results
 
-  useEffect(() =&gt; {                                // side effect: runs AFTER render
-    if (query.length &lt; 2) { setUsers([]); return; }
-    const ctrl = new AbortController();
-    fetch("/api/users?q=" + encodeURIComponent(query), { signal: ctrl.signal })
-      .then(r =&gt; r.json())
-      .then(setUsers)
-      .catch(() =&gt; {});                            // aborted requests land here
-    return () =&gt; ctrl.abort();                     // cleanup: cancel the stale request
-  }, [query]);                                     // re-run only when query changes
+<h3>A worked example: a counter, line by line</h3>
+<pre><code>function Counter() {
+  const [count, setCount] = useState(0);      // state starts at 0
+
+  useEffect(() =&gt; {
+    document.title = "Clicked " + count + " times";
+  }, [count]);                                // run again only when count changes
 
   return (
-    &lt;&gt;
-      &lt;input value={query} onChange={e =&gt; setQuery(e.target.value)} /&gt;
-      &lt;ul&gt;{users.map(u =&gt; &lt;li key={u.id}&gt;{u.name}&lt;/li&gt;)}&lt;/ul&gt;
-    &lt;/&gt;
+    &lt;button onClick={() =&gt; setCount(count + 1)}&gt;
+      Clicked {count} times
+    &lt;/button&gt;
   );
-}
+}</code></pre>
+<ol class="pr-steps">
+<li><code>useState(0)</code> creates a piece of state starting at 0. It gives back the current value (<code>count</code>) and a function to change it (<code>setCount</code>).</li>
+<li>The JSX describes a button showing the current count.</li>
+<li>Clicking calls <code>setCount</code>, which makes React render the component again with the new value.</li>
+<li><code>useEffect</code> updates the browser tab title after the screen updates. The <code>[count]</code> list means "only re-run when count changes".</li>
+<li>You never touch the page directly; you only change state, and React keeps the page in step.</li>
+</ol>
 
-// User types "a", then "as":
-// 1. setQuery("a")  -&gt; render -&gt; commit input value -&gt; effect: too short
-// 2. setQuery("as") -&gt; render -&gt; commit -&gt; cleanup of old effect (nothing to
-//    abort) -&gt; effect runs: fetch starts
-// 3. User types "asa" before it returns -&gt; render -&gt; cleanup ABORTS the "as"
-//    fetch -&gt; new fetch for "asa". A slow old response can never overwrite
-//    newer results.
-// 4. Response arrives -&gt; setUsers(list) -&gt; render -&gt; commit only the new &lt;li&gt;s</code></pre>
-<h3>The rules that most React questions come back to</h3>
-<table>
-<tr><th>Rule</th><th>Because</th></tr>
-<tr><td>Never mutate state; create a new object or array</td><td>React compares by reference. A mutated array is the "same" array, so nothing re-renders</td></tr>
-<tr><td>Stable, unique <code>key</code> in lists (not the index)</td><td>Keys tell React which item is which between renders; index keys mix up state when items move</td></tr>
-<tr><td>Hooks at the top level only, never inside conditions</td><td>React identifies each hook by its call order</td></tr>
-<tr><td>List every value an effect uses in its dependency array</td><td>Otherwise the effect reads stale values from an old render</td></tr>
-<tr><td>Derive, do not duplicate: compute values from state during render</td><td>Two copies of the same fact drift apart</td></tr>
-</table>`);
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Changing state directly</p>
+<p><code>items.push(newItem)</code> changes the existing array, so React sees the "same" array and does not update the screen.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> always create a new array or object: <code>setItems([...items, newItem])</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Using the array index as a list key</p>
+<p>When items are added, removed or reordered, index keys make React mix up which item is which, so inputs can show the wrong values.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use a stable, unique id from your data: <code>key={item.id}</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Wrong effect dependency list</p>
+<p>Leaving out a value the effect uses makes it work with an old, stale value. Leaving out the list entirely makes it run after every render, which can cause endless loops.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> list every value the effect uses, and follow the lint rule that checks this.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Calling hooks inside if statements or loops</p>
+<p>React identifies each hook by the order it is called. Skipping one with an <code>if</code> mixes up which state belongs to which hook.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> call hooks only at the top level of your component, every time it runs.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>The screen is a result of state: change the state, and React updates the screen.</li>
+<li>Props come in from the parent; state belongs to the component.</li>
+<li>Never change state directly; create new arrays and objects.</li>
+<li>Give list items stable, unique keys.</li>
+<li>Call hooks at the top level and give effects a correct dependency list.</li>
+</ul>
+<p><b>Next:</b> the questions below cover hooks, rendering, state management, data fetching, performance and testing.</p>`);
 
 appendTopic("react", [
 {

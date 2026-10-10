@@ -1,6 +1,26 @@
-registerPrimer("typescript", `<h3>The mental model: JavaScript plus a checker that disappears before runtime</h3>
-<p>TypeScript is JavaScript with type annotations. The compiler (<code>tsc</code>) does two separate jobs: it <strong>checks</strong> your types and reports mistakes, and it <strong>erases</strong> the types to produce plain JavaScript. The browser or Node never sees a single type. That one fact explains most TypeScript behaviour: types cannot validate data at runtime, <code>as</code> does not convert anything, and an <code>interface</code> produces no code at all.</p>
-<p>The second key idea is that TypeScript is <strong>structural</strong>. A value fits a type if it has the right shape, whatever it is called. Java asks "was this declared as a <code>User</code>?"; TypeScript asks "does it have the fields a <code>User</code> needs?".</p>
+registerPrimer("typescript", `<p class="pr-lead"><b>TypeScript</b> is JavaScript with <b>types</b> added: labels that say what kind of value each variable holds, such as a number, a string or a <code>User</code>. Before your code runs, the TypeScript compiler checks these labels and points out mistakes, like passing text where a number is expected. Then it removes the types and produces plain JavaScript that runs in the browser or Node.</p>
+<div class="pr-analogy"><b>Think of it like this</b>TypeScript is like a spell-checker for code. It underlines mistakes while you write, before anyone reads your document. But once the document is printed, the spell-checker is gone; it cannot fix a wrong word someone else hands you later. In the same way, TypeScript checks your own code at build time, but cannot check data that arrives while the program runs, such as a response from an API.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Type annotation</dt><dd>A label on a value: <code>let age: number = 30</code>.</dd>
+<dt>Type inference</dt><dd>TypeScript working out the type by itself: <code>let age = 30</code> is already known to be a number.</dd>
+<dt>Interface / type</dt><dd>A named description of an object's shape, such as "a User has a name (text) and an age (number)".</dd>
+<dt>Union type</dt><dd>"One of these": <code>string | number</code> means either text or a number.</dd>
+<dt>Narrowing</dt><dd>TypeScript following your checks (<code>if (typeof x === "number")</code>) to know the exact type inside each branch.</dd>
+<dt>Generics</dt><dd>Writing a function or type that works with any type while keeping track of which one, like <code>Array&lt;T&gt;</code>.</dd>
+<dt><code>any</code> / <code>unknown</code></dt><dd><code>any</code> switches checking off. <code>unknown</code> means "not checked yet" and forces you to check before use.</dd>
+<dt>Event loop</dt><dd>How JavaScript, which runs one thing at a time, handles timers, clicks and network replies without freezing.</dd>
+</dl>
+
+<h3>Step by step: what happens when you build</h3>
+<ol class="pr-steps">
+<li>You write <code>.ts</code> files with types.</li>
+<li>The compiler (<code>tsc</code>) <b>checks</b> every type and reports errors, such as calling <code>.toUpperCase()</code> on something that might be a number.</li>
+<li>It then <b>erases</b> all the types, producing plain JavaScript.</li>
+<li>The browser or Node runs that JavaScript. It never sees a single type.</li>
+<li>So any data arriving at runtime (from an API, a form, local storage) is not checked automatically; you must validate it yourself.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 196" role="img" aria-label="TypeScript source is type-checked and then types are erased, producing plain JavaScript that runs without any type information">
   <defs><marker id="pr-ts" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -28,41 +48,60 @@ registerPrimer("typescript", `<h3>The mental model: JavaScript plus a checker th
 </svg>
 <figcaption>Types exist only while you write and build. At runtime it is plain JavaScript.</figcaption>
 </figure>
-<h3>Worked example: inference, structural typing and narrowing</h3>
-<pre><code>// 1. INFERENCE: you rarely need to annotate locals
-const count = 3;                    // type: 3 (a literal type, because const)
-let total = 0;                      // type: number
-const names = ["asha", "ravi"];     // type: string[]
 
-// 2. STRUCTURAL: shape matters, not the declared name
-interface Point { x: number; y: number }
-const p = { x: 1, y: 2, label: "A" };
-function draw(pt: Point) { /* ... */ }
-draw(p);                            // OK: p has x and y. The extra field is fine.
-draw({ x: 1, y: 2, label: "A" });   // ERROR: an object LITERAL with unknown
-                                    // properties is checked strictly, to catch typos
+<h3>A worked example: unions and narrowing</h3>
+<pre><code>interface User { name: string; age: number }
 
-// 3. UNIONS and NARROWING: the compiler follows your checks
-function format(value: string | number | null): string {
-  if (value === null) return "—";          // here: null
+function describe(value: string | number | null): string {
+  if (value === null) return "nothing";        // here value is null
   if (typeof value === "number")
-    return value.toFixed(2);               // here: number
-  return value.toUpperCase();              // here: must be string
+    return value.toFixed(2);                   // here value is a number
+  return value.toUpperCase();                  // here it can only be a string
 }
 
-// 4. The compiler cannot see runtime data
-const data = JSON.parse(text) as Point;    // 'as' checks NOTHING. If the JSON is
-                                           // {"x":"1"}, data.x is a string at runtime.</code></pre>
-<h3>Types you will use every day</h3>
-<table>
-<tr><th>Tool</th><th>Use it for</th></tr>
-<tr><td><code>interface</code> / <code>type</code></td><td>Describing object shapes; <code>type</code> also names unions</td></tr>
-<tr><td>Union <code>A | B</code></td><td>"One of these"; combine with narrowing</td></tr>
-<tr><td>Generics <code>&lt;T&gt;</code></td><td>Functions and types that work for any type while keeping it precise</td></tr>
-<tr><td><code>unknown</code></td><td>Data you have not checked yet. Safer than <code>any</code>, which turns checking off</td></tr>
-<tr><td><code>Partial</code>, <code>Pick</code>, <code>Omit</code>, <code>Record</code></td><td>Deriving new types from existing ones instead of copying fields</td></tr>
-<tr><td><code>strict: true</code></td><td>Turns on null checks and more; always on for new projects</td></tr>
-</table>`);
+const u: User = { name: "Asha", age: 30 };     // OK
+const v: User = { name: "Ravi" };              // ERROR: age is missing
+
+const data = JSON.parse(text) as User;         // careful: 'as' checks nothing!</code></pre>
+<ol class="pr-steps">
+<li><code>interface User</code> describes the shape a user object must have.</li>
+<li><code>string | number | null</code> says the value can be any one of three types.</li>
+<li>Each <code>if</code> check narrows the possibilities, so in the last line TypeScript knows only a string is left, and allows <code>toUpperCase()</code>.</li>
+<li>Creating a <code>User</code> without <code>age</code> is caught before the code ever runs.</li>
+<li><code>as User</code> only tells the compiler "trust me". If the JSON is wrong, nothing stops it, which is why data from outside should be validated, for example with Zod.</li>
+</ol>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Using <code>any</code> to silence errors</p>
+<p><code>any</code> turns off checking for that value and spreads to everything it touches, so bugs slip through quietly.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use <code>unknown</code> for data you have not checked yet, then narrow it with checks.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Trusting <code>as</code> for API data</p>
+<p><code>response as Order</code> does not check anything. If the API sends a different shape, your code fails later in a confusing place.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> validate data at the boundary with a schema library such as Zod, which checks it and gives you the type.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Confusing <code>||</code> with <code>??</code></p>
+<p><code>count || 10</code> gives 10 even when count is 0, because 0 counts as "falsy". That is a real bug for valid zero values.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use <code>count ?? 10</code>, which only falls back when the value is null or undefined.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Turning strict mode off</p>
+<p>Without strict checks, TypeScript lets null and undefined go anywhere, which causes the classic "cannot read property of undefined" crashes.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> set <code>"strict": true</code> in <code>tsconfig.json</code> for every new project.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>TypeScript checks types at build time, then removes them; nothing is checked at runtime.</li>
+<li>Let TypeScript infer types where it can; annotate function inputs and outputs.</li>
+<li>Use union types and narrowing to handle "one of several" values safely.</li>
+<li>Prefer <code>unknown</code> over <code>any</code>, and validate outside data.</li>
+<li>Always turn on strict mode.</li>
+</ul>
+<p><b>Next:</b> the questions below cover TypeScript types and generics, plus the JavaScript essentials: closures, <code>this</code>, promises and the event loop.</p>`);
 
 appendTopic("typescript", [
 {

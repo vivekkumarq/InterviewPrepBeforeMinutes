@@ -61,9 +61,9 @@ window.GROUPS = [
   {
     id: "frontend", name: "Frontend", icon: "🎨",
     topics: [
-      { id: "angular", parts: 7,    name: "Angular",    icon: "🅰️", blurb: "Components, DI, RxJS, change detection, signals, routing, forms and performance." },
-      { id: "react", parts: 7,      name: "React",      icon: "⚛️", blurb: "JSX, hooks, reconciliation, state management, memoisation and common pitfalls." },
-      { id: "typescript", parts: 7, name: "TypeScript & JS", icon: "🟦", blurb: "Types, generics, closures, event loop, promises, this binding, and the JS trivia that still gets asked." }
+      { id: "angular", parts: 8,    name: "Angular",    icon: "🅰️", blurb: "Components, DI, RxJS, change detection, signals, routing, forms and performance." },
+      { id: "react", parts: 8,      name: "React",      icon: "⚛️", blurb: "JSX, hooks, reconciliation, state management, memoisation and common pitfalls." },
+      { id: "typescript", parts: 8, name: "TypeScript & JS", icon: "🟦", blurb: "Types, generics, closures, event loop, promises, this binding, and the JS trivia that still gets asked." }
     ]
   },
   {
@@ -84,7 +84,7 @@ window.GROUPS = [
     id: "cs", name: "CS Fundamentals", icon: "🧠",
     topics: [
       { id: "dsa", parts: 8, name: "DSA & Problem Solving", icon: "🧠", blurb: "Complexity, arrays, strings, hashing, trees, graphs, DP patterns and the most-asked coding problems." },
-      { id: "hr", parts: 6,  name: "HR & Behavioural",      icon: "💬", blurb: "Tell me about yourself, STAR stories, salary talk and the closing questions you should ask back." }
+      { id: "hr", parts: 7,  name: "HR & Behavioural",      icon: "💬", blurb: "Tell me about yourself, STAR stories, salary talk and the closing questions you should ask back." }
     ]
   }
 ];

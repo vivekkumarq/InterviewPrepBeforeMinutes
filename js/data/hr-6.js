@@ -1,5 +1,23 @@
-registerPrimer("hr", `<h3>The mental model: every behavioural question asks for evidence</h3>
-<p>"Tell me about a time when…" is not small talk. The interviewer has a list of traits to score (ownership, handling conflict, dealing with ambiguity, learning from failure) and needs <strong>evidence</strong> for each: a real situation, what <em>you</em> did, and what happened. Opinions ("I'm a team player") score nothing. Stories score. The <strong>STAR</strong> structure exists so your story delivers the evidence in the order the interviewer is listening for it.</p>
+registerPrimer("hr", `<p class="pr-lead"><b>HR and behavioural questions</b> ("Tell me about yourself", "Tell me about a time you failed") check how you work with people, handle problems and make decisions. Many candidates prepare hard for the technical rounds and then lose the offer here. The good news: these questions are very predictable, so a few hours of preparation makes a big difference.</p>
+<div class="pr-analogy"><b>Think of it like this</b>The interviewer is like a judge in a courtroom. Saying "I am a great team player" is like a lawyer saying "my client is innocent": it proves nothing. The judge needs <b>evidence</b>: a real situation, what you actually did, and what happened as a result. Every behavioural answer should be a short, true story that gives that evidence.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Behavioural question</dt><dd>A question about how you acted in the past, usually starting "Tell me about a time when…".</dd>
+<dt>STAR method</dt><dd>A simple structure for answers: Situation, Task, Action, Result.</dd>
+<dt>Ownership</dt><dd>Taking responsibility for your work and its outcome, including mistakes.</dd>
+<dt>Impact</dt><dd>The difference your work made, ideally with a real number: time saved, errors reduced, users helped.</dd>
+<dt>Culture fit</dt><dd>Whether your way of working matches how the team works.</dd>
+</dl>
+
+<h3>Step by step: the STAR method</h3>
+<ol class="pr-steps">
+<li><b>Situation (about 15% of your answer):</b> brief background. What was the project and what was the problem?</li>
+<li><b>Task (about 10%):</b> what were <i>you</i> responsible for?</li>
+<li><b>Action (about 60%):</b> what did <i>you</i> do, step by step? Say "I", not "we". This is where the evidence is, so spend most of your time here.</li>
+<li><b>Result (about 15%):</b> what happened, with a real number if possible, and what you learned.</li>
+</ol>
+<p>Aim for about two minutes per answer. Then stop and let the interviewer ask follow-up questions.</p>
 <figure class="fig">
 <svg viewBox="0 0 620 196" role="img" aria-label="STAR answer structure with the share of time for each part: Situation, Task, Action, Result">
   <rect class="dg-box" x="10" y="30" width="76" height="70" rx="8"/>
@@ -16,40 +34,64 @@ registerPrimer("hr", `<h3>The mental model: every behavioural question asks for 
 </svg>
 <figcaption>About two minutes in total. The Action is where the evidence is, so give it most of the time.</figcaption>
 </figure>
-<h3>Worked example: turning a weak answer into a strong one</h3>
-<p><strong>Question:</strong> "Tell me about a time you disagreed with a teammate."</p>
+
+<h3>A worked example: a weak answer made strong</h3>
+<p><b>Question:</b> "Tell me about a time you disagreed with a teammate."</p>
 <pre><code>WEAK
-"We had a disagreement about the database once. We discussed it as a team
- and eventually agreed on a solution. Communication is really important and
- I always try to listen to everyone's point of view."
- -&gt; no situation, no action, no result. Pure opinion. Scores almost nothing.
+"We disagreed about the database once. We talked as a team and agreed on
+ a solution. I think communication is really important."
+ -&gt; No real situation, nothing you did, no result. It proves nothing.
 
 STRONG
 S  "We were building a notifications service, and a senior colleague wanted
-    to store every notification in MongoDB for flexibility."
-T  "I owned the delivery-tracking part, which needed to report per-user
-    delivery counts for billing."
-A  "I thought billing needed transactions and joins, so Postgres fitted
-    better, but I did not want it to become my opinion against his. I
-    wrote down the five queries billing actually needed, and prototyped
-    the two hardest in both databases over an afternoon. In Mongo, the
-    monthly billing query needed an aggregation pipeline that took 9
-    seconds on test data; in Postgres it was one query at 200 ms. I
-    shared the numbers with him first, privately, before the team meeting."
-R  "He agreed, and suggested we keep the raw notification payload as a
-    JSONB column, which gave him the flexibility he wanted. Billing has run
-    on it for a year without issues. What I took from it: bring data to a
-    technical disagreement, and talk to the person before the meeting."</code></pre>
-<h3>How to prepare, in one evening</h3>
-<table>
-<tr><th>Step</th><th>What to do</th></tr>
-<tr><td>1. Write 6 to 8 stories</td><td>Real ones: a hard bug, a conflict, a failure, a deadline, leading something, learning something fast, a disagreement with a manager, helping a teammate</td></tr>
-<tr><td>2. Map them to questions</td><td>Each story usually answers two or three questions. "Failure" and "production incident" can be the same story</td></tr>
-<tr><td>3. Add a number to each Result</td><td>Time saved, latency cut, incidents prevented, users affected. Only real numbers</td></tr>
-<tr><td>4. Say them out loud once</td><td>Time yourself: about two minutes each. Written stories always run long when spoken</td></tr>
-<tr><td>5. Research the company</td><td>One specific reason you want to work there, and three questions to ask them</td></tr>
-</table>
-<p><strong>Honesty matters more than polish.</strong> Interviewers ask follow-ups ("what would you do differently?", "what did your manager say?") precisely to test whether a story is real. A modest true story survives follow-ups; an impressive invented one does not.</p>`);
+    to store everything in MongoDB."
+T  "I owned the billing reports, which needed exact totals per customer."
+A  "I thought PostgreSQL suited billing better, but I did not want it to be
+    my opinion against his. I listed the five reports billing needed and
+    tested the two hardest in both databases. In MongoDB the monthly report
+    took 9 seconds; in PostgreSQL, 200 ms. I showed him the numbers privately
+    before the team meeting."
+R  "He agreed, and suggested keeping the flexible part as a JSON column,
+    which gave him what he wanted. It has run without problems for a year.
+    I learned to bring data to a technical disagreement."</code></pre>
+<ol class="pr-steps">
+<li>The strong answer names a real situation, so the interviewer can picture it.</li>
+<li>It says clearly what <i>you</i> owned and did.</li>
+<li>It shows <b>how</b> you handled the disagreement: with data, respectfully, and privately first.</li>
+<li>It ends with a measurable result and a lesson, which shows you reflect and grow.</li>
+</ol>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Speaking in general terms</p>
+<p>"I always meet deadlines" or "I'm a hard worker" are opinions, and every candidate says them.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> answer with one specific, real story in the STAR structure.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Saying "we" all the time</p>
+<p>If every sentence is "we did", the interviewer cannot tell what you personally contributed.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> give the team credit briefly, then explain exactly what <i>you</i> did.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Criticising a previous employer or colleague</p>
+<p>Even if it is justified, it makes the interviewer wonder whether you will talk about them that way later.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> talk about what you are moving towards, not what you are escaping from.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Inventing or exaggerating stories</p>
+<p>Interviewers ask follow-ups ("What would you do differently?", "What did your manager say?") precisely to test whether a story is real.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use true stories, even modest ones. A small real story survives follow-ups; an invented one does not.</p>
+</div>
+
+<h3>How to prepare in one evening</h3>
+<ul class="pr-remember">
+<li>Write 6 to 8 real stories: a hard bug, a conflict, a failure, a tight deadline, leading something, learning something fast.</li>
+<li>Note which questions each story can answer; most stories cover two or three.</li>
+<li>Add a real number to each result where you can.</li>
+<li>Say each story out loud once and time it: about two minutes.</li>
+<li>Research the company, and prepare one honest reason you want to join and three questions to ask them.</li>
+</ul>
+<p><b>Next:</b> the questions below give a model approach and sample answer for every common HR and behavioural question.</p>`);
 
 appendTopic("hr", [
 {
