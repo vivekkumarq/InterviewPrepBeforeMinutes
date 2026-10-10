@@ -1,5 +1,25 @@
-registerPrimer("rest-api", `<h3>The mental model: nouns in the URL, verbs in the method, outcome in the status</h3>
-<p>A REST API exposes <strong>resources</strong> (things, named with nouns: orders, customers, invoices) at URLs, and uses the <strong>HTTP method</strong> to say what to do with them. The server answers with a <strong>status code</strong> that tells the client what happened before it even reads the body. If you keep those three jobs separate, most design questions answer themselves.</p>
+registerPrimer("rest-api", `<p class="pr-lead">A <b>REST API</b> is how programs talk to each other over the web. A mobile app asks a server "give me order 42" or "create a new order", and the server replies. REST is a set of simple conventions for how those requests and replies should look, so that any developer can guess how an API works.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Think of a library. Every book has a shelf address (the <b>URL</b>). You tell the librarian what you want to do with it: borrow it, return it, look at it (the <b>HTTP method</b>). The librarian replies with a short answer code before handing anything over: "here you go", "not found", "you are not a member" (the <b>status code</b>).</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Resource</dt><dd>A "thing" your API deals with, such as an order, a customer or a book. Named with nouns.</dd>
+<dt>URL / endpoint</dt><dd>The address of a resource, such as <code>/orders/42</code>.</dd>
+<dt>HTTP method</dt><dd>The action: <b>GET</b> (read), <b>POST</b> (create), <b>PUT</b> (replace), <b>PATCH</b> (change part), <b>DELETE</b> (remove).</dd>
+<dt>Status code</dt><dd>A number saying how it went. 2xx success, 4xx the client made a mistake, 5xx the server failed.</dd>
+<dt>JSON</dt><dd>The text format usually used for the data, like <code>{"id": 42, "status": "PAID"}</code>.</dd>
+<dt>Idempotent</dt><dd>Doing the same request twice has the same effect as doing it once, so it is safe to retry.</dd>
+<dt>Header</dt><dd>Extra information sent with a request or response, such as the login token or the data format.</dd>
+</dl>
+
+<h3>Step by step: one request and its reply</h3>
+<ol class="pr-steps">
+<li>The app sends <code>POST /customers/42/orders</code> with a JSON body describing the order and a login token in the <code>Authorization</code> header.</li>
+<li>The URL says <b>which</b> resource (the orders of customer 42); the method POST says <b>what to do</b> (create one).</li>
+<li>The server checks the token, validates the data and saves the order.</li>
+<li>It replies <code>201 Created</code>, a <code>Location</code> header with the new order's address (<code>/orders/9001</code>), and the order as JSON.</li>
+<li>The app reads the status code first. 201 means success, so it shows the new order.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 236" role="img" aria-label="Anatomy of an HTTP request and response: method, path, headers, body; status code, headers, body">
   <defs><marker id="pr-rest" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -28,34 +48,59 @@ registerPrimer("rest-api", `<h3>The mental model: nouns in the URL, verbs in the
 </svg>
 <figcaption>Every part has one job. Errors belong in the status code, not in a 200 with an "error" field.</figcaption>
 </figure>
-<h3>Worked example: designing a small API from nothing</h3>
+
+<h3>A worked example: designing a small API</h3>
 <p>Requirement: "Library members can borrow books, return them, and see their current loans."</p>
-<pre><code>Step 1: find the NOUNS.  books, members, loans   (a loan is a thing, with its own id)
-Step 2: map operations to methods on those nouns.
+<pre><code>GET    /books?author=orwell        search the catalogue           200
+GET    /books/{isbn}               one book                       200 or 404
+POST   /members/{id}/loans         borrow a book                  201
+GET    /members/{id}/loans         a member's loans               200
+POST   /loans/{loanId}/return      return the book                200</code></pre>
+<ol class="pr-steps">
+<li><b>Find the nouns:</b> books, members and loans. A loan is a real thing with its own id.</li>
+<li><b>Use the method as the verb:</b> GET to read, POST to create. There are no verbs like <code>/getBooks</code> in the URLs.</li>
+<li><b>Plan the failures:</b> book already on loan → 409 Conflict; not logged in → 401; logged in but not allowed → 403; book does not exist → 404.</li>
+<li>Returning a book does not delete the loan (the history matters for fines), so it is a POST to a <code>/return</code> action rather than a DELETE.</li>
+</ol>
 
-GET    /books?author=orwell&amp;available=true      search the catalogue      200
-GET    /books/{isbn}                              one book                  200 / 404
-POST   /members/{id}/loans    {"isbn": "..."}     borrow a book             201 + Location
-GET    /members/{id}/loans?status=active          a member's loans          200
-POST   /loans/{loanId}/return                     return it                 200
-GET    /loans/{loanId}                            one loan                  200 / 404
+<h3>The status codes you will use most</h3>
+<ul>
+<li><b>200 OK</b>: success, with data. <b>201 Created</b>: something new was made. <b>204 No Content</b>: success, nothing to return.</li>
+<li><b>400 Bad Request</b>: the input is wrong. <b>401</b>: not logged in. <b>403</b>: not allowed. <b>404 Not Found</b>. <b>409 Conflict</b>: clashes with the current state.</li>
+<li><b>500 Internal Server Error</b>: something broke on the server.</li>
+</ul>
 
-Step 3: decide the failure cases BEFORE writing code.
-  book already on loan         409 Conflict
-  member has 5 books out       422 Unprocessable Content (a business rule failed)
-  loan belongs to someone else 404 (do not reveal that it exists)
-  not logged in                401        logged in, not a librarian   403</code></pre>
-<p><strong>Why <code>POST /loans/{id}/return</code> and not <code>DELETE /loans/{id}</code>?</strong> Returning a book does not delete the loan: the history must survive for fines and reports. When an action does not map cleanly onto create, read, update or delete, a POST to a sub-resource named after the action is the honest choice.</p>
-<h3>The method table that most questions rely on</h3>
-<table>
-<tr><th>Method</th><th>Use</th><th>Safe</th><th>Idempotent</th></tr>
-<tr><td>GET</td><td>Read</td><td>Yes</td><td>Yes</td></tr>
-<tr><td>POST</td><td>Create, or trigger an action</td><td>No</td><td>No (make it so with an idempotency key)</td></tr>
-<tr><td>PUT</td><td>Replace the whole resource</td><td>No</td><td>Yes</td></tr>
-<tr><td>PATCH</td><td>Change some fields</td><td>No</td><td>Not guaranteed</td></tr>
-<tr><td>DELETE</td><td>Remove</td><td>No</td><td>Yes</td></tr>
-</table>
-<p><em>Safe</em> means it changes nothing on the server. <em>Idempotent</em> means doing it twice has the same effect as doing it once, which is what makes a request safe to retry after a timeout.</p>`);
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Putting verbs in URLs</p>
+<p>URLs like <code>/getAllUsers</code> or <code>/createOrder</code> repeat what the HTTP method already says, and every new action invents a new URL.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use nouns and let the method be the verb: <code>GET /users</code>, <code>POST /orders</code>.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Returning 200 for errors</p>
+<p>Replying <code>200 OK</code> with <code>{"success": false}</code> confuses clients, monitoring tools and retry logic, which all trust the status code.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> return the correct error status (400, 404, 409...) with a clear JSON error message.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Using GET to change data</p>
+<p>Browsers, crawlers and caches assume GET only reads. A link like <code>GET /deleteUser?id=5</code> can delete data by accident when something simply visits it.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use POST, PUT, PATCH or DELETE for anything that changes data.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Returning huge lists in one go</p>
+<p>An endpoint that returns all 80,000 customers is slow today and gets worse every day.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> paginate: return a page at a time with a sensible default size and a maximum.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>URLs name things (nouns); HTTP methods are the actions.</li>
+<li>The status code tells the client what happened; use the right one.</li>
+<li>GET only reads; never change data with GET.</li>
+<li>Make requests safe to retry where possible (idempotent).</li>
+<li>Paginate large lists and keep error responses consistent.</li>
+</ul>
+<p><b>Next:</b> the questions below cover status codes, versioning, pagination, idempotency, caching and API security.</p>`);
 
 appendTopic("rest-api", [
 {

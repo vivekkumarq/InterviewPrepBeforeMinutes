@@ -1,6 +1,27 @@
-registerPrimer("kafka", `<h3>The mental model: an append-only log that many readers can replay</h3>
-<p>A traditional queue hands a message to one consumer and then deletes it. Kafka is different: it is a <strong>log</strong>. Producers append records to the end, and records stay there for the retention period (say, seven days) whether or not anyone has read them. Each consumer simply remembers its <strong>offset</strong>, the position it has read up to. Two different services can read the same records independently, and a service can rewind and replay history.</p>
-<p>A <strong>topic</strong> is split into <strong>partitions</strong> so that it can be spread over machines and read in parallel. Order is guaranteed <em>within</em> a partition, not across the whole topic. The record's <strong>key</strong> decides its partition, so all records with the same key stay in order.</p>
+registerPrimer("kafka", `<p class="pr-lead"><b>Kafka</b> is a system for passing messages (events) between services. One service announces "an order was placed", and any number of other services (billing, email, analytics) can react to it, each at its own pace. Kafka stores these messages safely, so nothing is lost if a service is slow or down for a while.</p>
+<div class="pr-analogy"><b>Think of it like this</b>Think of Kafka as a shared diary that nobody erases. Writers add new lines at the end. Each reader keeps their own bookmark showing how far they have read. Two readers can read the same diary independently, a reader who was away can catch up from their bookmark, and a reader can even go back and re-read old pages. A normal message queue is more like a to-do list where items are crossed off once done.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Event / message / record</dt><dd>One piece of information, such as "order 42 was placed".</dd>
+<dt>Producer</dt><dd>A program that writes messages to Kafka.</dd>
+<dt>Consumer</dt><dd>A program that reads messages from Kafka.</dd>
+<dt>Topic</dt><dd>A named stream of related messages, such as "orders".</dd>
+<dt>Partition</dt><dd>A topic is split into several partitions so the work can be spread over many machines and readers. Order is kept within each partition.</dd>
+<dt>Offset</dt><dd>A message's position number within a partition: the reader's bookmark.</dd>
+<dt>Consumer group</dt><dd>A team of consumers that share the work of reading a topic. Each partition is read by exactly one member of the team.</dd>
+<dt>Broker</dt><dd>One Kafka server. A cluster has several, and each partition is copied to more than one for safety.</dd>
+</dl>
+
+<h3>Step by step: a message's journey</h3>
+<ol class="pr-steps">
+<li>The order service (a producer) sends "order 42 placed" to the <code>orders</code> topic, using the order id as the message's <b>key</b>.</li>
+<li>Kafka uses the key to choose a partition. Every message with key 42 goes to the same partition, so they stay in order.</li>
+<li>Kafka appends the message to the end of that partition and copies it to other brokers so it survives a server failure.</li>
+<li>The billing service and the email service each read the message using their own consumer group, so both receive it.</li>
+<li>After processing, each consumer saves (commits) its offset: "I have handled up to here". If it restarts, it carries on from that point.</li>
+<li>The message stays in Kafka for the configured time (say seven days), even after everyone has read it.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 244" role="img" aria-label="Kafka topic with three partitions as logs; producer hashes key to partition; consumer group of two consumers each owns partitions and tracks offsets">
   <defs><marker id="pr-kaf" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -42,37 +63,57 @@ registerPrimer("kafka", `<h3>The mental model: an append-only log that many read
 </svg>
 <figcaption>Same key, same partition, same order. More partitions let more consumers in a group work in parallel.</figcaption>
 </figure>
-<h3>Worked example: one order's events, end to end</h3>
-<pre><code>// Producer: key by orderId so every event for one order lands in one partition
-kafka.send("orders", order.id(), new OrderPlaced(order.id(), order.total()));
+
+<h3>A worked example: one order's events</h3>
+<pre><code>// Producer: the order id is the key, so all events for one order stay in order
+kafka.send("orders", order.id(), new OrderPlaced(order.id()));
 kafka.send("orders", order.id(), new OrderPaid(order.id()));
 kafka.send("orders", order.id(), new OrderShipped(order.id()));
-// All three hash to the same partition, so every consumer sees
-// Placed -&gt; Paid -&gt; Shipped, never Shipped before Paid.
 
-// Consumer: one group per SERVICE. Billing and email both get every event.
+// Two different services, two different groups: both get every event
 @KafkaListener(topics = "orders", groupId = "billing")
 void bill(OrderEvent e) { ... }
 
 @KafkaListener(topics = "orders", groupId = "email")
-void email(OrderEvent e) { ... }
+void email(OrderEvent e) { ... }</code></pre>
+<ol class="pr-steps">
+<li>All three events have the same key, so they land in the same partition and every consumer sees Placed, then Paid, then Shipped, never in a different order.</li>
+<li>Billing and email use different group ids, so each gets its own copy of every event.</li>
+<li>To handle more load, you run more copies of the billing service. Kafka shares the partitions between them. With 3 partitions, a 4th copy would sit idle.</li>
+<li>If a billing copy crashes, Kafka hands its partitions to the others (a <b>rebalance</b>). They resume from the last committed offset, so a few messages may be processed twice. Consumers must handle duplicates safely.</li>
+</ol>
 
-// Scaling billing: run 3 instances. Kafka assigns one partition to each.
-// A 4th instance would sit idle: there are only 3 partitions to share.
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Expecting order across the whole topic</p>
+<p>Kafka only keeps order within one partition. Messages without a key, or with different keys, can be read in a different order than they were sent.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> give related messages the same key (such as the order id) so they share a partition.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Assuming each message is processed exactly once</p>
+<p>After a crash or rebalance, some messages are delivered again. If processing a payment message twice charges the customer twice, that is a serious bug.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> make consumers <b>idempotent</b>: record which message ids were already handled and skip repeats.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ One bad message blocking everything</p>
+<p>A message that always fails (a "poison" message) is retried forever, and the whole partition stops moving.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> retry a few times, then move the message to a separate "dead letter" topic to investigate later.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Saving to the database and sending to Kafka as two separate steps</p>
+<p>If the app crashes between the two, the database and Kafka disagree: an order exists but no event was sent, or the reverse.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> use the <b>outbox pattern</b>: save the event in the same database transaction, and publish it to Kafka from there.</p>
+</div>
 
-// A billing instance crashes: its partitions are REASSIGNED to the
-// survivors (a rebalance), which resume from the last COMMITTED offset.
-// Anything processed but not yet committed is processed again, so
-// consumers must be idempotent.</code></pre>
-<h3>The settings that come up in every Kafka interview</h3>
-<table>
-<tr><th>Setting</th><th>Controls</th><th>Safe default</th></tr>
-<tr><td><code>acks=all</code></td><td>Producer waits until all in-sync replicas have the record</td><td>On (default since Kafka 3.0)</td></tr>
-<tr><td><code>enable.idempotence=true</code></td><td>Producer retries cannot create duplicates or reorder</td><td>On (default since 3.0)</td></tr>
-<tr><td><code>replication.factor=3</code> + <code>min.insync.replicas=2</code></td><td>Survive one broker loss without losing acknowledged writes</td><td>Standard for production</td></tr>
-<tr><td>Offset commit after processing</td><td>At-least-once delivery</td><td>Commit only when work is done</td></tr>
-<tr><td>Partition count</td><td>Maximum parallelism per consumer group</td><td>Plan for peak throughput; increasing it later changes key placement</td></tr>
-</table>`);
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Kafka is a durable log: messages stay after being read and can be replayed.</li>
+<li>Topics are split into partitions; order is guaranteed only inside a partition.</li>
+<li>Use a key to keep related messages in order.</li>
+<li>Each consumer group gets every message; members of a group share the partitions.</li>
+<li>Expect duplicates: make consumers safe to run twice.</li>
+</ul>
+<p><b>Next:</b> the questions below cover delivery guarantees, offsets, rebalancing, retries, lag, schemas and scaling.</p>`);
 
 appendTopic("kafka", [
 {

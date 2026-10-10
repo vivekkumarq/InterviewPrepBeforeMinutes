@@ -1,6 +1,25 @@
-registerPrimer("graphql", `<h3>The mental model: one endpoint, a typed graph, and the client picks the shape</h3>
-<p>With REST the server decides what each URL returns, so a screen that needs a user, their orders and each order's items may take several calls and still receive fields it never shows. GraphQL flips that. The server publishes a <strong>schema</strong>: a typed map of everything that can be asked for and how types connect. The client sends one <strong>query</strong> that describes exactly the shape it wants, and gets back JSON in exactly that shape.</p>
-<p>On the server, every field is filled by a <strong>resolver</strong>: a function that knows how to fetch that one field. The engine walks the query like a tree and calls resolvers level by level.</p>
+registerPrimer("graphql", `<p class="pr-lead"><b>GraphQL</b> is another way to build an API. With REST, the server decides what each URL returns. With GraphQL, there is one endpoint, and <b>the client describes exactly the data it wants</b>, in one request, and gets back exactly that shape. Nothing missing, nothing extra.</p>
+<div class="pr-analogy"><b>Think of it like this</b>A REST API is like a set menu: each dish (URL) comes with fixed sides, and to get a full meal you may need to order several dishes. GraphQL is like ordering à la carte: you write down exactly what you want on one order slip ("the customer's name, their last two orders, and the item titles"), and the kitchen brings exactly that on one plate.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Schema</dt><dd>A description of all the data the API offers and how it connects, such as "a User has a name and a list of Orders".</dd>
+<dt>Type</dt><dd>One kind of object in the schema, such as User or Order, with its fields.</dd>
+<dt>Query</dt><dd>A request to read data, written in GraphQL's own simple syntax.</dd>
+<dt>Mutation</dt><dd>A request that changes data, like creating an order.</dd>
+<dt>Subscription</dt><dd>A request to receive live updates as they happen.</dd>
+<dt>Resolver</dt><dd>A function on the server that fetches the value for one field.</dd>
+<dt>Over-fetching / under-fetching</dt><dd>Getting more data than you need, or too little so you must make more calls. GraphQL solves both.</dd>
+</dl>
+
+<h3>Step by step: how one GraphQL request works</h3>
+<ol class="pr-steps">
+<li>The client sends one query to <code>/graphql</code>, describing the exact shape it wants.</li>
+<li>The server checks the query against the schema: do these fields exist, are the types right?</li>
+<li>It runs the query level by level, like walking down a tree: first the user, then that user's orders, then each order's items.</li>
+<li>For every field, a resolver fetches the value from a database or another service.</li>
+<li>The server returns JSON shaped exactly like the query, usually with status 200 even when some parts fail; errors are listed separately in the body.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 228" role="img" aria-label="A GraphQL query tree resolved level by level: user, then orders, then items, each by its own resolver">
   <defs><marker id="pr-gql" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -36,59 +55,64 @@ registerPrimer("graphql", `<h3>The mental model: one endpoint, a typed graph, an
 </svg>
 <figcaption>The engine resolves one level at a time. A field on a list runs once per element, which is where N+1 comes from.</figcaption>
 </figure>
-<h3>Worked example: schema, resolvers and the response</h3>
-<pre><code># schema.graphqls
-type Query {
-  user(id: ID!): User                 # nullable: the user may not exist
-}
-type User {
-  id: ID!
-  name: String!
-  orders(last: Int = 10): [Order!]!   # a list that is never null, of orders never null
-}
-type Order {
-  id: ID!
-  total: Float!
-  items: [Item!]!
-}
-type Item { title: String! }</code></pre>
-<pre><code>// Spring for GraphQL: method names match the schema fields
-@Controller
-class UserGraph {
-    @QueryMapping
-    User user(@Argument String id) { return users.find(id); }
 
-    @SchemaMapping                                   // resolves User.orders
-    List&lt;Order&gt; orders(User user, @Argument int last) {
-        return orders.lastForUser(user.id(), last);
+<h3>A worked example: one request instead of three</h3>
+<pre><code># The client's query
+{
+  user(id: 7) {
+    name
+    orders(last: 2) {
+      total
+      items { title }
     }
+  }
+}
 
-    @BatchMapping                                    // resolves Order.items for ALL
-    Map&lt;Order, List&lt;Item&gt;&gt; items(List&lt;Order&gt; orders) {   // orders in ONE call
-        return items.forOrders(orders);              // -&gt; no N+1
-    }
-}</code></pre>
-<pre><code>{
+# The response: exactly the shape that was asked for
+{
   "data": {
     "user": {
       "name": "Asha",
       "orders": [
         { "total": 598.0, "items": [ { "title": "Clean Code" } ] },
-        { "total": 120.0, "items": [ { "title": "Pens" }, { "title": "Notebook" } ] }
+        { "total": 120.0, "items": [ { "title": "Pens" } ] }
       ]
     }
   }
 }</code></pre>
-<h3>What changes compared with REST</h3>
-<table>
-<tr><th>Concern</th><th>REST</th><th>GraphQL</th></tr>
-<tr><td>Endpoints</td><td>Many URLs</td><td>One, usually <code>POST /graphql</code></td></tr>
-<tr><td>Response shape</td><td>Fixed by the server</td><td>Chosen by the client, per query</td></tr>
-<tr><td>Errors</td><td>HTTP status codes</td><td>Usually 200 with an <code>errors</code> array; partial data is possible</td></tr>
-<tr><td>HTTP caching</td><td>Works out of the box</td><td>Needs persisted queries or client-side caches</td></tr>
-<tr><td>Evolving</td><td>Versions (<code>/v2</code>)</td><td>Add fields freely; mark old ones <code>@deprecated</code></td></tr>
-<tr><td>Main risk</td><td>Over- and under-fetching</td><td>Expensive queries and N+1 in resolvers</td></tr>
-</table>`);
+<ol class="pr-steps">
+<li>With REST, this screen might need three calls: the user, then their orders, then each order's items.</li>
+<li>With GraphQL it is one request, and only the fields actually shown (name, total, title) are returned.</li>
+<li>On the server, separate resolvers fetch the user, the user's orders and each order's items.</li>
+<li>If the items resolver runs once per order, it causes many database queries (the "N+1" problem). Batching them into one call, for example with DataLoader or <code>@BatchMapping</code>, fixes it.</li>
+</ol>
+
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Ignoring the N+1 problem in resolvers</p>
+<p>A resolver that loads data for one parent at a time runs one database query for every item in a list. A list of 100 orders can trigger 101 queries.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> batch the loading so all children are fetched in one call (DataLoader, or <code>@BatchMapping</code> in Spring).</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Letting clients send any query, however big</p>
+<p>Clients can nest queries very deeply or ask for huge lists, accidentally or on purpose, and overload your server.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> limit query depth and size, cap list lengths, and in production allow only known, approved queries.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Checking only the HTTP status code</p>
+<p>GraphQL usually returns 200 even when parts of the query failed. The errors are inside the response body.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> always check the <code>errors</code> list in the response, in your app and in your tests.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>GraphQL has one endpoint, and the client chooses exactly what data it gets.</li>
+<li>The schema describes everything that can be asked for.</li>
+<li>Queries read, mutations change, subscriptions stream live updates.</li>
+<li>Each field is filled by a resolver; batch them to avoid N+1 queries.</li>
+<li>Protect the server with limits on query depth and size.</li>
+</ul>
+<p><b>Next:</b> the questions below cover schema design, errors, security, caching, pagination and federation.</p>`);
 
 appendTopic("graphql", [
 {

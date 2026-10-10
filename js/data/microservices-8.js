@@ -1,6 +1,27 @@
-registerPrimer("microservices", `<h3>The mental model: small services that each own their data</h3>
-<p>A monolith is one deployable application with one database. Microservices split it into several small applications, each built around one business capability (orders, payments, inventory), each with <strong>its own database</strong> that no other service touches directly. Services talk over the network: synchronously with HTTP or gRPC when the caller needs an answer now, and asynchronously with events when it does not.</p>
-<p>The benefit is independence: teams deploy, scale and change their service without coordinating with everyone else. The price is that every function call that used to be in-memory is now a network call that can be slow, fail, or succeed on one side only. <strong>Most microservices questions are about paying that price well.</strong></p>
+registerPrimer("microservices", `<p class="pr-lead"><b>Microservices</b> means building one big application as several small, separate applications (services), each responsible for one business area such as orders, payments or inventory. Each service can be changed, deployed and scaled on its own, by its own team. The cost is that the services now talk over the network, which brings its own problems.</p>
+<div class="pr-analogy"><b>Think of it like this</b>A <b>monolith</b> is one big restaurant kitchen where every cook shares one fridge and one recipe book. A change to one dish can disrupt everyone. <b>Microservices</b> are a food court: separate stalls, each with its own kitchen, staff and supplies. Each stall can change its menu freely, but if you want a meal from three stalls, you have to coordinate between them, and one stall being slow can hold up your whole order.</div>
+
+<h3>Key words you will see</h3>
+<dl class="pr-terms">
+<dt>Monolith</dt><dd>One application, deployed as a single unit, usually with one database.</dd>
+<dt>Service</dt><dd>A small, independent application that owns one business capability and its own data.</dd>
+<dt>Database per service</dt><dd>Each service has its own database that no other service reads or writes directly.</dd>
+<dt>API gateway</dt><dd>The single front door for all client requests, which forwards them to the right service.</dd>
+<dt>Synchronous / asynchronous</dt><dd>Synchronous: call a service and wait for the answer. Asynchronous: send an event and carry on without waiting.</dd>
+<dt>Saga</dt><dd>A business process spread over several services, where each step can be undone if a later step fails.</dd>
+<dt>Circuit breaker</dt><dd>Stops calling a service that keeps failing, so your own service stays responsive.</dd>
+<dt>Distributed tracing</dt><dd>Following one user request as it passes through many services, to find where it was slow or failed.</dd>
+</dl>
+
+<h3>Step by step: placing an order across three services</h3>
+<p>In a monolith, placing an order is one database transaction. With separate services, each with its own database, there is no single transaction, so the work is done as a <b>saga</b>:</p>
+<ol class="pr-steps">
+<li>The <b>Order</b> service creates the order with status PENDING and announces "order placed".</li>
+<li>The <b>Inventory</b> service hears that, reserves the stock, and announces "stock reserved".</li>
+<li>The <b>Payment</b> service hears that and charges the card.</li>
+<li>If the payment succeeds, the Order service marks the order CONFIRMED.</li>
+<li>If the card is declined, Payment announces "payment failed". Inventory then releases the stock, and Order marks the order CANCELLED. Each service undoes its own step. This undo step is called a <b>compensation</b>.</li>
+</ol>
 <figure class="fig">
 <svg viewBox="0 0 620 250" role="img" aria-label="Clients go through an API gateway to order, payment and inventory services, each with its own database, connected by an event broker">
   <defs><marker id="pr-ms" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0l8 4-8 4z"/></marker></defs>
@@ -36,31 +57,48 @@ registerPrimer("microservices", `<h3>The mental model: small services that each 
 </svg>
 <figcaption>Database per service is the rule that makes services independent, and also the reason cross-service consistency needs sagas.</figcaption>
 </figure>
-<h3>Worked example: placing an order when three services each own a piece</h3>
-<p>In a monolith, placing an order is one database transaction: insert the order, charge the card, decrement stock, commit. With three databases there is no single transaction. Instead the work is a <strong>saga</strong>: a sequence of local transactions, where each step has a <em>compensating</em> action that undoes it if a later step fails.</p>
-<pre><code>HAPPY PATH (choreography: each service reacts to events)
-  Order      creates order, status=PENDING           -&gt; emits OrderPlaced
-  Inventory  reserves stock                          -&gt; emits StockReserved
-  Payment    charges the card                        -&gt; emits PaymentDone
-  Order      marks order CONFIRMED
 
-FAILURE: the card is declined
-  Payment    charge fails                            -&gt; emits PaymentFailed
-  Inventory  RELEASES the reserved stock             (compensation)
-  Order      marks order CANCELLED, tells the user   (compensation)
+<h3>The patterns that make it work</h3>
+<ul>
+<li><b>API gateway:</b> one entry point for clients, handling login checks and rate limits in one place.</li>
+<li><b>Saga:</b> a multi-step business process across services, with an undo step for each part.</li>
+<li><b>Outbox:</b> save data and announce an event reliably, without losing one or the other.</li>
+<li><b>Timeouts, retries and circuit breakers:</b> stop one slow service from freezing all the services that call it.</li>
+<li><b>Idempotent consumers:</b> events can arrive twice, so handling the same event twice must be harmless.</li>
+<li><b>Distributed tracing:</b> a shared trace id lets you follow one request through every service.</li>
+</ul>
 
-Nothing was ever "rolled back" in the database sense. Each service
-undid its own step with a new, forward-moving transaction.</code></pre>
-<table>
-<tr><th>Pattern</th><th>Problem it solves</th></tr>
-<tr><td><strong>API gateway</strong></td><td>One entry point for clients; auth and rate limiting in one place</td></tr>
-<tr><td><strong>Saga</strong></td><td>A business transaction across several databases</td></tr>
-<tr><td><strong>Outbox</strong></td><td>Save to your database and publish an event without losing either one</td></tr>
-<tr><td><strong>Circuit breaker, timeout, retry</strong></td><td>One slow service dragging all its callers down</td></tr>
-<tr><td><strong>Idempotent consumers</strong></td><td>Events are delivered at least once, so duplicates must be harmless</td></tr>
-<tr><td><strong>Distributed tracing</strong></td><td>Following one request through ten services</td></tr>
-</table>
-<p><strong>When not to do this at all:</strong> a small team, an unclear domain, or no need for independent scaling. A well-structured monolith (clear modules, no shared tables between modules) gives most of the benefit with none of the network problems, and can be split later along the module lines.</p>`);
+<h3>Common mistakes beginners make</h3>
+<div class="pr-mistake">
+<p class="pm-what">❌ Services sharing one database</p>
+<p>If several services read and write the same tables, no team can change a table without breaking others. You end up with the problems of a monolith plus the problems of a network.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> each service owns its data. Others get it through that service's API or its events.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Calling other services without timeouts</p>
+<p>If a service you depend on becomes slow, every one of your threads ends up waiting on it, and your service stops answering too. The failure spreads from service to service.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> set a timeout on every outgoing call, and add a circuit breaker and a fallback.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ Splitting too early, or by technical layer</p>
+<p>Splitting into "a database service" and "a UI service", or splitting a small app before you understand it, creates services that must always change and deploy together: a "distributed monolith".</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> split by business capability (orders, payments), and only when teams and scale really need it. A well-organised monolith is a fine starting point.</p>
+</div>
+<div class="pr-mistake">
+<p class="pm-what">❌ No way to trace a request</p>
+<p>When one click passes through eight services and fails, logs scattered over eight places are almost impossible to follow.</p>
+<p class="pm-fix"><strong>✅ Fix:</strong> pass a trace id with every call and use distributed tracing, so you can see the whole journey in one view.</p>
+</div>
+
+<h3>Remember this</h3>
+<ul class="pr-remember">
+<li>Microservices are small, independent services, each owning one business area and its own data.</li>
+<li>They give team independence and separate scaling, at the cost of network complexity.</li>
+<li>Use sagas instead of cross-service database transactions.</li>
+<li>Protect every network call with timeouts, retries and circuit breakers.</li>
+<li>Start with a well-structured monolith unless you clearly need microservices.</li>
+</ul>
+<p><b>Next:</b> the questions below cover service boundaries, communication styles, data consistency, resilience, testing and deployment.</p>`);
 
 appendTopic("microservices", [
 {
