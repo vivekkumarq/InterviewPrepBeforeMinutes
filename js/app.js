@@ -2105,7 +2105,7 @@
           (quiz.shown
             ? '<button class="quiz-btn knew" id="quizKnew"><b>1</b> I knew it</button>' +
               '<button class="quiz-btn missed" id="quizMissed"><b>2</b> Needs work</button>'
-            : '<button class="quiz-btn reveal" id="quizReveal">Reveal answer <b>Space</b></button>') +
+            : '<button class="quiz-btn primary" id="quizReveal">Reveal answer <b>Space</b></button>') +
         "</div>" +
       "</div>";
 
@@ -2160,7 +2160,7 @@
           : "") +
         '<div class="quiz-actions">' +
           (quiz.missed.length
-            ? '<button class="quiz-btn reveal" id="quizRetry">Retry just these ' + quiz.missed.length + "</button>"
+            ? '<button class="quiz-btn primary" id="quizRetry">Retry just these ' + quiz.missed.length + "</button>"
             : "") +
           '<a class="quiz-btn ghost" href="#/quiz/' + quiz.topic + '">Shuffle again</a>' +
           '<a class="quiz-btn ghost" href="#/topic/' + quiz.topic + '">Back to the questions</a>' +
