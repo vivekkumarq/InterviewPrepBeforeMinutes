@@ -1400,8 +1400,8 @@ pre:hover .copy-btn,.copy-btn:focus-visible{opacity:1;transform:none}
   padding:2px 7px;border-radius:5px;background:var(--bg-soft);
   border:1px solid var(--border);color:var(--text-mute);
 }
-.quiz-btn.reveal{background:var(--accent);border-color:var(--accent);color:#fff}
-.quiz-btn.reveal b{background:rgba(255,255,255,.18);border-color:transparent;color:#fff}
+.quiz-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.quiz-btn.primary b{background:rgba(255,255,255,.18);border-color:transparent;color:#fff}
 .quiz-btn.knew:hover{border-color:var(--good);color:var(--good)}
 .quiz-btn.missed:hover{border-color:var(--warn);color:var(--warn)}
 .quiz-btn.ghost{flex:0 1 auto}
