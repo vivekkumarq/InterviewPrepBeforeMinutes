@@ -2162,7 +2162,9 @@
           (quiz.missed.length
             ? '<button class="quiz-btn primary" id="quizRetry">Retry just these ' + quiz.missed.length + "</button>"
             : "") +
-          '<a class="quiz-btn ghost" href="#/quiz/' + quiz.topic + '">Shuffle again</a>' +
+          /* A button, not a link to #/quiz/<topic>: that is the current hash,
+             so following it fires no hashchange and nothing happens. */
+          '<button class="quiz-btn ghost" id="quizShuffle">Shuffle again</button>' +
           '<a class="quiz-btn ghost" href="#/topic/' + quiz.topic + '">Back to the questions</a>' +
         "</div>" +
       "</div>";
@@ -2173,6 +2175,9 @@
       quiz.order = again; quiz.at = 0; quiz.shown = false;
       quiz.knew = []; quiz.missed = [];
       renderQuiz();
+    });
+    document.getElementById("quizShuffle").addEventListener("click", function () {
+      startQuiz(quiz.topic);
     });
   }
 
