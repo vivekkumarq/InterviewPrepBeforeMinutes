@@ -1441,7 +1441,7 @@
     });
   }
 
-  /* Opens and centres the deep-linked question once its topic has painted. */
+  /* Opens the deep-linked question and scrolls it to the top once its topic has painted. */
   function openPendingQuestion(tid) {
     if (state.pendingQ === null) return;
     var idx = state.pendingQ;
@@ -1456,13 +1456,25 @@
         card.querySelector(".qhead").setAttribute("aria-expanded", "true");
         noteOpened(card);
         card.classList.add("flash");
-        card.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
-        /* Cards above were laid out at an estimated height (content-visibility),
-           so the first scroll can land short. Correct it once it settles. */
-        setTimeout(function () {
-          var top = card.getBoundingClientRect().top;
-          if (top < 60 || top > 140) card.scrollIntoView({ behavior: "auto", block: "start" });
-        }, 700);
+        /* Jump, don't animate: a smooth scroll across cards laid out at an
+           estimated height (content-visibility) renders them on the way and
+           lands short or long, and the old fix-up ran on a 700ms guess that a
+           slow device misses. Put the title just below what is stuck to the
+           top, the header plus the toolbar while it is sticky; the toolbar
+           wraps to two rows, deeper than the CSS scroll offsets allow for.
+           offsetTop rather than getBoundingClientRect, which includes the
+           cards' entrance transform. Jump again in case late layout moved it. */
+        function settle() {
+          var bar = view.querySelector(".toolbar");
+          var stuck = bar && getComputedStyle(bar).position === "sticky"
+            ? parseFloat(getComputedStyle(bar).top) + bar.offsetHeight
+            : topbar.offsetHeight;
+          var y = 0;
+          for (var el = card; el; el = el.offsetParent) y += el.offsetTop;
+          window.scrollTo({ top: y - stuck - 8, behavior: "instant" });
+        }
+        settle();
+        setTimeout(settle, 400);
         setTimeout(function () { card.classList.remove("flash"); }, 1600);
       });
     });
