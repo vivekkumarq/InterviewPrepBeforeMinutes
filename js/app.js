@@ -1581,8 +1581,8 @@
     });
   }
 
-  /* Jump to one result: clear every filter that could hide the card, make sure
-     the topic is actually rendered, then open and centre it. */
+  /* Jump to one result: a company page, a topic, a quick action, or one
+     question opened through its deep link. */
   function openHit(b) {
     searchBox.hidden = true;
     searchInput.value = "";
@@ -1596,32 +1596,12 @@
     if (b.dataset.href) { location.hash = b.dataset.href; return; }
     if (b.dataset.action) { runAction(b.dataset.action); return; }
 
-    var tid = b.dataset.id, idx = +b.dataset.idx;
-    state.level = "all"; state.filter = ""; state.firm = ""; state.hotOnly = false;
-
-    var target = "#/topic/" + tid;
-    if (location.hash === target) route();          // same topic: no hashchange fires
+    /* Reuse the deep-link route: it clears the filters, waits for the parts
+       and scrolls the card's title to the top. Centring the card instead put
+       the title of a long answer above the viewport, under the header. */
+    var target = "#/topic/" + b.dataset.id + "/q/" + b.dataset.idx;
+    if (location.hash === target) route();          // same question: no hashchange fires
     else location.hash = target;
-
-    var tries = 0;
-    (function reveal() {
-      var card = document.getElementById("q-" + tid + "-" + idx);
-      if (!card) {
-        if (tries++ < 40) return setTimeout(reveal, 40);   // wait for the part files
-        return;
-      }
-      card.classList.add("open");
-      var head = card.querySelector(".qhead");
-      if (head) head.setAttribute("aria-expanded", "true");
-      /* Cards use content-visibility, so the first scroll can land short while
-         heights are still being resolved. Settle it on the next frame. */
-      card.scrollIntoView({ behavior: "smooth", block: "center" });
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () {
-          card.scrollIntoView({ behavior: "smooth", block: "center" });
-        });
-      });
-    })();
   }
 
   /* Arrow-key navigation over the result list. */
