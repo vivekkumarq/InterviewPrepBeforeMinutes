@@ -590,6 +590,11 @@
   }
 
   function markActive() {
+    /* The phone bar is outside the sidebar, so it is updated in both modes;
+       skipping it in the coding section left the last tab (e.g. Saved) lit. */
+    document.querySelectorAll(".bn-item").forEach(function (b) {
+      b.classList.toggle("on", b.dataset.view === state.view);
+    });
     if (navMode === "code") {
       navTree.querySelectorAll(".code-q").forEach(function (a) {
         a.classList.toggle("active", a.dataset.slug === state.codeSlug);
@@ -611,9 +616,6 @@
     }
     var saved = document.getElementById("navSaved");
     if (saved) saved.classList.toggle("active", state.view === "saved");
-    document.querySelectorAll(".bn-item").forEach(function (b) {
-      b.classList.toggle("on", b.dataset.view === state.view);
-    });
   }
 
   function paintSavedCount() {
