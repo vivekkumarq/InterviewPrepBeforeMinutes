@@ -438,7 +438,7 @@ mark{background:linear-gradient(transparent 55%, var(--accent-soft) 55%);color:i
 /* ---------- nav groups (dropdowns) ---------- */
 .nav-group{margin-bottom:4px}
 .nav-group-btn{
-  width:100%;display:flex;align-items:center;gap:10px;
+  width:100%;display:flex;align-items:center;gap:10px;text-align:left;
   padding:10px 12px;border-radius:10px;cursor:pointer;
   background:none;border:none;color:var(--text-dim);
   font-family:inherit;font-size:0.78125rem;font-weight:700;
