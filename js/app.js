@@ -446,7 +446,9 @@
     return q._text;
   }
   /* Highlights every search word, not just the whole phrase, so a result
-     found by matching two separate words still shows why it matched. */
+     found by matching two separate words still shows why it matched.
+     Matches the RAW text and escapes each piece: matching the escaped HTML
+     let a word like "lt" land inside "&lt;" and print the entity literally. */
   function highlight(text, term) {
     if (!term) return esc(text);
     var words = String(term).toLowerCase().split(/\s+/).filter(Boolean);
@@ -454,7 +456,10 @@
     var re = new RegExp("(" + words.map(function (w) {
       return w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     }).join("|") + ")", "ig");
-    return esc(text).replace(re, "<mark>$1</mark>");
+    /* split() with a capture group puts the matches at the odd indexes. */
+    return String(text).split(re).map(function (part, i) {
+      return i % 2 ? "<mark>" + esc(part) + "</mark>" : esc(part);
+    }).join("");
   }
   function qKey(topicId, i) { return topicId + ":" + i; }
 
