@@ -95,7 +95,7 @@ appendTopic("java-versions", [
 {
   q: "Rewrite this Java 8 class in modern Java, step by step",
   level: "advanced", hot: true, tags: ["records", "sealed", "pattern-matching", "refactoring", "must-know"],
-  companies: ["Amazon", "Goldman Sachs", "JP Morgan", "SAP", "Oracle", "Microsoft", "Atlassian"],
+  companies: ["Amazon", "Goldman Sachs", "JPMorgan", "SAP", "Oracle", "Microsoft", "Atlassian"],
   a: `<p>Listing features is weak. Taking typical Java 8 code and modernising it one step at a time shows you actually use them. Here is a small shipping-cost calculator as it would have been written in 2015.</p>
 <pre><code>// JAVA 8 VERSION: about 60 lines once equals, hashCode and toString are added
 public abstract class Shape { }

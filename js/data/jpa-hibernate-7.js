@@ -103,7 +103,7 @@ appendTopic("jpa-hibernate", [
 {
   q: "Your update saved nothing, or saved something you never asked for. Explain both",
   level: "advanced", hot: true, tags: ["dirty-checking", "persistence-context", "detached", "must-know"],
-  companies: ["Amazon", "Goldman Sachs", "JP Morgan", "Walmart", "SAP", "Infosys", "TCS"],
+  companies: ["Amazon", "Goldman Sachs", "JPMorgan", "Walmart", "SAP", "Infosys", "TCS"],
   a: `<p>Both bugs have the same root cause: not knowing whether an entity is <strong>managed</strong> (tracked, changes saved automatically at commit) or <strong>detached</strong> (not tracked, changes ignored). Walk through each.</p>
 <p><strong>Bug 1: the change silently disappears.</strong></p>
 <pre><code>// No @Transactional on this method or its class

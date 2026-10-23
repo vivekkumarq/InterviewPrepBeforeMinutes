@@ -7,6 +7,8 @@
  *     `${DB_URL}` silently breaks the whole topic when the file loads.
  *  2. Markdown syntax in a plain-text field (question titles, topic blurbs,
  *     cheatsheet headings), which renders as literal backticks on the page.
+ *  3. One company spelled two ways ("JP Morgan" / "JPMorgan"), which gives it
+ *     two half-empty prep pages.
  *
  * Usage:  node tools/check-data.js          # report
  *         node tools/check-data.js --fix    # escape the ${ and report the rest
@@ -18,7 +20,10 @@ const FIX = process.argv.includes("--fix");
 const dataDir = path.join(__dirname, "..", "js", "data");
 const files = fs.readdirSync(dataDir).filter(f => f.endsWith(".js"));
 
-let dollars = 0, fixed = 0, markdown = 0, stray = 0, backticks = 0;
+let dollars = 0, fixed = 0, markdown = 0, stray = 0, backticks = 0, spellings = 0;
+// Each company spelling becomes its own prep page, so "JP Morgan" and
+// "JPMorgan" split one company's questions in two. Keyed by letters and digits.
+const companyNames = {};
 
 for (const name of files) {
   const file = path.join(dataDir, name);
@@ -86,12 +91,26 @@ for (const name of files) {
       console.log(`  ERROR  ${name}:${line} backtick in a cheatsheet heading: ${m[1].slice(0, 60)}`);
     }
   }
+
+  for (const m of src.matchAll(/\bcompanies:\s*\[([^\]]*)\]/g)) {
+    for (const c of m[1].match(/"[^"]*"/g) || []) {
+      const key = c.toLowerCase().replace(/[^a-z0-9]/g, "");
+      (companyNames[key] = companyNames[key] || new Set()).add(c);
+    }
+  }
 }
 
-const remaining = (FIX ? 0 : dollars) + markdown + stray + backticks;
+for (const key of Object.keys(companyNames)) {
+  if (companyNames[key].size > 1) {
+    spellings++;
+    console.log(`  ERROR  company spelled more than one way, which splits its page: ${[...companyNames[key]].join(" vs ")}`);
+  }
+}
+
+const remaining = (FIX ? 0 : dollars) + markdown + stray + backticks + spellings;
 console.log(
   `\nScanned ${files.length} files — ` +
   (FIX ? `escaped ${fixed} interpolation(s), ` : `${dollars} unescaped interpolation(s), `) +
-  `${markdown} markdown issue(s), ${stray} stray character(s)`
+  `${markdown} markdown issue(s), ${stray} stray character(s), ${spellings} company spelling clash(es)`
 );
 process.exit(remaining ? 1 : 0);
