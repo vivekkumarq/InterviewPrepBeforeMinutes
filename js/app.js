@@ -1756,16 +1756,23 @@
   /* ---- sidebar tree for the coding section ---- */
   function buildCodeNav() {
     var chev = '<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
+    /* A search or difficulty filter must cover every topic, not only the one
+       that happens to be open: fetch each topic once and open those with a
+       match. codeLoading[id] is undefined only until the first fetch starts,
+       so a failed fetch is not retried on every redraw. */
+    var filtering = !!codeSearch.trim() || codeDiff !== "all";
     var body = window.CODE_SECTIONS.map(function (sec) {
       var topics = window.CODE_TOPICS.filter(function (t) { return t.section === sec.id; });
       var rows = topics.map(function (t) {
         var data = window.CODE_DATA[t.id];
         var isOpen = state.codeTopic === t.id;
+        if (filtering && !data && !t.soon && codeLoading[t.id] === undefined) loadCodeTopic(t.id, buildCodeNav);
+        var qs = data ? data.questions.filter(codeMatches) : [];
+        var shown = isOpen || (filtering && qs.length > 0);
         var inner;
         if (!data) {
           inner = '<div class="code-q dim">' + (isOpen ? "Loading…" : "") + "</div>";
         } else {
-          var qs = data.questions.filter(codeMatches);
           inner =
             '<a class="code-q intro' + (state.view === "codeTopic" && isOpen ? " active" : "") +
               '" href="#/code/' + t.id + '"><span class="cq-n">📖</span>' +
@@ -1785,9 +1792,9 @@
             '<span class="n">' + t.count + "</span>" +
             '<span class="soon-tag">soon</span></span></div>';
         }
-        return '<div class="nav-group' + (isOpen ? " open" : "") + '" data-codetopic="' + t.id + '">' +
+        return '<div class="nav-group' + (shown ? " open" : "") + '" data-codetopic="' + t.id + '">' +
           '<button class="nav-group-btn"><span>' + esc(t.name) + "</span>" +
-          '<span class="n">' + t.count + "</span>" + chev + "</button>" +
+          '<span class="n">' + (filtering && data ? qs.length : t.count) + "</span>" + chev + "</button>" +
           '<div class="nav-group-body"><div>' + inner + "</div></div></div>";
       }).join("");
       return '<div class="code-sec">' + esc(sec.name) + "</div>" + rows;
