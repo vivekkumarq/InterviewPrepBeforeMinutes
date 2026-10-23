@@ -171,7 +171,7 @@ for (Employee e : emps) { running += e.salary(); System.out.println(running); }<
 {
   q: "Build a validation pipeline by composing Predicate and Function",
   level: "advanced", tags: ["lambdas", "functional-interfaces", "composition"],
-  companies: ["Amazon", "Goldman Sachs", "JP Morgan", "SAP", "Adobe", "Infosys"],
+  companies: ["Amazon", "Goldman Sachs", "JPMorgan", "SAP", "Adobe", "Infosys"],
   a: `<p>The functional interfaces are more than lambda targets. <code>Predicate</code> and <code>Function</code> have <strong>default methods that combine them</strong>, which lets you build behaviour out of small named pieces instead of one long method full of <code>if</code> statements.</p>
 <pre><code>record Signup(String email, String password, int age, String country) {}
 

@@ -116,7 +116,7 @@ appendTopic("java-oop", [
 {
   q: "Model a bank account so that invalid states are impossible",
   level: "beginner", hot: true, tags: ["encapsulation", "invariants", "design", "must-know"],
-  companies: ["Goldman Sachs", "JP Morgan", "Amazon", "Infosys", "TCS", "Wipro", "Accenture"],
+  companies: ["Goldman Sachs", "JPMorgan", "Amazon", "Infosys", "TCS", "Wipro", "Accenture"],
   a: `<p>This is the practical test of <strong>encapsulation</strong>. Most candidates write a class with private fields and public getters and setters for every one of them. That is not encapsulation. It is a public struct with extra typing, because any caller can still put the object into a broken state.</p>
 <pre><code>// NOT encapsulated, even though the fields are private
 public class Account {

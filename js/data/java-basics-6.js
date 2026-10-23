@@ -175,7 +175,7 @@ long totalPaise = Math.addExact(balancePaise, depositPaise);   // throws rather
 {
   q: "Why is 0.1 + 0.2 not equal to 0.3, and how do you compare doubles correctly?",
   level: "beginner", hot: true, tags: ["primitives", "floating-point", "bigdecimal", "must-know"],
-  companies: ["Goldman Sachs", "JP Morgan", "Morgan Stanley", "Amazon", "Infosys", "TCS", "Wipro"],
+  companies: ["Goldman Sachs", "JPMorgan", "Morgan Stanley", "Amazon", "Infosys", "TCS", "Wipro"],
   a: `<p>A <code>double</code> stores numbers in <strong>binary</strong>. Just as 1/3 cannot be written exactly in decimal (0.3333…), 0.1 cannot be written exactly in binary. Every such value is stored as the nearest binary fraction, and the tiny errors show up when you add them.</p>
 <pre><code>System.out.println(0.1 + 0.2);             // 0.30000000000000004
 System.out.println(0.1 + 0.2 == 0.3);      // false
